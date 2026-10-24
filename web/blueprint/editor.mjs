@@ -11,6 +11,7 @@ import {
   variablesOf,
   newId,
   cloneGraph,
+  assignable,
 } from "./model.mjs";
 import { nodeWidth, nodeHeight, pinPosition, codeLines } from "./layout.mjs";
 
@@ -565,6 +566,10 @@ export class BlueprintEditor {
             const t = target.dataset;
             const ok = drag.direction === "out" ? connect(this.graph, drag.node, drag.pin, t.node, t.pin) : connect(this.graph, t.node, t.pin, drag.node, drag.pin);
             this.render();
+            const source = this.node(drag.direction === "out" ? drag.node : t.node);
+            const fanOut = this.graph.links.filter((l) => l.from === source?.id && l.fromPin === "value").length;
+            if (ok && source?.type === "call" && fanOut > 1)
+              this.setStatus(`Вызов ${source.props.name}() подключён к ${fanOut} входам и выполнится ${fanOut} раза. Чтобы вызвать один раз, сохраните результат узлом «Объявить переменную».`, "error");
             if (ok || drag.detached) this.changed();
           } else if (drag.moved && !target) {
             if (drag.detached) {
@@ -650,7 +655,11 @@ export class BlueprintEditor {
     if (t.node === drag.node || t.dir === drag.direction) return false;
     const node = this.node(t.node);
     const pin = (t.dir === "in" ? pinsOf(node, this.graph).inputs : pinsOf(node, this.graph).outputs).find((p) => p.id === t.pin);
-    return pin?.kind === drag.kind;
+    if (pin?.kind !== drag.kind) return false;
+    if (pin.kind !== "data") return true;
+    const other = this.node(drag.node);
+    const own = (drag.direction === "out" ? pinsOf(other, this.graph).outputs : pinsOf(other, this.graph).inputs).find((p) => p.id === drag.pin);
+    return drag.direction === "out" ? assignable(own?.type, pin.type) : assignable(pin.type, own?.type);
   }
 
   command(name, element) {

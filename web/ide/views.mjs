@@ -153,7 +153,7 @@ export function projectTree(
       })
       .join("");
   }
-  return `<div class="tree-project"><button data-action="overview" title="Обзор проекта">${glyph("down", 11)}<b>${e(project.name)}</b><span>JAVA</span></button></div><div class="project-tree" role="tree" aria-label="Файлы ${e(project.name)}">${children("", 0) || `<p class="tree-loading">${loading ? "Загрузка…" : "В папке пока нет файлов"}</p>`}</div><div class="explorer-bottom"><span>Игнорируются build, target, .git и зависимости</span><button data-action="reveal-root">${glyph("external", 12)}В проводнике</button></div>`;
+  return `<div class="tree-project"><button data-action="overview" title="Обзор проекта">${glyph("down", 11)}<b>${e(project.name)}</b><span>JAVA</span></button></div><div class="project-tree" role="tree" aria-label="Файлы ${e(project.name)}">${children("", 0) || `<p class="tree-loading">${loading ? "Загрузка…" : "В папке пока нет файлов"}</p>`}</div><div class="explorer-bottom"><span>Игнорируются build, target, .git и зависимости</span><button data-action="${project.capabilities?.folderPicker === false ? "export-project" : "reveal-root"}">${glyph(project.capabilities?.folderPicker === false ? "download" : "external", 12)}${project.capabilities?.folderPicker === false ? "Скачать ZIP" : "В проводнике"}</button></div>`;
 }
 
 export function searchSidebar(state) {

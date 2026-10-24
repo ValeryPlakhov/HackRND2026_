@@ -5,6 +5,7 @@ import { CommandPalette } from "./palette.mjs";
 import { availableCommands, shortcutCommand } from "./commands.mjs";
 import { JAVA_FILE_TEMPLATES } from "./language.mjs";
 import { StudioClient } from "../lib/client.mjs";
+import { zipBytes } from "../lib/export.mjs";
 import { BlueprintEditor } from "../blueprint/editor.mjs";
 import { autoLayout } from "../blueprint/layout.mjs";
 import { generate, CodegenError } from "../blueprint/codegen.mjs";
@@ -386,7 +387,7 @@ export class IdeApplication {
   }
 
   blueprintKey(file, method) {
-    return `${file.path}#${method.owner}.${method.name}/${method.signature}`;
+    return `${this.project?.id ?? "-"}|${file.path}#${method.owner}.${method.name}/${method.signature}`;
   }
 
   renderGraph() {
@@ -397,7 +398,8 @@ export class IdeApplication {
     const key = method ? this.blueprintKey(file, method) : null;
     // The graph the user is editing stays mounted while the code below it is regenerated.
     // While the code it generated is being re-analysed the model is briefly absent: keep the graph.
-    const generating = !file?.currentModel && this.blueprint?.path === file?.path;
+    const generating =
+      !file?.currentModel && this.blueprint?.path === file?.path && this.blueprint?.projectId === this.project?.id;
     if (
       this.graph instanceof BlueprintEditor &&
       (this.blueprint?.key === key || generating) &&
@@ -449,7 +451,14 @@ export class IdeApplication {
       } else graph = autoLayout(fresh);
     }
     if (this.documents.active !== file || file.revision !== revision) return;
-    this.blueprint = { key, revision, graph, path: file.path };
+    this.blueprint = {
+      key,
+      revision,
+      graph,
+      path: file.path,
+      projectId: this.project?.id,
+      body: file.content.slice(graph.bodyStart, graph.bodyEnd),
+    };
     const body = $(".ide-graph-body", target);
     if (!body) return;
     this.graph = new BlueprintEditor(body, graph, {
@@ -485,6 +494,17 @@ export class IdeApplication {
   blueprintChanged(file, graph, { structural }) {
     const state = this.blueprint;
     if (!state || state.graph !== graph) return;
+    // A graph may only rewrite the text it was built from (F03): same project, revision and body.
+    if (
+      state.projectId !== this.project?.id ||
+      file.revision !== state.revision ||
+      file.content.slice(graph.bodyStart, graph.bodyEnd) !== state.body
+    ) {
+      this.blueprint = null;
+      this.notify("Код изменился, пока открыт граф: граф перестроен по текущему коду, правка не применена.", "warning");
+      this.renderGraph();
+      return;
+    }
     if (structural) {
       if (file.readOnly) {
         this.graph?.setStatus("Файл только для чтения: изменения графа не попадут в код", "error");
@@ -495,11 +515,21 @@ export class IdeApplication {
         const lineStart = file.content.lastIndexOf("\n", graph.bodyStart) + 1;
         const outer = file.content.slice(lineStart).match(/^\s*/)[0];
         result = generate(graph, { indent: outer + "    " });
+        if (result.problems.length) {
+          this.graph?.setStatus(
+            `Черновик: ${result.problems.length} неподключённых входов — код не изменён, пока граф не завершён`,
+            "error",
+          );
+          const body = file.content.slice(graph.bodyStart, graph.bodyEnd);
+          this.quality.saveLayout(state.key, body, graph);
+          return;
+        }
         const body = "{\n" + result.code + (result.code ? "\n" : "") + outer + "}";
         const content = file.content.slice(0, graph.bodyStart) + body + file.content.slice(graph.bodyEnd);
         graph.bodyEnd = graph.bodyStart + body.length;
         file.update(content);
         state.revision = file.revision;
+        state.body = body;
         this.editor?.refresh();
         this.analyseSoon(file);
       } catch (error) {
@@ -507,12 +537,7 @@ export class IdeApplication {
         if (error.nodeId) this.graph?.select(error.nodeId);
         return;
       }
-      this.graph?.setStatus(
-        result.problems.length
-          ? `Java обновлена · ${result.problems.length} неподключённых входов (подставлены значения по умолчанию)`
-          : "Java обновлена из блупринта ✓",
-        result.problems.length ? "error" : "ok",
-      );
+      this.graph?.setStatus("Java обновлена из блупринта (синтаксис проверит анализ, поведение — F6)", "ok");
     }
     const body = file.content.slice(graph.bodyStart, graph.bodyEnd);
     this.quality.saveLayout(state.key, body, graph);
@@ -715,6 +740,8 @@ export class IdeApplication {
     this.searchState.result = null;
     this.runConfig = { mainClass: "", input: "" };
     this.quality.reset(null);
+    this.blueprint = null;
+    this.blueprintViews = {};
     this.sidebar = "explorer";
     this.sidebarHidden = false;
     this.panelHidden = true;
@@ -1549,10 +1576,22 @@ export class IdeApplication {
         this.showModal(
           view.modalFrame(
             "Действия с проектом",
-            `<div class="file-actions-menu">${view.button("new-file", "Создать файл", "file")}${view.button("new-folder", "Создать папку", "folder")}${this.selectedPath ? view.button("rename-file", "Переименовать «" + basename(this.selectedPath) + "»", "edit") + view.button("trash-file", "Переместить в корзину", "close") : ""}${view.button("reveal-root", "Открыть в проводнике", "external")}${view.button("close-project", "Закрыть проект", "folder")}</div>`,
+            `<div class="file-actions-menu">${view.button("new-file", "Создать файл", "file")}${view.button("new-folder", "Создать папку", "folder")}${this.selectedPath ? view.button("rename-file", "Переименовать «" + basename(this.selectedPath) + "»", "edit") + view.button("trash-file", "Переместить в корзину", "close") : ""}${this.bridge.desktop ? view.button("reveal-root", "Открыть в проводнике", "external") : view.button("export-project", "Скачать проект (ZIP)", "download")}${view.button("close-project", "Закрыть проект", "folder")}</div>`,
           ),
         );
         break;
+      case "export-project": {
+        if (!this.project) break;
+        const scan = await this.bridge.scan(this.project.id);
+        const files = {};
+        for (const item of scan.files) {
+          const open = this.documents.documents.get(item.path);
+          files[item.path] = open ? open.content : (await this.bridge.read(this.project.id, item.path)).content;
+        }
+        download(`${this.project.name}.zip`, new Blob([zipBytes(files)], { type: "application/zip" }));
+        this.notify(`Скачан проект: ${Object.keys(files).length} файлов, включая несохранённые правки в редакторе.`);
+        break;
+      }
       case "reveal-root":
         if (this.project) await this.bridge.reveal(this.project.id, "");
         break;
@@ -1798,6 +1837,7 @@ export class IdeApplication {
           mainClass: String(data.get("mainClass")).trim(),
           input: String(data.get("input")),
         };
+        this.quality.invalidate();
         this.notify("Параметры запуска сохранены для текущей сессии");
         break;
       case "ide-settings-form": {

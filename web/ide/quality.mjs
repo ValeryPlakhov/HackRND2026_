@@ -51,6 +51,8 @@ export class QualityLab {
     this.lab = { mutation: null, benchmark: null, reduction: null, reducerInput: "" };
     this.job = null;
     this.layouts = {};
+    this.pending = null;
+    this.changedDuringCheck = false;
   }
 
   // ---------- blueprint layouts ----------
@@ -135,6 +137,7 @@ export class QualityLab {
 
   invalidate() {
     if (this.report) this.reportStale = true;
+    if (this.job && ["queued", "running"].includes(this.job.state)) this.changedDuringCheck = true;
     if (this.analysis) this.analysisStale = true;
     this.renderStatus();
   }
@@ -238,6 +241,7 @@ export class QualityLab {
       job: this.job,
       tab: this.tab,
       lab: this.lab,
+      pending: this.pending,
       method: active?.language === "java" ? active.selectedMethod() : null,
       document: active,
     });
@@ -478,6 +482,7 @@ export class QualityLab {
     });
     if (this.app.documents.active !== document || document.revision !== entry.revision)
       throw new Error("Код изменился во время применения. Повторите.");
+    this.pending = { label: target?.title ?? "улучшение", docs: [{ path: document.path, content: document.content }], created: null };
     document.update(result.source);
     this.app.closeModal();
     this.app.editor?.refresh();
@@ -536,6 +541,7 @@ export class QualityLab {
   }
 
   async decompose({ fileName, methodIds, className, errorTarget }) {
+    const projectId = this.project.id;
     const files = await this.collect();
     let result;
     try {
@@ -553,11 +559,23 @@ export class QualityLab {
       }
       throw error;
     }
-    const id = this.project.id;
-    await this.bridge.create(id, { path: result.created, kind: "file", content: result.files[result.created] });
+    if (this.project?.id !== projectId) throw new Error("Проект сменился во время выделения класса — результат не применён");
+    const now = await this.collect();
+    if (JSON.stringify(now) !== JSON.stringify(files))
+      throw new Error("Код изменился во время выделения класса — результат не применён. Повторите операцию.");
     await this.app.openFile(fileName);
     const document = this.app.documents.documents.get(fileName);
+    const previous = document.content;
     document.update(result.files[fileName]);
+    try {
+      await this.bridge.create(projectId, { path: result.created, kind: "file", content: result.files[result.created] });
+    } catch (error) {
+      // One operation: without the new class the delegates would not compile.
+      document.update(previous);
+      this.app.editor?.refresh();
+      throw new Error("Не удалось создать " + result.created + ": изменения отменены. " + readableError(error));
+    }
+    this.pending = { label: "выделение " + className, docs: [{ path: fileName, content: previous }], created: result.created };
     this.app.closeModal();
     this.app.editor?.refresh();
     await this.app.refreshTree();
@@ -571,6 +589,7 @@ export class QualityLab {
 
   setCases(cases) {
     this.cases = cases.slice(0, 30);
+    this.invalidate();
     this.persistSoon();
     this.render();
   }
@@ -654,6 +673,7 @@ export class QualityLab {
     this.openPanel("results");
     const candidate = await this.collect();
     this.reportStale = false;
+    this.changedDuringCheck = false;
     const job = await this.runJob("compare", {
       original: this.baseline.files,
       candidate,
@@ -663,6 +683,9 @@ export class QualityLab {
     this.report = { ...job.result, caseNames: cases.map((item) => item.name), finishedAt: new Date().toISOString() };
     this.reportJobId = job.id;
     this.reportFiles = candidate;
+    // The result belongs to the code and inputs captured at the start, not to later edits.
+    this.reportStale = this.changedDuringCheck === true;
+    if (this.pending && this.report.passed && !this.reportStale) this.pending = null;
     this.tab = "results";
     this.render();
     const passed = this.report.tests.filter((test) => test.passed).length;
@@ -760,6 +783,29 @@ export class QualityLab {
       evidence,
     );
     download(`${this.project.name}-behaviour-evidence.zip`, new Blob([bytes], { type: "application/zip" }));
+  }
+
+  /** Restores the files an automatic change touched and removes a class it created. */
+  async rollback() {
+    const change = this.pending;
+    if (!change) return;
+    for (const item of change.docs) {
+      await this.app.openFile(item.path);
+      this.app.documents.documents.get(item.path)?.update(item.content);
+    }
+    if (change.created) {
+      const open = this.app.documents.documents.get(change.created);
+      if (open) await this.app.closeTab(change.created);
+      await this.bridge.trash(this.project.id, change.created).catch(() => {});
+      await this.app.refreshTree();
+    }
+    this.pending = null;
+    this.app.editor?.refresh();
+    const document = this.app.documents.active;
+    if (document?.language === "java") await this.app.analyse(document);
+    this.invalidate();
+    this.render();
+    this.app.notify(`Изменение «${change.label}» отменено.`);
   }
 
   baselineChanges(current) {
@@ -889,6 +935,9 @@ export class QualityLab {
         if (test) await this.reduce(test.input);
         return true;
       }
+      case "rollback-change":
+        await this.rollback();
+        return true;
       case "job-cancel":
         if (this.job?.id) await this.client.cancelJob(this.job.id);
         return true;

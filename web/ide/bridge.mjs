@@ -270,12 +270,12 @@ export class BrowserBridge {
             this.project = {
               id: crypto.randomUUID(),
               name,
-              root: "Импорт папки · только чтение",
+              root: "Импорт папки · копия в памяти страницы (сохраните ZIP-экспортом)",
               buildSystem: files.has("pom.xml") ? "maven" : "plain",
               git: false,
               capabilities: {
                 read: true,
-                write: false,
+                write: true,
                 folderPicker: false,
                 java: true,
                 otherLanguages: false,
@@ -365,14 +365,12 @@ export class BrowserBridge {
       language: languageOf(path),
       eol: content.includes("\r\n") ? "CRLF" : "LF",
       bom: false,
-      readOnly: this.imported,
+      readOnly: false,
     };
   }
 
   async write(id, request) {
     this.require(id);
-    if (this.imported)
-      throw new Error("Для сохранения в выбранную папку откройте EXE-версию");
     const previous = this.files.get(request.path);
     const hash = previous === undefined ? null : await digest(previous);
     if (hash !== request.expectedHash)
@@ -400,7 +398,6 @@ export class BrowserBridge {
 
   async create(id, request) {
     this.require(id);
-    if (this.imported) throw new Error("Изменение папки доступно в EXE");
     const path = safeRelative(request.path);
     if (this.files.has(path)) throw new Error("Файл уже существует");
     if (request.kind === "directory") this.files.set(path + "/.gitkeep", "");
@@ -410,7 +407,6 @@ export class BrowserBridge {
 
   async rename(id, request) {
     this.require(id);
-    if (this.imported) throw new Error("Переименование доступно в EXE");
     const to = safeRelative(request.to);
     if (
       this.files.has(to) ||
@@ -430,7 +426,6 @@ export class BrowserBridge {
 
   async trash(id, path) {
     this.require(id);
-    if (this.imported) throw new Error("Удаление доступно в EXE");
     for (const name of [...this.files.keys()])
       if (name === path || name.startsWith(path + "/")) this.files.delete(name);
     return { path, trashed: true };

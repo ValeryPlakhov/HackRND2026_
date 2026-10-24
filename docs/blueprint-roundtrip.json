@@ -40,6 +40,26 @@
       "code": 3,
       "passed": true,
       "error": null
+    },
+    {
+      "project": "probe:double-negation",
+      "passed": true,
+      "error": null
+    },
+    {
+      "project": "probe:ternary-receiver",
+      "passed": true,
+      "error": null
+    },
+    {
+      "project": "probe:unary-mix",
+      "passed": true,
+      "error": null
+    },
+    {
+      "project": "probe:comments",
+      "passed": true,
+      "error": null
     }
   ]
 }
