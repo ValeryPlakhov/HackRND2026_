@@ -24,7 +24,7 @@
     "diskHasDelegate": true,
     "passed": true
   },
-  "version": "4.2.0",
+  "version": "4.3.0",
   "runtime": {
     "node": "24.22.0",
     "acorn": "8.18.0",
@@ -58,8 +58,8 @@
     "electron": "45.0.0",
     "chrome": "156.0.8078.48"
   },
-  "backend": "http://127.0.0.1:54026",
+  "backend": "http://127.0.0.1:55274",
   "mode": "single-exe",
-  "durationSeconds": 13.39,
+  "durationSeconds": 13.64,
   "binary": "output\\desktop\\Blueprints-IDE-4.exe"
 }

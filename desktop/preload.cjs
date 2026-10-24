@@ -13,7 +13,7 @@ const subscribe = (channel) => (callback) => {
 contextBridge.exposeInMainWorld(
   "blueprintsDesktop",
   Object.freeze({
-    version: "4.2.0",
+    version: "4.3.0",
     smokeReady: (value) => invoke("smoke-ready", value),
     boot: () => invoke("boot"),
     chooseFolder: () => invoke("choose-folder"),

@@ -1,6 +1,6 @@
 {
   "name": "blueprints-ide",
-  "version": "4.2.0",
+  "version": "4.3.0",
   "description": "Local Java Blueprint IDE",
   "main": "main.cjs",
   "private": true,
