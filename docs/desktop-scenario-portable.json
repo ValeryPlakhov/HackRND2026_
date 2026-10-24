@@ -58,8 +58,8 @@
     "electron": "45.0.0",
     "chrome": "156.0.8078.48"
   },
-  "backend": "http://127.0.0.1:61658",
+  "backend": "http://127.0.0.1:51108",
   "mode": "portable",
-  "durationSeconds": 11.61,
+  "durationSeconds": 11.19,
   "binary": "output\\desktop\\BlueprintsIDE\\BlueprintsIDE.exe"
 }

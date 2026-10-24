@@ -3,8 +3,8 @@
   "method": "UTF-8 splitlines; nonempty excludes whitespace-only lines, includes comments.",
   "newAuthoredProduct": {
     "files": 28,
-    "physical": 13553,
-    "nonempty": 13147
+    "physical": 13718,
+    "nonempty": 13304
   },
   "excluded": [
     "Electron and Java runtimes",
@@ -17,8 +17,8 @@
     {
       "path": "web/ide/app.mjs",
       "language": "JavaScript",
-      "physical": 1966,
-      "nonempty": 1908,
+      "physical": 2078,
+      "nonempty": 2017,
       "category": "product"
     },
     {
@@ -115,22 +115,22 @@
     {
       "path": "web/ide/quality.mjs",
       "language": "JavaScript",
-      "physical": 923,
-      "nonempty": 863,
+      "physical": 960,
+      "nonempty": 896,
       "category": "product"
     },
     {
       "path": "web/ide/views.mjs",
       "language": "JavaScript",
-      "physical": 362,
-      "nonempty": 336,
+      "physical": 370,
+      "nonempty": 343,
       "category": "product"
     },
     {
       "path": "web/ide.html",
       "language": "HTML",
-      "physical": 20,
-      "nonempty": 20,
+      "physical": 21,
+      "nonempty": 21,
       "category": "product"
     },
     {
@@ -178,8 +178,8 @@
     {
       "path": "desktop/services/persistence.cjs",
       "language": "JavaScript",
-      "physical": 321,
-      "nonempty": 300,
+      "physical": 328,
+      "nonempty": 307,
       "category": "product"
     },
     {
