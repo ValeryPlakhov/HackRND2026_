@@ -118,7 +118,7 @@ public final class ProjectAnalysis {
         int end = ((Number) finding.getOrDefault("end", -1)).intValue();
         // A finding is fixable when a rewrite plan touches its span (plans stay narrow).
         boolean methodWide =
-            Set.of("LONG_METHOD", "BP103", "BP104", "BP118").contains(finding.get("rule"));
+            Set.of("LONG_METHOD", "NESTED_LOOPS", "BP103", "BP104", "BP118").contains(finding.get("rule"));
         if (start >= 0
             && !methodWide
             && plans.stream().anyMatch(plan -> plan.start() < Math.max(end, start + 1) && start < plan.end()))
