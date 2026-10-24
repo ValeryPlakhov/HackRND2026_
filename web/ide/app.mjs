@@ -5,8 +5,9 @@ import { CommandPalette } from "./palette.mjs";
 import { availableCommands, shortcutCommand } from "./commands.mjs";
 import { JAVA_FILE_TEMPLATES } from "./language.mjs";
 import { StudioClient } from "../lib/client.mjs";
-import { GraphWidget, graphShell } from "../components/graph.mjs";
-import { graphToSvg } from "./graph-export.mjs";
+import { BlueprintEditor } from "../blueprint/editor.mjs";
+import { autoLayout } from "../blueprint/layout.mjs";
+import { generate, CodegenError } from "../blueprint/codegen.mjs";
 import {
   escapeHtml as e,
   $,
@@ -384,40 +385,137 @@ export class IdeApplication {
         : "";
   }
 
+  blueprintKey(file, method) {
+    return `${file.path}#${method.owner}.${method.name}/${method.signature}`;
+  }
+
   renderGraph() {
     const target = $("#ide-graph-pane", this.root);
     if (!target) return;
+    const file = this.documents.active;
+    const method = file?.language === "java" ? file.selectedMethod() : null;
+    const key = method ? this.blueprintKey(file, method) : null;
+    // The graph the user is editing stays mounted while the code below it is regenerated.
+    // While the code it generated is being re-analysed the model is briefly absent: keep the graph.
+    const generating = !file?.currentModel && this.blueprint?.path === file?.path;
+    if (
+      this.graph instanceof BlueprintEditor &&
+      (this.blueprint?.key === key || generating) &&
+      this.blueprint.revision === file.revision &&
+      $(".bp-root", target)
+    ) {
+      if (!method) return (this.blueprintReady = Promise.resolve());
+      $("#ide-method-why", target)?.remove();
+      const header = $(".ide-graph-header", target);
+      if (header) header.outerHTML = view.graphHeader(file);
+      this.quality.decorateGraph(this.graph, file, method);
+      return (this.blueprintReady = Promise.resolve());
+    }
     this.graph?.destroy();
     this.graph = null;
-    const file = this.documents.active;
     if (!file || file.language !== "java") {
       target.innerHTML = "";
-      return;
+      return (this.blueprintReady = Promise.resolve());
     }
-    const method = file.selectedMethod();
     target.innerHTML =
       view.graphHeader(file) +
-      `<div class="ide-graph-body">${method && file.currentModel?.valid ? graphShell({ title: method.signature, toolbar: true }) : view.graphEmpty(file, this.analysing.has(file.path))}</div><div id="ide-node-inspector"></div>`;
-    if (method && file.currentModel?.valid) {
-      this.graph = new GraphWidget($(".ide-graph-body", target), method.graph, {
-        direction: this.settings.graphDirection,
-        minimumFitScale: 0.85,
-        selected: file.selectedNode,
-        onSelect: (node) => this.selectNode(node),
-        onEdit: (node) => {
-          this.selectNode(node);
-          this.safe(() => this.action("edit-node"));
-        },
-      });
-      this.selectedNode =
-        method.graph.nodes.find((node) => node.id === file.selectedNode) ??
-        null;
-      $("#ide-node-inspector", target).innerHTML = this.inspectorHtml(
-        this.selectedNode,
-        file,
-      );
-      this.quality.decorateGraph(this.graph, file, method);
+      `<div class="ide-graph-body">${method && file.currentModel?.valid ? '<div class="graph-empty"><span class="ide-spinner"></span><h3>Собираем блупринт</h3></div>' : view.graphEmpty(file, this.analysing.has(file.path))}</div><div id="ide-node-inspector" hidden></div>`;
+    if (!method || !file.currentModel?.valid) return (this.blueprintReady = Promise.resolve());
+    this.blueprintReady = this.mountBlueprint(file, method, key, target).catch((error) => {
+      const body = $(".ide-graph-body", target);
+      if (body && this.documents.active === file)
+        body.innerHTML = `<div class="graph-empty error"><h3>Не удалось построить блупринт</h3><p>${e(readableError(error))}</p></div>`;
+    });
+    return this.blueprintReady;
+  }
+
+  async mountBlueprint(file, method, key, target) {
+    const revision = file.revision;
+    let graph;
+    if (this.blueprint?.key === key && this.blueprint.revision === revision) graph = this.blueprint.graph;
+    else {
+      const fresh = await this.client.request("/blueprint", { source: file.content, methodId: method.id });
+      if (this.documents.active !== file || file.revision !== revision) return;
+      const body = file.content.slice(fresh.bodyStart, fresh.bodyEnd);
+      const saved = this.quality.layoutFor(key, body);
+      if (saved) {
+        // Same body text: keep the user's arrangement, re-anchor spans to the current offsets.
+        const delta = fresh.bodyStart - saved.bodyStart;
+        graph = { ...fresh, nodes: saved.nodes, links: saved.links };
+        for (const node of graph.nodes) {
+          if (node.start >= 0) node.start += delta;
+          if (node.end >= 0) node.end += delta;
+        }
+      } else graph = autoLayout(fresh);
     }
+    if (this.documents.active !== file || file.revision !== revision) return;
+    this.blueprint = { key, revision, graph, path: file.path };
+    const body = $(".ide-graph-body", target);
+    if (!body) return;
+    this.graph = new BlueprintEditor(body, graph, {
+      view: this.blueprint.view?.[key],
+      onChange: (changed, info) => this.blueprintChanged(file, changed, info),
+      onSelect: (node) => {
+        this.selectedNode = node;
+        file.selectedNode = node?.id ?? null;
+      },
+      onOpenLine: (node) => {
+        if (this.mode === "blueprint") this.setMode("split");
+        this.editor?.selectSpan(node.start, node.end);
+      },
+      onLayout: (current) => autoLayout(current),
+      onView: (view) => {
+        this.blueprintViews ??= {};
+        this.blueprintViews[key] = { ...view };
+      },
+    });
+    if (this.blueprintViews?.[key]) {
+      Object.assign(this.graph.view, this.blueprintViews[key]);
+      this.graph.transform();
+    }
+    this.quality.decorateGraph(this.graph, file, method);
+    this.graph.setStatus(
+      graph.nodes.some((node) => node.type === "code" || node.type === "expr")
+        ? "Узлы «Java» хранят конструкции без отдельного блока — их можно редактировать текстом"
+        : "",
+    );
+  }
+
+  /** Graph edit → regenerate the method body in the document; layout-only changes are just saved. */
+  blueprintChanged(file, graph, { structural }) {
+    const state = this.blueprint;
+    if (!state || state.graph !== graph) return;
+    if (structural) {
+      if (file.readOnly) {
+        this.graph?.setStatus("Файл только для чтения: изменения графа не попадут в код", "error");
+        return;
+      }
+      let result;
+      try {
+        const lineStart = file.content.lastIndexOf("\n", graph.bodyStart) + 1;
+        const outer = file.content.slice(lineStart).match(/^\s*/)[0];
+        result = generate(graph, { indent: outer + "    " });
+        const body = "{\n" + result.code + (result.code ? "\n" : "") + outer + "}";
+        const content = file.content.slice(0, graph.bodyStart) + body + file.content.slice(graph.bodyEnd);
+        graph.bodyEnd = graph.bodyStart + body.length;
+        file.update(content);
+        state.revision = file.revision;
+        this.editor?.refresh();
+        this.analyseSoon(file);
+      } catch (error) {
+        this.graph?.setStatus(error instanceof CodegenError ? "Ошибка графа: " + error.message : readableError(error), "error");
+        if (error.nodeId) this.graph?.select(error.nodeId);
+        return;
+      }
+      this.graph?.setStatus(
+        result.problems.length
+          ? `Java обновлена · ${result.problems.length} неподключённых входов (подставлены значения по умолчанию)`
+          : "Java обновлена из блупринта ✓",
+        result.problems.length ? "error" : "ok",
+      );
+    }
+    const body = file.content.slice(graph.bodyStart, graph.bodyEnd);
+    this.quality.saveLayout(state.key, body, graph);
   }
 
   inspectorHtml(node, file) {
@@ -1391,18 +1489,9 @@ export class IdeApplication {
       case "graph-zoom-out":
         this.graph?.zoom(1 / 1.2);
         break;
-      case "graph-direction":
-        this.settings.graphDirection =
-          this.settings.graphDirection === "TB" ? "LR" : "TB";
-        this.renderGraph();
-        break;
-      case "export-graph":
-        if (this.graph)
-          download(
-            (file?.name ?? "blueprint") + ".svg",
-            graphToSvg(this.graph.layout),
-            "image/svg+xml",
-          );
+      case "new-method":
+        if (file?.language === "java" && file.currentModel?.valid && !file.readOnly)
+          this.showModal(view.newMethodModal(file.currentModel.classes ?? [], file.selectedMethod()?.owner?.split(".")[0]));
         break;
       case "new-file":
         if (this.project)
@@ -1670,6 +1759,29 @@ export class IdeApplication {
         this.selectedPath = to;
         this.closeModal();
         await this.refreshTree();
+        break;
+      }
+      case "new-method-form": {
+        const doc = this.documents.active;
+        const model = doc?.currentModel;
+        const owner = (model?.classes ?? []).find((item) => item.name === data.get("owner")) ?? model?.classes?.[0];
+        const name = String(data.get("name")).trim();
+        if (!/^[a-zA-Z_$][\w$]*$/.test(name)) throw new Error("Имя метода: латиница, цифры и _, например calculateTotal");
+        if (!owner || owner.end <= 0) throw new Error("Не найден класс для нового метода");
+        const params = String(data.get("params") ?? "").trim();
+        const returnType = String(data.get("returnType") || "void").trim();
+        const modifiers = data.has("static") ? "static " : "";
+        const close = doc.content.lastIndexOf("}", owner.end - 1);
+        const fallback = returnType === "void" ? "" : returnType === "boolean" ? "\n        return false;" : /^(int|long|short|byte|double|float|char)$/.test(returnType) ? "\n        return 0;" : "\n        return null;";
+        const method = `\n    ${modifiers}${returnType} ${name}(${params}) {${fallback}\n    }\n`;
+        doc.update(doc.content.slice(0, close) + method + doc.content.slice(close));
+        this.closeModal();
+        this.editor?.refresh();
+        await this.analyse(doc);
+        const created = doc.currentModel?.methods.find((item) => item.name === name && item.owner === owner.name);
+        if (created) await this.selectMethod(created.id);
+        if (this.mode === "code") this.setMode("blueprint");
+        this.notify(`Метод ${name} создан. Добавляйте узлы правой кнопкой мыши на поле блупринта.`);
         break;
       }
       case "goto-line-form": {

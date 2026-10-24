@@ -124,7 +124,8 @@ public final class JavaModel implements AutoCloseable {
       if (t instanceof ClassTree c)
         classes.add(
             Map.of(
-                "name", c.getSimpleName().toString(), "kind", c.getKind().name(), "line", line(c)));
+                "name", c.getSimpleName().toString(), "kind", c.getKind().name(), "line", line(c),
+                "start", start(c), "end", end(c)));
     Map<String, Object> out = new LinkedHashMap<>();
     out.put("valid", valid());
     out.put("diagnostics", diagnostics);

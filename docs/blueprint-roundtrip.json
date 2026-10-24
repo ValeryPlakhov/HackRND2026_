@@ -1,0 +1,45 @@
+{
+  "passed": true,
+  "projects": [
+    {
+      "project": "language-showcase",
+      "methods": 7,
+      "nodes": 138,
+      "code": 18,
+      "passed": true,
+      "error": null
+    },
+    {
+      "project": "large-monolith",
+      "methods": 51,
+      "nodes": 2233,
+      "code": 99,
+      "passed": true,
+      "error": null
+    },
+    {
+      "project": "pair-analyzer",
+      "methods": 3,
+      "nodes": 67,
+      "code": 3,
+      "passed": true,
+      "error": null
+    },
+    {
+      "project": "shop-monolith",
+      "methods": 77,
+      "nodes": 1662,
+      "code": 100,
+      "passed": true,
+      "error": null
+    },
+    {
+      "project": "text-pipeline",
+      "methods": 2,
+      "nodes": 41,
+      "code": 3,
+      "passed": true,
+      "error": null
+    }
+  ]
+}

@@ -57,7 +57,7 @@ function normalizeSettings(input) {
 }
 
 function normalizeProjectState(input) {
-  const result = { baseline: null, cases: [] };
+  const result = { baseline: null, cases: [], layouts: {} };
   if (!input || typeof input !== "object") return result;
   const baseline = input.baseline;
   if (baseline && typeof baseline === "object" && baseline.files) {
@@ -91,6 +91,13 @@ function normalizeProjectState(input) {
         enabled: item.enabled !== false,
         category: typeof item.category === "string" ? item.category.slice(0, 40) : "manual",
       }));
+  // Blueprint arrangements are opaque to the main process; they are size-bounded here.
+  if (input.layouts && typeof input.layouts === "object" && !Array.isArray(input.layouts)) {
+    for (const [key, value] of Object.entries(input.layouts).slice(0, 150))
+      if (typeof key === "string" && key.length <= 600 && value && Array.isArray(value.nodes) && Array.isArray(value.links))
+        result.layouts[key] = value;
+    if (JSON.stringify(result.layouts).length > 6 * 1024 * 1024) result.layouts = {};
+  }
   return result;
 }
 

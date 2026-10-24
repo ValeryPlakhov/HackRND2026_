@@ -92,6 +92,12 @@ public final class BlueprintServer {
                           Transformations.extract(m, Json.str(r, "methodId", ""), name, files));
                 }
               }
+              case "/api/blueprint" -> {
+                try (JavaModel m = new JavaModel(Json.str(r, "source", ""))) {
+                  if (!m.valid()) throw new IllegalArgumentException("Fix syntax errors first");
+                  result = new BlueprintImport(m).build(m.method(Json.str(r, "methodId", "")));
+                }
+              }
               case "/api/decompose" -> {
                 var files = Runner.sources(r.get("files"));
                 String name = Json.str(r, "fileName", "");

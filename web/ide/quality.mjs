@@ -4,6 +4,13 @@ import { projectArchive } from "../lib/export.mjs";
 
 const TESTS_FILE = "blueprints-tests.json";
 const normalize = (source) => String(source).replace(/^﻿/, "").replace(/\r\n?/g, "\n");
+/** FNV-1a: cheap identity of a method body for remembering its blueprint layout. */
+function hash(text) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193) >>> 0;
+  return h.toString(16) + ":" + text.length;
+}
+
 const uid = () => "case-" + (crypto.randomUUID?.() ?? Date.now() + Math.random()).toString().slice(0, 18);
 
 /**
@@ -43,6 +50,29 @@ export class QualityLab {
     this.tab = "inputs";
     this.lab = { mutation: null, benchmark: null, reduction: null, reducerInput: "" };
     this.job = null;
+    this.layouts = {};
+  }
+
+  // ---------- blueprint layouts ----------
+
+  layoutFor(key, body) {
+    const saved = this.layouts?.[key];
+    return saved && saved.bodyHash === hash(body) ? saved : null;
+  }
+
+  saveLayout(key, body, graph) {
+    this.layouts[key] = {
+      bodyHash: hash(body),
+      bodyStart: graph.bodyStart,
+      nodes: graph.nodes,
+      links: graph.links,
+      savedAt: Date.now(),
+    };
+    const keys = Object.keys(this.layouts);
+    if (keys.length > 150)
+      for (const old of keys.sort((a, b) => this.layouts[a].savedAt - this.layouts[b].savedAt).slice(0, keys.length - 150))
+        delete this.layouts[old];
+    this.persistSoon();
   }
 
   // ---------- project lifecycle ----------
@@ -56,6 +86,7 @@ export class QualityLab {
     if (this.project?.id !== project.id) return;
     if (saved?.baseline?.files && Object.keys(saved.baseline.files).length)
       this.baseline = saved.baseline;
+    this.layouts = saved?.layouts ?? {};
     const bundled = await this.readTestsFile();
     if (saved?.cases?.length) this.cases = saved.cases;
     else if (bundled?.cases?.length) this.cases = bundled.cases;
@@ -98,7 +129,7 @@ export class QualityLab {
   async persist() {
     if (!this.project) return;
     await this.bridge
-      .projectState(this.project.id, { baseline: this.baseline, cases: this.cases })
+      .projectState(this.project.id, { baseline: this.baseline, cases: this.cases, layouts: this.layouts })
       .catch((error) => this.app.notify("Не удалось сохранить тесты: " + readableError(error), "warning"));
   }
 
@@ -313,12 +344,13 @@ export class QualityLab {
     if (this.app.mode !== "split") this.app.setMode("split");
     if (method) {
       document.methodId = method.id;
-      const node = finding ? this.nodeFor(method, finding) : null;
-      document.selectedNode = node?.id ?? null;
-      this.app.renderGraph();
+      document.selectedNode = null;
+      await this.app.renderGraph();
+      const editor = this.app.graph;
+      const node = finding && editor?.graph ? this.nodeFor({ graph: editor.graph }, finding) : null;
       if (node) {
-        this.app.graph?.center(node.id);
-        this.app.selectNode(node);
+        editor.select(node.id);
+        editor.center(node.id);
       }
     }
     this.app.editor?.goTo(line, 1);
@@ -338,22 +370,27 @@ export class QualityLab {
 
   // ---------- graph decoration ----------
 
-  decorateGraph(graph, document, method) {
-    if (!graph || !method) return;
+  decorateGraph(editor, document, method) {
+    if (!editor || !method) return;
+    const graph = editor;
+    const nodes = { graph: editor.graph ?? method.graph };
     const findings = this.findingsFor(document).filter(
       (finding) =>
         (finding.methodId === method.id || (finding.start >= method.start && finding.end <= method.end)) &&
         finding.start >= 0,
     );
     const marks = new Map();
+    const notes = new Map();
     for (const finding of findings) {
-      const node = this.nodeFor(method, finding);
+      const node = this.nodeFor(nodes, finding);
+      if (node) notes.set(node.id, [...(notes.get(node.id) ?? []), finding]);
       if (!node) continue;
       const current = marks.get(node.id);
       if (!current || current === "info" || (current === "warning" && finding.severity === "error"))
         marks.set(node.id, finding.severity);
     }
     graph.mark?.(marks);
+    graph.setNotes?.(new Map([...notes].map(([id, list]) => [id, qv.nodeFindings(list)])));
     const target = $("#ide-method-metrics", this.app.root);
     if (target) {
       const detail = this.detailFor(document, method);

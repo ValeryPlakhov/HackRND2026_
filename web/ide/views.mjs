@@ -193,7 +193,7 @@ export function historySidebar(document, entries, loading) {
 export function graphHeader(document) {
   const model = document.currentModel;
   const methods = model?.methods ?? [];
-  return `<div class="ide-graph-header"><div><span class="graph-header-icon">${glyph("graph", 17)}</span><b>Блупринт</b><span class="graph-live-label ${!model ? "stale" : ""}">${model ? "Из Java-кода" : "Нужно обновить"}</span></div><label class="sr-only" for="ide-method-select">Метод</label><select id="ide-method-select" ${!methods.length ? "disabled" : ""}>${methods.map((method) => `<option value="${e(method.id)}" ${method.id === document.methodId ? "selected" : ""}>${e(method.owner + " · " + method.name)}</option>`).join("") || "<option>Нет методов</option>"}</select><span id="ide-method-metrics" class="q-metrics"></span>${iconButton("improve", "Улучшения и декомпозиция", "sparkle")}${iconButton("analyse", "Обновить блупринт", "loop")}</div><div id="ide-method-why"></div>`;
+  return `<div class="ide-graph-header"><div><span class="graph-header-icon">${glyph("graph", 17)}</span><b>Блупринт</b><span class="graph-live-label ${!model ? "stale" : ""}">${model ? "Из Java-кода" : "Нужно обновить"}</span></div><label class="sr-only" for="ide-method-select">Метод</label><select id="ide-method-select" ${!methods.length ? "disabled" : ""}>${methods.map((method) => `<option value="${e(method.id)}" ${method.id === document.methodId ? "selected" : ""}>${e(method.owner + " · " + method.name)}</option>`).join("") || "<option>Нет методов</option>"}</select><span id="ide-method-metrics" class="q-metrics"></span>${button("new-method", "Новый метод", "plus", "ide-button small subtle", model?.valid ? "" : "disabled")}${iconButton("improve", "Улучшения и декомпозиция", "sparkle")}${iconButton("analyse", "Обновить блупринт", "loop")}</div><div id="ide-method-why"></div>`;
 }
 
 export function graphEmpty(document, analysing) {
@@ -328,6 +328,14 @@ export function overviewModal(project, overview) {
       )}</div></section><section><h3>О проекте</h3><p>Система сборки: <b>${e(project.buildSystem)}</b></p><p>Блупринты строятся для методов выбранного файла через настоящий Java-парсер. Навигационный обзор проекта использует быстрый лексический индекс.</p>${project.buildSystem !== "plain" ? '<div class="overview-notice">Maven/Gradle-проект можно открыть и изучать. Встроенная сборка использует стандартную Java 21; загрузка зависимостей и запуск build-скриптов пока не реализованы.</div>' : ""}${overview.limited ? '<div class="overview-notice">Обзор ограничен первыми 300 Java-файлами и 8 МиБ исходников. Остальные файлы доступны через дерево проекта.</div>' : ""}<h3>Файлы проекта</h3>${overview.configs.map((item) => `<button class="overview-config" data-action="open-config" data-path="${e(item.path)}">${glyph("file", 13)}${e(item.path)}</button>`).join("")}</section></div>`,
     button("close-modal", "К проекту", null, "ide-button primary"),
     "wide",
+  );
+}
+
+export function newMethodModal(classes, selected) {
+  return modalFrame(
+    "Новый метод из блоков",
+    `<form id="new-method-form"><p class="modal-lead">IDE добавит пустой метод в класс и откроет его блупринт. Дальше стройте логику узлами: правый клик по полю — палитра, провода тянутся от пинов.</p><label class="modal-field">Класс<select name="owner">${classes.filter((item) => item.kind === "CLASS").map((item) => `<option ${item.name === selected ? "selected" : ""}>${e(item.name)}</option>`).join("")}</select></label><label class="modal-field">Имя метода<input name="name" value="calculate" required autocomplete="off" pattern="[A-Za-z_$][A-Za-z0-9_$]*"/></label><label class="modal-field">Тип результата<input name="returnType" value="int" list="new-method-types" autocomplete="off"/><datalist id="new-method-types">${["void", "int", "long", "double", "boolean", "String"].map((type) => `<option value="${type}">`).join("")}</datalist></label><label class="modal-field">Параметры<input name="params" value="int a, int b" autocomplete="off" placeholder="int a, String name"/></label><label class="setting-checkbox"><input type="checkbox" name="static" checked/><span><b>static</b><small>Метод класса, вызывается без объекта</small></span></label></form>`,
+    '<button type="submit" form="new-method-form" class="ide-button primary">Создать и открыть блупринт</button>',
   );
 }
 
