@@ -132,8 +132,77 @@ export class IdeApplication {
       new URLSearchParams(location.search).get("demo") === "1"
     )
       await this.adopt(await this.bridge.demo());
-    if (this.bootInfo.smoke) await this.bridge.smokeReady({ ready: true });
+    if (this.bootInfo.smoke) {
+      const scenario = this.bootInfo.scenario
+        ? await this.smokeScenario().catch((error) => ({
+            passed: false,
+            error: readableError(error),
+          }))
+        : null;
+      await this.bridge.smokeReady({ ready: true, scenario });
+    }
     this.root.dataset.ready = "true";
+  }
+
+  /**
+   * Self-test of the packaged app: open the bundled monolith, analyse, optimise, decompose,
+   * verify behaviour after each change and save to disk. Runs only with --smoke-scenario.
+   */
+  async smokeScenario() {
+    const until = async (condition, timeout = 90000) => {
+      const end = Date.now() + timeout;
+      while (!condition()) {
+        if (Date.now() > end) throw new Error("Сценарий: истекло время ожидания");
+        await delay(200);
+      }
+    };
+    const steps = {};
+    await this.switchProject(() => this.bridge.openExample("shop-monolith"));
+    steps.project = this.project?.name;
+    await until(() => this.quality.project && this.quality.baseline);
+    steps.cases = this.quality.cases.length;
+    steps.baselineFiles = Object.keys(this.quality.baseline.files).length;
+    await until(() => this.quality.analysis && !this.quality.analysing);
+    steps.findings = this.quality.analysis.findings.length;
+    const file = this.documents.active;
+    steps.file = file?.path;
+    await this.quality.loadPlans(file);
+    const plans = this.quality.plansFor(file)?.data?.plans ?? [];
+    steps.plans = plans.map((plan) => plan.rule);
+    const plan = plans.find((item) => item.rule === "histogram-pairs");
+    if (!plan) throw new Error("Сценарий: план histogram-pairs не найден");
+    await this.quality.applyPlans([plan.id]);
+    steps.optimisedVerified = this.quality.report?.passed === true;
+    steps.tests = this.quality.report?.tests.length ?? 0;
+    await this.quality.analyseProject({ reveal: false });
+    const output = this.quality.analysis.modules.find((item) => item.id === "output");
+    const methods = new Map(this.quality.analysis.methods.map((item) => [item.id, item]));
+    const ids = output.methods
+      .map((id) => methods.get(id))
+      .filter((item) => item?.fileName === file.path && item.static && item.name !== "main")
+      .map((item) => item.methodId);
+    await this.quality.decompose({
+      fileName: file.path,
+      methodIds: ids,
+      className: "ShopReports",
+      errorTarget: "#decompose-error",
+    });
+    steps.created = (await this.bridge.scan(this.project.id)).files.some((item) =>
+      item.path.endsWith("ShopReports.java"),
+    );
+    steps.decomposedVerified = this.quality.report?.passed === true;
+    steps.saved = await this.saveAll();
+    const disk = await this.bridge.read(this.project.id, file.path);
+    steps.diskHasDelegate = disk.content.includes("ShopReports.");
+    steps.passed =
+      steps.findings > 0 &&
+      steps.tests > 0 &&
+      steps.optimisedVerified &&
+      steps.created &&
+      steps.decomposedVerified &&
+      steps.saved === true &&
+      steps.diskHasDelegate;
+    return steps;
   }
 
   async safe(operation) {

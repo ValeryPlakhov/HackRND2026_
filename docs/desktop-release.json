@@ -1,19 +1,19 @@
 {
-  "version": "3.0.0",
+  "version": "4.0.0",
   "platform": "Windows 10/11 x64",
   "java": "21.0.12.1+1",
   "electron": "45.0.0",
   "codeSigned": false,
   "artifacts": [
     {
-      "file": "Blueprints-IDE-3-Windows-x64.zip",
-      "bytes": 219267477,
-      "sha256": "6954d38f7755675717841cd122663f53c4891f901a7d00c7b1b1593719858c2b"
+      "file": "Blueprints-IDE-4-Windows-x64.zip",
+      "bytes": 217580153,
+      "sha256": "baeb9c6a6df6e0b5da7f79ee6ac2800dc67fd8a776647e9c8657d7ee1226cccf"
     },
     {
-      "file": "Blueprints-IDE-3.exe",
-      "bytes": 219584512,
-      "sha256": "0c0dabed2024f6ad15b3c1c6a5953c3a628acc5b033e21c100c70c95a722df50"
+      "file": "Blueprints-IDE-4.exe",
+      "bytes": 217897472,
+      "sha256": "247c3914584f53c143591ca417a40b8356ab327289694b3ab498eecaeb176303"
     }
   ],
   "runtimeBundled": true,

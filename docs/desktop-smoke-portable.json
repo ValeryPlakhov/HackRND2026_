@@ -2,7 +2,8 @@
   "passed": true,
   "exportVerified": true,
   "exportError": null,
-  "version": "3.0.0",
+  "scenario": null,
+  "version": "4.0.0",
   "runtime": {
     "node": "24.22.0",
     "acorn": "8.18.0",
@@ -36,8 +37,8 @@
     "electron": "45.0.0",
     "chrome": "156.0.8078.48"
   },
-  "backend": "http://127.0.0.1:60418",
+  "backend": "http://127.0.0.1:61149",
   "mode": "portable",
-  "durationSeconds": 4.3,
+  "durationSeconds": 0.61,
   "binary": "output\\desktop\\BlueprintsIDE\\BlueprintsIDE.exe"
 }

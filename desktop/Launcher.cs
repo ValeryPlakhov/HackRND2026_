@@ -92,11 +92,12 @@ namespace BlueprintsLauncher
                 string executable = Path.Combine(directory, "BlueprintsIDE.exe");
                 if (!File.Exists(executable)) throw new IOException("Не найден исполняемый файл IDE.");
                 bool smoke = Array.IndexOf(arguments, "--smoke-test") >= 0;
+                bool scenario = smoke && Array.IndexOf(arguments, "--smoke-scenario") >= 0;
                 Process process = Process.Start(new ProcessStartInfo
                 {
                     FileName = executable,
                     WorkingDirectory = directory,
-                    Arguments = smoke ? "--smoke-test" : "",
+                    Arguments = scenario ? "--smoke-test --smoke-scenario" : smoke ? "--smoke-test" : "",
                     UseShellExecute = false,
                     CreateNoWindow = smoke
                 });

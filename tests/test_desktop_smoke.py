@@ -10,17 +10,20 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else 'portable'
+    scenario = '--scenario' in sys.argv
     binaries = {
         'development': [ROOT / '.runtime/electron/unpacked/electron.exe', ROOT / 'desktop'],
         'portable': [ROOT / 'output/desktop/BlueprintsIDE/BlueprintsIDE.exe'],
         'single-exe': [ROOT / 'output/desktop/Blueprints-IDE-4.exe'],
     }
     arguments = [str(item) for item in binaries[mode]]
-    report = ROOT / 'docs' / f'desktop-smoke-{mode}.json'
+    report = ROOT / 'docs' / f'desktop-{"scenario" if scenario else "smoke"}-{mode}.json'
     report.unlink(missing_ok=True)
     profile = ROOT / 'tmp' / ('electron-smoke-' + mode)
     profile.mkdir(parents=True, exist_ok=True)
     arguments += ['--smoke-test', '--user-data-dir=' + str(profile)]
+    if scenario:
+        arguments.append('--smoke-scenario')
     environment = {**os.environ, 'BLUEPRINTS_SMOKE_REPORT': str(report), 'BLUEPRINTS_SMOKE_PROFILE': str(profile)}
     environment.pop('ELECTRON_RUN_AS_NODE', None)
     startup = subprocess.STARTUPINFO()
@@ -30,17 +33,19 @@ def main():
     process = subprocess.Popen(arguments, cwd=ROOT, env=environment, startupinfo=startup,
                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     try:
-        output, _ = process.communicate(timeout=120)
+        output, _ = process.communicate(timeout=300 if scenario else 120)
     except subprocess.TimeoutExpired:
         process.kill()
         output, _ = process.communicate()
         raise RuntimeError('Desktop smoke test timed out: ' + output.decode('utf-8', 'replace')[-4000:])
     text = output.decode('utf-8', 'replace')
-    (ROOT / 'docs' / f'desktop-smoke-{mode}.log').write_text(text, encoding='utf-8')
+    (ROOT / 'docs' / f'desktop-{"scenario" if scenario else "smoke"}-{mode}.log').write_text(text, encoding='utf-8')
     if process.returncode != 0 or not report.exists():
         raise RuntimeError(f'Desktop smoke failed ({process.returncode}): {text[-6000:]}')
     result = json.loads(report.read_text(encoding='utf-8'))
     assert result['passed'] is True
+    if scenario:
+        assert result['scenario']['passed'] is True, result['scenario']
     result['mode'] = mode
     result['durationSeconds'] = round(time.monotonic() - started, 2)
     result['binary'] = str(binaries[mode][0].relative_to(ROOT))

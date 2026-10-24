@@ -36,8 +36,12 @@ let dirty = false;
 let quitting = false;
 let baseUrl;
 const smoke = process.argv.includes("--smoke-test");
+// The scenario drives the real renderer through the case path; see IdeApplication.smokeScenario.
+const scenario = smoke && process.argv.includes("--smoke-scenario");
 if (smoke && process.env.BLUEPRINTS_SMOKE_PROFILE) {
-  app.setPath("userData", path.resolve(process.env.BLUEPRINTS_SMOKE_PROFILE));
+  const profile = path.resolve(process.env.BLUEPRINTS_SMOKE_PROFILE);
+  app.setPath("userData", profile);
+  app.setPath("documents", path.join(profile, "documents"));
 }
 
 function send(channel, value) {
@@ -113,6 +117,7 @@ function wire(engine) {
     runtime: { java: "21", electron: process.versions.electron },
     desktop: true,
     smoke,
+    scenario,
   }));
   handle("choose-folder", async () => {
     if (!(await maySwitch())) return { cancelled: true };
@@ -259,6 +264,7 @@ function wire(engine) {
     if (!(await maySwitch())) return { cancelled: true };
     // Examples are copied so experiments never modify the bundled originals.
     const target = path.join(app.getPath("documents"), "Blueprints IDE", name);
+    if (scenario) await fs.rm(target, { recursive: true, force: true });
     try {
       await fs.access(target);
     } catch {
@@ -515,11 +521,14 @@ async function start() {
   if (smoke) {
     // This is an application self-test, not a browser automation transport.
     // Renderer announces readiness through the normal boot IPC contract.
-    const deadline = setTimeout(() => {
-      console.error("SMOKE TIMEOUT");
-      backend.stop();
-      app.exit(2);
-    }, 20000);
+    const deadline = setTimeout(
+      () => {
+        console.error("SMOKE TIMEOUT");
+        backend.stop();
+        app.exit(2);
+      },
+      scenario ? 240000 : 20000,
+    );
     ipcMain.handle("blueprints:smoke-ready", async (event, value) => {
       validSender(event);
       clearTimeout(deadline);
@@ -551,9 +560,13 @@ async function start() {
         exportError = error.message;
       }
       const report = {
-        passed: value?.ready === true && exportVerified,
+        passed:
+          value?.ready === true &&
+          exportVerified &&
+          (!scenario || value?.scenario?.passed === true),
         exportVerified,
         exportError,
+        scenario: value?.scenario ?? null,
         version: app.getVersion(),
         runtime: process.versions,
         backend: backend.url,
