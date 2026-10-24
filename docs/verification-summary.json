@@ -1,9 +1,9 @@
 {
   "passed": true,
-  "tests": 263,
+  "tests": 268,
   "unit": {
-    "tests": 151,
-    "pass": 151,
+    "tests": 156,
+    "pass": 156,
     "fail": 0,
     "passed": true
   },
@@ -104,44 +104,44 @@
       {
         "name": "bundled Java compiles and runs a packaged multi-file project in a Unicode path",
         "passed": true,
-        "durationMs": 843
+        "durationMs": 827
       },
       {
         "name": "compiler errors include actionable project-relative diagnostics",
         "passed": true,
-        "durationMs": 593
+        "durationMs": 556
       },
       {
         "name": "explicit main class resolves multiple project entry points",
         "passed": true,
-        "durationMs": 674
+        "durationMs": 718
       },
       {
         "name": "native run passes stdin as UTF-8",
         "passed": true,
-        "durationMs": 756
+        "durationMs": 726
       },
       {
         "name": "output flooding is stopped and reported as a failed task",
         "passed": true,
-        "durationMs": 672
+        "durationMs": 715
       },
       {
         "name": "cancellation terminates the active JVM task",
         "passed": true,
-        "durationMs": 647
+        "durationMs": 633
       },
       {
         "name": "run timeout stops non-terminating Java",
         "passed": true,
-        "durationMs": 10589
+        "durationMs": 10591
       }
     ],
-    "durationSeconds": 14.783,
+    "durationSeconds": 14.771,
     "runtime": "bundled Java 21",
     "platform": "win32"
   },
-  "durationSeconds": 524.51,
+  "durationSeconds": 528.19,
   "environment": {
     "python": "3.12.10",
     "platform": "win32",

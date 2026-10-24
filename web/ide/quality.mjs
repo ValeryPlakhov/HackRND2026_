@@ -53,6 +53,8 @@ export class QualityLab {
     this.layouts = {};
     this.pending = null;
     this.changedDuringCheck = false;
+    this.projectPlans = null;
+    this.projectPlansLoading = false;
   }
 
   // ---------- blueprint layouts ----------
@@ -184,6 +186,7 @@ export class QualityLab {
   render() {
     if (["analysis", "improve"].includes(this.app.sidebar)) this.app.renderSidebar();
     if (this.app.panel === "verify" && !this.app.panelHidden) this.renderPanel();
+    this.app.renderWorkspace?.();
     this.renderStatus();
   }
 
@@ -256,6 +259,12 @@ export class QualityLab {
 
   openPanel(tab) {
     if (tab) this.tab = tab;
+    // Outside the editor the overview, task and check pages show the result themselves.
+    if (this.app.project && this.app.workspace && this.app.workspace !== "method") {
+      if (this.app.workspace !== "verify" && tab !== "results") this.app.setWorkspace("verify");
+      else this.render();
+      return;
+    }
     this.app.panel = "verify";
     this.app.panelHidden = false;
     if (this.app.settings.panelHeight < 300) {
@@ -298,6 +307,7 @@ export class QualityLab {
       if (this.project?.id === id) {
         this.app.renderSidebar();
         this.app.renderGraph();
+        this.app.renderWorkspace?.();
       }
     }
   }
@@ -334,7 +344,15 @@ export class QualityLab {
   }
 
   async openLocation(path, { methodId = null, line = 1, start = -1, end = -1, finding = null } = {}) {
+    const switching = this.app.workspace !== "method";
+    this.app.workspace = "method";
     await this.app.openFile(path);
+    if (switching) {
+      this.app.renderWorkspaceNav();
+      this.app.renderTabs();
+      this.app.renderToolbar();
+      this.app.renderCenter();
+    }
     const document = this.app.documents.active;
     if (!document || document.path !== path) return;
     if (document.language === "java" && !document.currentModel) await this.app.analyse(document);
@@ -357,7 +375,7 @@ export class QualityLab {
         editor.center(node.id);
       }
     }
-    this.app.editor?.goTo(line, 1);
+    this.app.editor?.goTo(line === 1 && method?.line ? method.line : line, 1);
   }
 
   async openFinding(index) {
@@ -462,6 +480,62 @@ export class QualityLab {
     }
   }
 
+  /** Plans for every Java file of the project, for the task list. */
+  async loadProjectPlans() {
+    if (!this.project || this.projectPlansLoading) return;
+    const id = this.project.id;
+    this.projectPlansLoading = true;
+    this.app.renderWorkspace?.();
+    try {
+      const files = await this.collect();
+      const result = {};
+      for (const [path, source] of Object.entries(files)) {
+        try {
+          result[path] = await this.client.request("/plans", { source });
+        } catch {
+          result[path] = { plans: [] };
+        }
+      }
+      if (this.project?.id === id) this.projectPlans = result;
+    } finally {
+      this.projectPlansLoading = false;
+      if (this.project?.id === id) this.app.renderWorkspace?.();
+    }
+  }
+
+  /** Opens the task's file and returns the same plan computed for the editor's current text. */
+  async planForTask(path, id) {
+    const listed = Object.values(this.projectPlans?.[path]?.plans ?? []).find((plan) => plan.id === id);
+    await this.app.openFile(path);
+    const document = this.app.documents.active;
+    if (document?.path !== path) throw new Error("Не удалось открыть файл задачи");
+    if (!this.plansFor(document)?.data) await this.loadPlans(document);
+    const plans = this.plansFor(document)?.data?.plans ?? [];
+    const plan =
+      plans.find((item) => item.id === id) ??
+      plans.find((item) => listed && item.rule === listed.rule && item.methodId === listed.methodId);
+    if (!plan) {
+      this.projectPlans = null;
+      this.app.renderWorkspace?.();
+      throw new Error("Код изменился, и это исправление больше не применимо. Список задач обновлён.");
+    }
+    return plan;
+  }
+
+  /** Saving the files of a pending change accepts it. */
+  accepted(path) {
+    if (!this.pending?.docs.some((item) => item.path === path)) return;
+    if (this.app.documents.documents.get(path)?.dirty) return;
+    this.pending = null;
+    this.render();
+  }
+
+  /** After an accepted change the project map and the task list must be rebuilt. */
+  refreshAfterChange() {
+    this.projectPlans = null;
+    this.analyseProject({ reveal: false }).catch(() => {});
+  }
+
   findPlan(id) {
     const document = this.app.documents.active;
     const entry = document ? this.plansFor(document) : null;
@@ -502,6 +576,7 @@ export class QualityLab {
     );
     await this.loadPlans(document);
     await this.verifyAfterChange();
+    this.refreshAfterChange();
   }
 
   async verifyAfterChange() {
@@ -583,6 +658,7 @@ export class QualityLab {
     this.analysisStale = true;
     this.app.notify(qv.decomposeResultNote(result) + ". Новый файл создан, исходный изменён в редакторе.", "info", 10000);
     await this.verifyAfterChange();
+    this.refreshAfterChange();
   }
 
   // ---------- cases ----------
@@ -685,7 +761,7 @@ export class QualityLab {
     this.reportFiles = candidate;
     // The result belongs to the code and inputs captured at the start, not to later edits.
     this.reportStale = this.changedDuringCheck === true;
-    if (this.pending && this.report.passed && !this.reportStale) this.pending = null;
+    // A passed change stays pending until the user saves it (accept) or rolls it back.
     this.tab = "results";
     this.render();
     const passed = this.report.tests.filter((test) => test.passed).length;
@@ -804,6 +880,7 @@ export class QualityLab {
     const document = this.app.documents.active;
     if (document?.language === "java") await this.app.analyse(document);
     this.invalidate();
+    this.refreshAfterChange();
     this.render();
     this.app.notify(`Изменение «${change.label}» отменено.`);
   }

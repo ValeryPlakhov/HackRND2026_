@@ -23,6 +23,7 @@ const labels = {
   break: "BREAK",
   continue: "CONTINUE",
   opaque: "JAVA BLOCK",
+  sequence: "ШАГИ",
 };
 
 export function graphShell({ title = "Control flow", toolbar = true } = {}) {

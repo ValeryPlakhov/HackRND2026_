@@ -7,6 +7,7 @@ import { JAVA_FILE_TEMPLATES } from "./language.mjs";
 import { StudioClient } from "../lib/client.mjs";
 import { zipBytes } from "../lib/export.mjs";
 import { BlueprintEditor } from "../blueprint/editor.mjs";
+import { GraphWidget, graphShell } from "../components/graph.mjs";
 import { autoLayout } from "../blueprint/layout.mjs";
 import { generate, CodegenError } from "../blueprint/codegen.mjs";
 import {
@@ -27,6 +28,7 @@ import {
 import * as view from "./views.mjs";
 import { QualityLab } from "./quality.mjs";
 import { nodeFindings } from "./quality-views.mjs";
+import * as ws from "./workspace.mjs";
 
 const DEFAULT_SETTINGS = {
   theme: "light",
@@ -61,6 +63,11 @@ export class IdeApplication {
     this.panel = "output";
     this.panelHidden = true;
     this.mode = "blueprint";
+    this.workspace = "overview";
+    this.treeExpanded = new Set();
+    this.treeTouched = false;
+    this.navStack = [];
+    this.blueprintEditing = false;
     this.editor = null;
     this.graph = null;
     this.selectedNode = null;
@@ -262,6 +269,7 @@ export class IdeApplication {
   }
 
   renderAll() {
+    this.renderWorkspaceNav();
     this.renderTabs();
     this.renderToolbar();
     this.renderSidebar();
@@ -274,7 +282,7 @@ export class IdeApplication {
   }
   renderToolbar() {
     $("#ide-toolbar", this.root).innerHTML = view.toolbar(
-      this.documents.active,
+      this.workspace === "method" ? this.documents.active : null,
       this.mode,
       this.project,
       this.busy,
@@ -349,9 +357,157 @@ export class IdeApplication {
     this.graph = null;
   }
 
+  // ---------- workspaces ----------
+
+  workspaceTasks() {
+    return ws.buildTasks(this.quality.analysis, this.quality.projectPlans ?? {});
+  }
+
+  renderWorkspaceNav() {
+    const target = $("#ide-workspaces", this.root);
+    if (!target) return;
+    $(".ide-shell", this.root).dataset.workspace = this.project ? this.workspace : "none";
+    if (!this.project) return (target.innerHTML = "");
+    const tasks = this.quality.analysis ? this.workspaceTasks() : null;
+    target.innerHTML = ws.workspaceNav(this.workspace, {
+      tasks: tasks ? tasks.risks.length + tasks.faster.length + tasks.simpler.length + tasks.split.length : 0,
+    });
+  }
+
+  workspaceState() {
+    const quality = this.quality;
+    return {
+      project: this.project,
+      analysis: quality.analysis,
+      analysing: quality.analysing,
+      error: quality.analysisError,
+      report: quality.report,
+      stale: quality.reportStale,
+      job: quality.job,
+      pending: quality.pending,
+      cases: quality.cases,
+      baseline: quality.baseline,
+      expanded: this.treeExpanded,
+      plansLoading: quality.projectPlansLoading,
+      showAdvice: this.showAdvice,
+      tasks: quality.analysis ? this.workspaceTasks() : null,
+    };
+  }
+
+  /** Re-renders the active non-editor workspace in place (keeps scroll and the verify inputs' focus). */
+  renderWorkspace() {
+    this.renderWorkspaceNav();
+    if (!this.project || this.workspace === "method") return;
+    const target = $("#ide-content", this.root);
+    if (!target) return;
+    if (!target.querySelector(`[data-ws="${this.workspace}"]`)) return this.renderCenter();
+    if (this.workspace === "verify") {
+      const head = $("#ws-verify-head", target);
+      if (head) head.innerHTML = this.verifyHeader();
+      this.quality.renderPanel($("#ws-verify-panel", target));
+      return;
+    }
+    const page = $(".ws-scroll", target);
+    const scroll = page?.scrollTop ?? 0;
+    page.innerHTML = this.workspaceBody();
+    page.scrollTop = scroll;
+  }
+
+  verifyHeader() {
+    const quality = this.quality;
+    return ws.verifyHeaderHtml({
+      baseline: quality.baseline,
+      changes: ws.baselineChanges(quality.baseline, this.documents.documents),
+      report: quality.report,
+      stale: quality.reportStale,
+      job: quality.job,
+      pending: quality.pending,
+      cases: quality.cases,
+    });
+  }
+
+  workspaceBody() {
+    const state = this.workspaceState();
+    if (this.workspace === "tasks") {
+      if (state.analysis && !this.quality.projectPlans && !this.quality.projectPlansLoading && this.client.online)
+        queueMicrotask(() => this.safe(() => this.quality.loadProjectPlans()));
+      return ws.tasksHtml(state);
+    }
+    if (state.analysis && !this.quality.projectPlans && !this.quality.projectPlansLoading && this.client.online)
+      queueMicrotask(() => this.safe(() => this.quality.loadProjectPlans()));
+    if (state.analysis && !this.treeTouched)
+      for (const method of ws.entryPoints(state.analysis)) {
+        // Open the entry point and its direct callees: the first screen shows how commands are dispatched.
+        this.treeExpanded.add(method.id);
+        for (const call of state.analysis.calls)
+          if (call.from === method.id) for (const target of call.targets ?? []) this.treeExpanded.add(`${method.id}>${target}`);
+      }
+    if (!state.analysis && !state.analysing && !state.error && this.client.online)
+      queueMicrotask(() => this.safe(() => this.quality.analyseProject({ reveal: false })));
+    return ws.overviewHtml(state);
+  }
+
+  setWorkspace(name) {
+    if (!ws.WORKSPACES.some((item) => item.id === name)) return;
+    if (name === "method" && !this.documents.active) {
+      this.notify("Выберите метод на карте проекта или файл в дереве слева");
+      name = "overview";
+    }
+    this.workspace = name;
+    this.renderWorkspaceNav();
+    this.renderTabs();
+    this.renderToolbar();
+    this.renderCenter();
+  }
+
+  /** Remembers where the user was, so «Назад» returns there after jumping through calls. */
+  rememberLocation() {
+    const file = this.documents.active;
+    this.navStack.push({ workspace: this.workspace, path: file?.path ?? null, methodId: file?.methodId ?? null });
+    if (this.navStack.length > 50) this.navStack.shift();
+  }
+
+  async openMethod(path, methodId) {
+    this.rememberLocation();
+    this.workspace = "method";
+    await this.quality.openLocation(path, { methodId });
+    this.renderWorkspaceNav();
+    this.renderTabs();
+    this.renderToolbar();
+  }
+
+  async navigateBack() {
+    const place = this.navStack.pop();
+    if (!place) return;
+    if (place.workspace !== "method" || !place.path) return this.setWorkspace(place.workspace);
+    this.workspace = "method";
+    await this.quality.openLocation(place.path, { methodId: place.methodId });
+    this.renderWorkspaceNav();
+  }
+
+  methodContext(file, method) {
+    return ws.methodContextHtml({
+      analysis: this.quality.analysis,
+      fileName: file.path,
+      methodId: method?.id,
+      canBack: this.navStack.length > 0,
+      editing: this.blueprintEditing,
+    });
+  }
+
   renderCenter() {
     this.disposeCenter();
     const target = $("#ide-content", this.root);
+    if (this.project && this.workspace !== "method") {
+      this.renderWorkspaceNav();
+      if (this.workspace === "verify") {
+        target.innerHTML = `<section class="ws-page ws-verify" data-ws="verify"><div id="ws-verify-head">${this.verifyHeader()}</div><div id="ws-verify-panel" class="ide-panel-body quality-panel"></div></section>`;
+        this.quality.renderPanel($("#ws-verify-panel", target));
+      } else {
+        target.innerHTML = `<div class="ws-scroll" data-ws="${this.workspace}">${this.workspaceBody()}</div>`;
+      }
+      return;
+    }
     const file = this.documents.active;
     if (!file) {
       target.innerHTML = view.welcome({
@@ -401,6 +557,7 @@ export class IdeApplication {
     const generating =
       !file?.currentModel && this.blueprint?.path === file?.path && this.blueprint?.projectId === this.project?.id;
     if (
+      this.blueprintEditing &&
       this.graph instanceof BlueprintEditor &&
       (this.blueprint?.key === key || generating) &&
       this.blueprint.revision === file.revision &&
@@ -410,6 +567,8 @@ export class IdeApplication {
       $("#ide-method-why", target)?.remove();
       const header = $(".ide-graph-header", target);
       if (header) header.outerHTML = view.graphHeader(file);
+      const context = $(".ws-context", target);
+      if (context) context.outerHTML = this.methodContext(file, method);
       this.quality.decorateGraph(this.graph, file, method);
       return (this.blueprintReady = Promise.resolve());
     }
@@ -419,16 +578,58 @@ export class IdeApplication {
       target.innerHTML = "";
       return (this.blueprintReady = Promise.resolve());
     }
+    target.classList.toggle("bp-reading", !this.blueprintEditing);
     target.innerHTML =
       view.graphHeader(file) +
+      (method ? this.methodContext(file, method) : "") +
       `<div class="ide-graph-body">${method && file.currentModel?.valid ? '<div class="graph-empty"><span class="ide-spinner"></span><h3>Собираем блупринт</h3></div>' : view.graphEmpty(file, this.analysing.has(file.path))}</div><div id="ide-node-inspector" hidden></div>`;
     if (!method || !file.currentModel?.valid) return (this.blueprintReady = Promise.resolve());
+    if (!this.blueprintEditing) {
+      this.mountFlowchart(file, method, target);
+      return (this.blueprintReady = Promise.resolve());
+    }
     this.blueprintReady = this.mountBlueprint(file, method, key, target).catch((error) => {
       const body = $(".ide-graph-body", target);
       if (body && this.documents.active === file)
         body.innerHTML = `<div class="graph-empty error"><h3>Не удалось построить блупринт</h3><p>${e(readableError(error))}</p></div>`;
     });
     return this.blueprintReady;
+  }
+
+  /** Reading mode: a statement-level flowchart of the method; double-click a step to edit it as blocks. */
+  mountFlowchart(file, method, target) {
+    const body = $(".ide-graph-body", target);
+    if (!body || !method.graph?.nodes?.length) return;
+    this.blueprint = null;
+    body.innerHTML = graphShell({ title: `${method.owner}.${method.name}`, toolbar: false });
+    const chart = ws.condenseGraph(method.graph);
+    const flowchart = new GraphWidget($(".graph-workbench", body), chart, {
+      view: { x: 0, y: 0, scale: 0.8 },
+      onSelect: (node) => {
+        if (node?.line) this.editor?.goTo(node.line, 1);
+      },
+      onEdit: () => this.safe(() => this.action("blueprint-edit", { dataset: { edit: "1" } })),
+    });
+    this.graph = flowchart;
+    // Long methods fitted to the pane become unreadable: start at a readable scale at the first step.
+    flowchart.fitted = true;
+    requestAnimationFrame(() => {
+      const nodes = flowchart.layout.nodes;
+      const entry = nodes.find((node) => node.id === method.graph.entry) ?? nodes[0];
+      const width = flowchart.viewport.clientWidth;
+      if (!entry || !width) return flowchart.fit();
+      const scale = 0.8;
+      flowchart.view = { scale, x: width / 2 - (entry.x + entry.width / 2) * scale, y: 24 - entry.y * scale };
+      flowchart.transform();
+    });
+    const marks = new Map();
+    for (const finding of this.quality.findingsFor(file)) {
+      if (finding.methodId !== method.id || finding.start < 0) continue;
+      const inside = chart.nodes.filter((node) => node.start >= finding.start && node.end <= finding.end);
+      const focus = inside.length > 3 ? inside.filter((node) => node.kind === "loop") : inside;
+      for (const node of focus) if (marks.get(node.id) !== "warning") marks.set(node.id, finding.severity);
+    }
+    flowchart.mark(marks);
   }
 
   async mountBlueprint(file, method, key, target) {
@@ -746,6 +947,11 @@ export class IdeApplication {
     this.sidebarHidden = false;
     this.panelHidden = true;
     this.mode = this.settings.editorView;
+    this.workspace = "overview";
+    this.treeExpanded = new Set();
+    this.treeTouched = false;
+    this.navStack = [];
+    this.blueprintEditing = false;
     await this.refreshTree();
     if (this.settings.restoreSession) {
       for (const path of result.session?.tabs ?? [])
@@ -842,6 +1048,7 @@ export class IdeApplication {
       });
       if (this.project?.id !== id) return false;
       file.saved(result, snapshot);
+      this.quality.accepted(file.path);
       this.overviewState = null;
       if (this.sidebar === "history") await this.loadHistory();
       return true;
@@ -1295,7 +1502,59 @@ export class IdeApplication {
       case "toggle-folder":
         await this.toggleFolder(path);
         break;
+      case "workspace":
+        this.setWorkspace(element.dataset.workspace);
+        break;
+      case "ws-open-method":
+        await this.openMethod(element.dataset.file, element.dataset.method);
+        break;
+      case "ws-tree-toggle": {
+        const key = element.dataset.key;
+        this.treeTouched = true;
+        if (this.treeExpanded.has(key)) this.treeExpanded.delete(key);
+        else this.treeExpanded.add(key);
+        this.renderWorkspace();
+        break;
+      }
+      case "ws-tour": {
+        const entry = ws.entryPoints(this.quality.analysis)[0] ?? this.quality.analysis?.hotspots?.[0];
+        if (!entry) return this.notify("Дождитесь окончания анализа проекта");
+        if (this.mode === "blueprint") this.mode = "split";
+        await this.openMethod(entry.fileName, entry.methodId);
+        this.notify("Слева код, справа его логика блоками. Над схемой — кто вызывает метод и что вызывает он сам: кликайте, чтобы идти по программе.", "info", 9000);
+        break;
+      }
+      case "ws-build":
+        this.blueprintEditing = true;
+        if (!this.documents.active) {
+          const main = ws.entryPoints(this.quality.analysis)[0];
+          if (main) await this.openFile(main.fileName);
+        }
+        this.setWorkspace("method");
+        await this.action("new-method");
+        break;
+      case "blueprint-edit":
+        this.blueprintEditing = element.dataset.edit === "1";
+        this.renderGraph();
+        $("#ide-graph-pane", this.root)?.classList.toggle("bp-reading", !this.blueprintEditing);
+        break;
+      case "nav-back":
+        await this.navigateBack();
+        break;
+      case "task-preview":
+      case "task-fix": {
+        const plan = await this.quality.planForTask(element.dataset.file, element.dataset.id);
+        if (name === "task-preview") await this.quality.action("plan-preview", { dataset: { id: plan.id } });
+        else await this.quality.applyPlans([plan.id]);
+        break;
+      }
       case "activate-tab":
+        if (this.workspace !== "method") {
+          this.workspace = "method";
+          this.renderWorkspaceNav();
+          this.renderToolbar();
+          this.renderCenter();
+        }
         this.documents.activate(path);
         break;
       case "close-tab":
@@ -1955,6 +2214,13 @@ export class IdeApplication {
       "keydown",
       (event) => {
         if (this.dialog.open) return;
+        if (event.altKey && !event.ctrlKey && this.project) {
+          const target = ws.WORKSPACES.find((item) => item.key === event.key);
+          if (target || event.key === "ArrowLeft") {
+            event.preventDefault();
+            return this.safe(() => (target ? this.setWorkspace(target.id) : this.navigateBack()));
+          }
+        }
         const command = shortcutCommand(event);
         if (!command) return;
         event.preventDefault();

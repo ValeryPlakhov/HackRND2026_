@@ -13,8 +13,8 @@ using System.Windows.Forms;
 [assembly: AssemblyDescription("Portable Java Blueprint IDE launcher")]
 [assembly: AssemblyCompany("Blueprints IDE")]
 [assembly: AssemblyProduct("Blueprints IDE")]
-[assembly: AssemblyVersion("4.2.0.0")]
-[assembly: AssemblyFileVersion("4.2.0.0")]
+[assembly: AssemblyVersion("4.3.0.0")]
+[assembly: AssemblyFileVersion("4.3.0.0")]
 
 namespace BlueprintsLauncher
 {
@@ -136,7 +136,7 @@ namespace BlueprintsLauncher
                     hash = BitConverter.ToString(algorithm.ComputeHash(payload)).Replace("-", "").ToLowerInvariant();
                 }
                 payload.Position = 0;
-                string destination = Path.Combine(baseDirectory, "4.2.0-" + hash.Substring(0, 16));
+                string destination = Path.Combine(baseDirectory, "4.3.0-" + hash.Substring(0, 16));
                 string marker = Path.Combine(destination, ".ready");
                 using (Mutex installLock = new Mutex(false, "Local\\BlueprintsIDE-" + hash.Substring(0, 24)))
                 {

@@ -2,9 +2,9 @@
   "baselineCommit": "d0624b3",
   "method": "UTF-8 splitlines; nonempty excludes whitespace-only lines, includes comments.",
   "newAuthoredProduct": {
-    "files": 28,
-    "physical": 13809,
-    "nonempty": 13394
+    "files": 30,
+    "physical": 15270,
+    "nonempty": 14803
   },
   "excluded": [
     "Electron and Java runtimes",
@@ -17,8 +17,8 @@
     {
       "path": "web/ide/app.mjs",
       "language": "JavaScript",
-      "physical": 2118,
-      "nonempty": 2057,
+      "physical": 2384,
+      "nonempty": 2310,
       "category": "product"
     },
     {
@@ -115,8 +115,8 @@
     {
       "path": "web/ide/quality.mjs",
       "language": "JavaScript",
-      "physical": 1009,
-      "nonempty": 944,
+      "physical": 1086,
+      "nonempty": 1017,
       "category": "product"
     },
     {
@@ -127,10 +127,24 @@
       "category": "product"
     },
     {
+      "path": "web/ide/workspace.css",
+      "language": "CSS",
+      "physical": 725,
+      "nonempty": 714,
+      "category": "product"
+    },
+    {
+      "path": "web/ide/workspace.mjs",
+      "language": "JavaScript",
+      "physical": 392,
+      "nonempty": 368,
+      "category": "product"
+    },
+    {
       "path": "web/ide.html",
       "language": "HTML",
-      "physical": 21,
-      "nonempty": 21,
+      "physical": 22,
+      "nonempty": 22,
       "category": "product"
     },
     {
