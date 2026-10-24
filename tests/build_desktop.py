@@ -91,7 +91,7 @@ def main():
         with file.open('rb') as stream:
             digest = hashlib.file_digest(stream, 'sha256').hexdigest()
         records.append({'file': file.name, 'bytes': file.stat().st_size, 'sha256': digest})
-    (RELEASE / 'SHA256SUMS.txt').write_text(''.join(f"{item['sha256']}  {item['file']}\n" for item in records), encoding='ascii')
+    (RELEASE / 'SHA256SUMS.txt').write_text(''.join(f"{item['sha256']}  {item['file']}\n" for item in records), encoding='ascii', newline='\n')
     summary = {'version': '4.0.0', 'platform': 'Windows 10/11 x64', 'java': '21.0.12.1+1',
                'electron': json.loads((ROOT / 'docs/electron-runtime.json').read_text())['version'],
                'codeSigned': False, 'artifacts': records,

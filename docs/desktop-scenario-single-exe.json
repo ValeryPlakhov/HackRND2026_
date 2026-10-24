@@ -58,8 +58,8 @@
     "electron": "45.0.0",
     "chrome": "156.0.8078.48"
   },
-  "backend": "http://127.0.0.1:61126",
+  "backend": "http://127.0.0.1:61681",
   "mode": "single-exe",
-  "durationSeconds": 19.92,
+  "durationSeconds": 18.5,
   "binary": "output\\desktop\\Blueprints-IDE-4.exe"
 }

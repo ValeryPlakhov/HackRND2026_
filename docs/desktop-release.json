@@ -7,13 +7,13 @@
   "artifacts": [
     {
       "file": "Blueprints-IDE-4-Windows-x64.zip",
-      "bytes": 217580153,
-      "sha256": "baeb9c6a6df6e0b5da7f79ee6ac2800dc67fd8a776647e9c8657d7ee1226cccf"
+      "bytes": 217580431,
+      "sha256": "f70e78891ca4c2dcd30f4b1215a3c3aa29ddfe3c798563c416032e925cd80ac5"
     },
     {
       "file": "Blueprints-IDE-4.exe",
-      "bytes": 217897472,
-      "sha256": "247c3914584f53c143591ca417a40b8356ab327289694b3ab498eecaeb176303"
+      "bytes": 217897984,
+      "sha256": "addfbf95438e31c256288488f9389257d8a8ffd6f7b38c9460d0382b41456657"
     }
   ],
   "runtimeBundled": true,
