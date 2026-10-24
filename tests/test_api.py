@@ -23,7 +23,7 @@ def compare(a, b, inputs):
 def method(model, name):
     return next(m for m in model['methods'] if m['name'] == name)
 
-PAIR = (ROOT / 'examples/PairAnalyzer.java').read_text(encoding='utf-8')
+PAIR = (ROOT / 'examples/pair-analyzer/src/PairAnalyzer.java').read_text(encoding='utf-8')
 FILES = {'PairAnalyzer.java': PAIR}
 
 class IntegrationTests(unittest.TestCase):
@@ -44,7 +44,7 @@ class IntegrationTests(unittest.TestCase):
                     self.assertEqual(actual, n['editCode'])
 
     def test_02_real_java_scope_compiles_and_runs(self):
-        source = (ROOT / 'examples/LanguageShowcase.java').read_text(encoding='utf-8')
+        source = (ROOT / 'examples/language-showcase/src/LanguageShowcase.java').read_text(encoding='utf-8')
         model = post('analyze', {'source': source})
         self.assertTrue(model['valid'])
         kinds = {n['kind'] for m in model['methods'] for n in m['graph']['nodes']}
@@ -135,7 +135,7 @@ class IntegrationTests(unittest.TestCase):
             post('optimize', {'source':source,'methodId':method(model,'countPairs')['id']})
 
     def test_15_1000_line_monolith_roundtrip(self):
-        source = (ROOT / 'examples/LargeMonolith.java').read_text(encoding='utf-8')
+        source = (ROOT / 'examples/large-monolith/src/LargeMonolith.java').read_text(encoding='utf-8')
         self.assertGreaterEqual(len(source.splitlines()),1000)
         model = post('analyze', {'source':source})
         self.assertTrue(model['valid'])

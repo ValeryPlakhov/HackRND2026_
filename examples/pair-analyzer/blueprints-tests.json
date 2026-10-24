@@ -1,0 +1,8 @@
+{
+  "mainClass": "PairAnalyzer",
+  "cases": [
+    { "name": "Пусто", "input": "0\n" },
+    { "name": "Повторы", "input": "5\n1 2 1 2 1\n" },
+    { "name": "Все разные", "input": "4\n1 2 3 4\n" }
+  ]
+}

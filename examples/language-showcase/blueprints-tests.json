@@ -1,0 +1,9 @@
+{
+  "mainClass": "LanguageShowcase",
+  "cases": [
+    { "name": "Ноль", "input": "0\n" },
+    { "name": "Обычное значение", "input": "4\n" },
+    { "name": "Проверяемое исключение", "input": "-1\n" },
+    { "name": "IOException", "input": "999\n" }
+  ]
+}

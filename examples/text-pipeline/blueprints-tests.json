@@ -1,0 +1,8 @@
+{
+  "mainClass": "TextPipeline",
+  "cases": [
+    { "name": "Три слова", "input": "3\nмонолит станет лучше\n" },
+    { "name": "Пусто", "input": "0\n" },
+    { "name": "Ошибка ввода", "input": "-5\n" }
+  ]
+}

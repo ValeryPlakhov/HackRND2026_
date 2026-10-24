@@ -197,7 +197,7 @@ export class QualityLab {
         ? { id: focused.dataset.id, cls: focused.className, start: focused.selectionStart, end: focused.selectionEnd }
         : null;
     const scroll = $(".q-verify-body", target)?.scrollTop ?? 0;
-    const document = this.app.documents.active;
+    const active = this.app.documents.active;
     target.innerHTML = qv.verifyPanel({
       project: this.project,
       baseline: this.baseline,
@@ -207,8 +207,8 @@ export class QualityLab {
       job: this.job,
       tab: this.tab,
       lab: this.lab,
-      method: document?.language === "java" ? document.selectedMethod() : null,
-      document,
+      method: active?.language === "java" ? active.selectedMethod() : null,
+      document: active,
     });
     const body = $(".q-verify-body", target);
     if (body) body.scrollTop = scroll;
@@ -432,6 +432,8 @@ export class QualityLab {
     const entry = document ? this.plansFor(document) : null;
     if (!entry?.data) throw new Error("Предложения устарели. Обновите список улучшений.");
     if (document.readOnly) throw new Error("Файл открыт только для чтения");
+    const target = entry.data.plans.find((plan) => plan.id === ids[0]);
+    const targetMethod = document.currentModel?.methods.find((method) => method.id === target?.methodId);
     const result = await this.client.request("/plans/apply", {
       source: document.content,
       sourceHash: entry.data.sourceHash,
@@ -443,6 +445,16 @@ export class QualityLab {
     this.app.closeModal();
     this.app.editor?.refresh();
     await this.app.analyse(document);
+    const changed = targetMethod
+      ? document.currentModel?.methods.find(
+          (method) => method.name === targetMethod.name && method.owner === targetMethod.owner,
+        )
+      : null;
+    if (changed && document.methodId !== changed.id) {
+      document.methodId = changed.id;
+      document.selectedNode = null;
+      this.app.renderGraph();
+    }
     this.app.notify(
       `Применено улучшений: ${result.applied.length}. Изменения в редакторе — проверяем поведение против эталона.`,
     );

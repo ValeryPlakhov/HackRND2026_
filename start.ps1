@@ -1,4 +1,4 @@
-param([switch]$TrustedLocal, [switch]$Docker, [int]$Port = 8080)
+param([switch]$TrustedLocal, [switch]$Docker, [int]$Port = $(if ($env:PORT) { [int]$env:PORT } else { 8080 }))
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
 $taskJdk = $null

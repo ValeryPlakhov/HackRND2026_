@@ -613,8 +613,45 @@ export class BrowserBridge {
     if (value) this.qualityState = structuredClone(value);
     return structuredClone(this.qualityState ?? { baseline: null, cases: [] });
   }
-  async openExample() {
-    return this.demo();
+  async openExample(name) {
+    let example;
+    try {
+      example = await this.client.request(
+        `/examples/${encodeURIComponent(name)}`,
+        undefined,
+        { timeout: 8000 },
+      );
+    } catch {
+      return this.demo();
+    }
+    this.files = new Map(Object.entries(example.files));
+    this.versions.clear();
+    this.qualityState = null;
+    this.imported = false;
+    this.project = {
+      id: crypto.randomUUID(),
+      name,
+      root: "Пример в памяти страницы",
+      buildSystem: "plain",
+      git: false,
+      capabilities: {
+        read: true,
+        write: true,
+        folderPicker: false,
+        java: true,
+        otherLanguages: false,
+      },
+    };
+    const main = [...this.files.keys()].find((path) => path.endsWith(".java"));
+    return {
+      project: this.project,
+      recent: [],
+      session: {
+        tabs: main ? [main] : [],
+        active: main ?? null,
+        expanded: main?.includes("/") ? [main.split("/")[0]] : [],
+      },
+    };
   }
 
   async startTask(id, request) {

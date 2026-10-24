@@ -1,0 +1,29 @@
+{
+  "mainClass": "ShopMonolith",
+  "cases": [
+    {
+      "name": "Полный день магазина",
+      "input": "PRODUCT A1;Ноутбук;ELECTRONICS;8999000;5\nPRODUCT B2;Книга Java;BOOKS;159000;20\nPRODUCT C3;Кофе;FOOD;45000;2\nPRODUCT D4;Футболка;CLOTHES;99000;10\nCUSTOMER u1;Анна;GOLD\nCUSTOMER u2;Борис;BASIC\nCUSTOMER u3;Вера;SILVER\nORDER o1;u1;A1:1,B2:2\nORDER o2;u2;C3:3\nORDER o3;u2;C3:2,D4:2,B2:2\nPAY o1;9000000\nPAY o3;100000\nPAY o3;400000\nRETURN o3;D4;1\nTOP 2\nSTATS\nREPORT\nAUDIT\nCANCEL o2\n"
+    },
+    {
+      "name": "Пустой ввод",
+      "input": ""
+    },
+    {
+      "name": "Ошибки формата",
+      "input": "PRODUCT X;Без цены\nFOO bar\nPRODUCT Y;Товар;BOOKS;abc;1\nORDER z;nobody;A1:1\nSTATS\n"
+    },
+    {
+      "name": "Скидки и уровни",
+      "input": "PRODUCT A1;Ноутбук;ELECTRONICS;8999000;5\nPRODUCT B2;Книга Java;BOOKS;159000;20\nPRODUCT C3;Кофе;FOOD;45000;2\nPRODUCT D4;Футболка;CLOTHES;99000;10\nCUSTOMER u1;Анна;GOLD\nCUSTOMER u2;Борис;BASIC\nCUSTOMER u3;Вера;SILVER\nORDER o1;u3;B2:10\nPAY o1;1510500\nORDER o2;u3;A1:1\nPAY o2;8549050\nORDER o3;u2;D4:5,B2:1\nPAY o3;700000\nAUDIT\nTOP 5\n"
+    },
+    {
+      "name": "Отмена и возвраты",
+      "input": "PRODUCT A1;Ноутбук;ELECTRONICS;8999000;5\nPRODUCT B2;Книга Java;BOOKS;159000;20\nPRODUCT C3;Кофе;FOOD;45000;2\nPRODUCT D4;Футболка;CLOTHES;99000;10\nCUSTOMER u1;Анна;GOLD\nCUSTOMER u2;Борис;BASIC\nCUSTOMER u3;Вера;SILVER\nORDER o1;u1;D4:4,C3:1\nPAY o1;500000\nRETURN o1;D4;2\nRETURN o1;D4;5\nCANCEL o1\nCANCEL o1\nRESTOCK C3;10\nORDER o2;u2;C3:12\nREPORT\nSTATS\n"
+    },
+    {
+      "name": "Много позиций",
+      "input": "PRODUCT A1;Ноутбук;ELECTRONICS;8999000;5\nPRODUCT B2;Книга Java;BOOKS;159000;20\nPRODUCT C3;Кофе;FOOD;45000;2\nPRODUCT D4;Футболка;CLOTHES;99000;10\nCUSTOMER u1;Анна;GOLD\nCUSTOMER u2;Борис;BASIC\nCUSTOMER u3;Вера;SILVER\nORDER n0;u1;B2:1,D4:1\nORDER n1;u2;B2:2,D4:2\nORDER n2;u3;B2:3,D4:1\nORDER n3;u1;B2:4,D4:2\nORDER n4;u2;B2:1,D4:1\nORDER n5;u3;B2:2,D4:2\nORDER n6;u1;B2:3,D4:1\nORDER n7;u2;B2:4,D4:2\nSTATS\nTOP 3\nEND\nREPORT\n"
+    }
+  ]
+}

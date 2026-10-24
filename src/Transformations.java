@@ -230,17 +230,9 @@ public final class Transformations {
         || existing.values().stream()
             .anyMatch(s -> s.matches("(?s).*\\b(class|interface|record|enum)\\s+" + className + "\\b.*")))
       throw new IllegalArgumentException("Класс " + className + " уже существует");
-    Set<String> ownerNames = new HashSet<>();
-    Set<String> nestedTypes = new HashSet<>();
+    Map<String, ClassTree> owners = new HashMap<>();
     for (Tree type : m.unit.getTypeDecls())
-      if (type instanceof ClassTree c) {
-        for (Tree member : c.getMembers()) {
-          if (member instanceof VariableTree v) ownerNames.add(v.getName().toString());
-          if (member instanceof ClassTree nested) nestedTypes.add(nested.getSimpleName().toString());
-        }
-      }
-    Map<String, JavaModel.Method> byName = new LinkedHashMap<>();
-    for (JavaModel.Method method : m.methods) byName.putIfAbsent(method.tree().getName().toString(), method);
+      if (type instanceof ClassTree c) owners.put(c.getSimpleName().toString(), c);
     List<JavaModel.Method> candidates = new ArrayList<>();
     List<Object> skipped = new ArrayList<>();
     for (String id : ids) {
@@ -252,68 +244,193 @@ public final class Transformations {
       }
       MethodTree t = method.tree();
       Set<Modifier> flags = t.getModifiers().getFlags();
+      ClassTree owner = owners.get(method.owner());
       String reason = null;
       if (t.getName().contentEquals("main")) reason = "точка входа остаётся на месте";
+      else if (owner == null) reason = "метод вложенного класса";
+      else if (owner.getKind() != Tree.Kind.CLASS) reason = "метод enum, интерфейса или record";
       else if (!flags.contains(Modifier.STATIC)) reason = "метод экземпляра использует состояние объекта";
       else if (t.getBody() == null
           || flags.contains(Modifier.SYNCHRONIZED)
           || flags.contains(Modifier.NATIVE)
           || !t.getModifiers().getAnnotations().isEmpty()) reason = "особые модификаторы или аннотации";
-      else if (method.owner().contains(".")) reason = "метод вложенного класса";
       if (reason == null) {
-        Set<String> used = new HashSet<>();
-        new TreeScanner<Void, Void>() {
-          public Void visitIdentifier(IdentifierTree x, Void v) {
-            used.add(x.getName().toString());
-            return null;
-          }
-        }.scan(t.getBody(), null);
-        Set<String> locals = new HashSet<>();
-        for (VariableTree p : t.getParameters()) locals.add(p.getName().toString());
-        new TreeScanner<Void, Void>() {
-          public Void visitVariable(VariableTree x, Void v) {
-            locals.add(x.getName().toString());
-            return super.visitVariable(x, v);
-          }
-        }.scan(t.getBody(), null);
-        if (used.contains("this") || used.contains("super")) reason = "ссылка this/super";
-        else if (used.stream().anyMatch(name -> ownerNames.contains(name) && !locals.contains(name)))
-          reason = "читает поля исходного класса";
-        else if (used.stream().anyMatch(nestedTypes::contains)) reason = "использует вложенные типы класса";
+        Map<String, Set<Modifier>> values = ownerMembers(owner, false);
+        Map<String, Set<Modifier>> methods = ownerMembers(owner, true);
+        Set<String> names = identifiers(t.getBody(), false);
+        Set<String> calls = identifiers(t.getBody(), true);
+        Set<String> locals = locals(t);
+        if (names.contains("this") || names.contains("super")) reason = "ссылка this/super";
+        for (String name : names) {
+          if (reason != null) break;
+          Set<Modifier> modifiers = values.get(name);
+          if (modifiers == null || locals.contains(name)) continue;
+          if (modifiers.contains(Modifier.PRIVATE)) reason = "использует private-поле " + name;
+          else if (!modifiers.contains(Modifier.STATIC)) reason = "использует поле экземпляра " + name;
+        }
+        for (String name : calls) {
+          if (reason != null) break;
+          Set<Modifier> modifiers = methods.get(name);
+          if (modifiers == null) continue;
+          if (modifiers.contains(Modifier.PRIVATE)) reason = "вызывает private-метод " + name + "()";
+          else if (!modifiers.contains(Modifier.STATIC)) reason = "вызывает метод экземпляра " + name + "()";
+        }
       }
       if (reason != null) skipped.add(Digests.map("methodId", id, "name", t.getName().toString(), "reason", reason));
       else candidates.add(method);
     }
-    // Calls to methods of the original class that stay behind would no longer resolve.
-    boolean changed = true;
-    while (changed) {
-      changed = false;
-      Set<String> moving = new HashSet<>();
-      for (JavaModel.Method c : candidates) moving.add(c.tree().getName().toString());
-      for (Iterator<JavaModel.Method> it = candidates.iterator(); it.hasNext(); ) {
-        JavaModel.Method c = it.next();
-        Set<String> calls = new HashSet<>();
-        new TreeScanner<Void, Void>() {
-          public Void visitMethodInvocation(MethodInvocationTree x, Void v) {
-            if (x.getMethodSelect() instanceof IdentifierTree id) calls.add(id.getName().toString());
-            return super.visitMethodInvocation(x, v);
-          }
-        }.scan(c.tree().getBody(), null);
-        String blocked =
-            calls.stream().filter(name -> byName.containsKey(name) && !moving.contains(name)).findFirst().orElse(null);
-        if (blocked != null) {
-          it.remove();
-          skipped.add(
-              Digests.map(
-                  "methodId", c.id(), "name", c.tree().getName().toString(),
-                  "reason", "вызывает " + blocked + "(), который остаётся в исходном классе"));
-          changed = true;
-        }
+    candidates.sort(Comparator.comparingInt(c -> m.start(c.tree())));
+    // javac is the final dependency check; methods named in its diagnostics are left in place.
+    for (int round = 0; round < 4; round++) {
+      if (candidates.isEmpty())
+        throw new IllegalArgumentException("Нет методов, которые можно перенести без изменения контекста");
+      Map<JavaModel.Method, int[]> lines = new LinkedHashMap<>();
+      Map<String, String> files =
+          moveMethods(m, owners, candidates, fileName, className, target, existing, lines);
+      var compiled = Runner.compileOnly(files);
+      if (Boolean.TRUE.equals(compiled.get("success")))
+        return Digests.map(
+            "files", files,
+            "created", target,
+            "className", className,
+            "moved", candidates.stream().map(c -> c.tree().getName().toString()).toList(),
+            "skipped", skipped);
+      String diagnostics = String.valueOf(compiled.get("diagnostics"));
+      java.util.regex.Matcher matcher =
+          java.util.regex.Pattern.compile(java.util.regex.Pattern.quote(className + ".java") + ":(\\d+):")
+              .matcher(diagnostics);
+      Set<JavaModel.Method> failing = new LinkedHashSet<>();
+      while (matcher.find()) {
+        int line = Integer.parseInt(matcher.group(1));
+        lines.forEach(
+            (method, range) -> {
+              if (line >= range[0] && line <= range[1]) failing.add(method);
+            });
+      }
+      if (failing.isEmpty())
+        throw new IllegalArgumentException(
+            "После переноса проект не собирается, изменения не применены: " + diagnostics);
+      for (JavaModel.Method method : failing) {
+        candidates.remove(method);
+        skipped.add(
+            Digests.map(
+                "methodId", method.id(), "name", method.tree().getName().toString(),
+                "reason", "javac: зависит от контекста исходного класса"));
       }
     }
-    if (candidates.isEmpty())
-      throw new IllegalArgumentException("Нет методов, которые можно перенести без изменения контекста");
-    candidates.sort(Comparator.comparingInt(c -> m.start(c.tree())));
+    throw new IllegalArgumentException("Не удалось выделить класс без ошибок компиляции");
+  }
+
+  /**
+   * Members of a class by simple name: fields and nested types, or methods. Java keeps the two
+   * namespaces apart, so a local variable may share a name with a method. Overloads merge.
+   */
+  private static Map<String, Set<Modifier>> ownerMembers(ClassTree owner, boolean methods) {
+    Map<String, Set<Modifier>> members = new HashMap<>();
+    for (Tree member : owner.getMembers()) {
+      String name = null;
+      Set<Modifier> flags = null;
+      if (!methods && member instanceof VariableTree v) {
+        name = v.getName().toString();
+        flags = v.getModifiers().getFlags();
+      } else if (!methods && member instanceof ClassTree c) {
+        name = c.getSimpleName().toString();
+        flags = EnumSet.of(Modifier.STATIC);
+        flags.addAll(c.getModifiers().getFlags());
+      } else if (methods
+          && member instanceof MethodTree method
+          && !method.getName().contentEquals("<init>")) {
+        name = method.getName().toString();
+        flags = method.getModifiers().getFlags();
+      }
+      if (name == null) continue;
+      Set<Modifier> merged = members.computeIfAbsent(name, key -> EnumSet.of(Modifier.STATIC));
+      if (!flags.contains(Modifier.STATIC)) merged.remove(Modifier.STATIC);
+      if (flags.contains(Modifier.PRIVATE)) merged.add(Modifier.PRIVATE);
+    }
+    return members;
+  }
+
+  /** Simple names used in a body: either as method-call targets or as values and types. */
+  private static Set<String> identifiers(Tree body, boolean calls) {
+    Set<String> used = new HashSet<>();
+    Set<Tree> selects = Collections.newSetFromMap(new IdentityHashMap<>());
+    new TreeScanner<Void, Void>() {
+      public Void visitMethodInvocation(MethodInvocationTree x, Void v) {
+        selects.add(x.getMethodSelect());
+        return super.visitMethodInvocation(x, v);
+      }
+
+      public Void visitIdentifier(IdentifierTree x, Void v) {
+        if (selects.contains(x) == calls) used.add(x.getName().toString());
+        return null;
+      }
+    }.scan(body, null);
+    return used;
+  }
+
+  private static Set<String> locals(MethodTree method) {
+    Set<String> locals = new HashSet<>();
+    for (VariableTree p : method.getParameters()) locals.add(p.getName().toString());
+    new TreeScanner<Void, Void>() {
+      public Void visitVariable(VariableTree x, Void v) {
+        locals.add(x.getName().toString());
+        return super.visitVariable(x, v);
+      }
+
+      public Void visitClass(ClassTree x, Void v) {
+        return null;
+      }
+    }.scan(method.getBody(), null);
+    return locals;
+  }
+
+  /** Body text where members that stay behind are qualified with the original class name. */
+  private static String qualifiedBody(
+      JavaModel m, MethodTree method, String owner, Set<String> values, Set<String> methods) {
+    int base = m.start(method.getBody());
+    List<int[]> spots = new ArrayList<>();
+    Set<Tree> labels = Collections.newSetFromMap(new IdentityHashMap<>());
+    Set<Tree> selects = Collections.newSetFromMap(new IdentityHashMap<>());
+    new TreeScanner<Void, Void>() {
+      public Void visitCase(CaseTree x, Void v) {
+        labels.addAll(x.getExpressions());
+        return super.visitCase(x, v);
+      }
+
+      public Void visitMethodInvocation(MethodInvocationTree x, Void v) {
+        selects.add(x.getMethodSelect());
+        return super.visitMethodInvocation(x, v);
+      }
+
+      public Void visitIdentifier(IdentifierTree x, Void v) {
+        String name = x.getName().toString();
+        boolean call = selects.contains(x);
+        if (!labels.contains(x) && (call ? methods.contains(name) : values.contains(name))) {
+          int start = m.start(x);
+          if (start >= 0) spots.add(new int[] {start - base, m.end(x) - base});
+        }
+        return null;
+      }
+    }.scan(method.getBody(), null);
+    String text = m.text(method.getBody());
+    spots.sort((a, b) -> Integer.compare(b[0], a[0]));
+    for (int[] spot : spots)
+      text = text.substring(0, spot[0]) + owner + "." + text.substring(spot[0]);
+    return text;
+  }
+
+  private static Map<String, String> moveMethods(
+      JavaModel m,
+      Map<String, ClassTree> owners,
+      List<JavaModel.Method> candidates,
+      String fileName,
+      String className,
+      String target,
+      Map<String, String> existing,
+      Map<JavaModel.Method, int[]> lines) {
+    Set<String> moving = new HashSet<>();
+    for (JavaModel.Method c : candidates) moving.add(c.owner() + "#" + c.tree().getName());
     String imports = String.join("\n", m.unit.getImports().stream().map(Object::toString).toList());
     String pkg = m.unit.getPackageName() == null ? "" : "package " + m.unit.getPackageName() + ";\n";
     StringBuilder helper = new StringBuilder();
@@ -332,25 +449,25 @@ public final class Transformations {
     }
     for (JavaModel.Method c : candidates) {
       MethodTree t = c.tree();
+      ClassTree owner = owners.get(c.owner());
+      Set<String> values = new HashSet<>(ownerMembers(owner, false).keySet());
+      values.removeAll(locals(t));
+      Set<String> methods = new HashSet<>();
+      for (String name : ownerMembers(owner, true).keySet())
+        if (!moving.contains(c.owner() + "#" + name)) methods.add(name);
       String original = m.text(t);
       int rel = m.start(t.getBody()) - m.start(t);
       String head = original.substring(0, rel).replaceFirst("\\b(public|private|protected)\\s+", "");
-      helper.append("\n    ").append(head).append(m.text(t.getBody())).append("\n");
+      int first = (int) helper.chars().filter(ch -> ch == '\n').count() + 2;
+      helper.append("\n    ").append(head).append(qualifiedBody(m, t, c.owner(), values, methods)).append("\n");
+      int last = (int) helper.chars().filter(ch -> ch == '\n').count();
+      lines.put(c, new int[] {first, last});
     }
     helper.append("}\n");
     Map<String, String> files = new LinkedHashMap<>(existing);
     files.put(fileName, source);
     files.put(target, helper.toString());
-    var compiled = Runner.compileOnly(files);
-    if (!Boolean.TRUE.equals(compiled.get("success")))
-      throw new IllegalArgumentException(
-          "После переноса проект не собирается, изменения не применены: " + compiled.get("diagnostics"));
-    return Digests.map(
-        "files", files,
-        "created", target,
-        "className", className,
-        "moved", candidates.stream().map(c -> c.tree().getName().toString()).toList(),
-        "skipped", skipped);
+    return files;
   }
 
   static String replace(String source, int start, int end, String replacement) {

@@ -52,6 +52,10 @@ public final class StudioApi {
               RuleCatalog.catalog().size() + 5));
       return true;
     }
+    if (route.startsWith("/api/examples/")) {
+      BlueprintServer.reply(exchange, 200, example(route.substring("/api/examples/".length())));
+      return true;
+    }
     if (route.equals("/api/rules")) {
       BlueprintServer.reply(exchange, 200, Map.of("rules", RuleCatalog.catalog()));
       return true;
@@ -209,6 +213,32 @@ public final class StudioApi {
       }
       default -> throw new IllegalArgumentException("Unknown job kind");
     };
+  }
+
+  /** Bundled example projects for the browser preview; the desktop app copies them via IPC. */
+  static Map<String, Object> example(String name) throws java.io.IOException {
+    if (!name.matches("[a-z0-9-]{1,60}")) throw new IllegalArgumentException("Unknown example");
+    java.nio.file.Path root =
+        java.nio.file.Path.of(System.getProperty("blueprints.examples", "examples"))
+            .toAbsolutePath()
+            .normalize();
+    java.nio.file.Path folder = root.resolve(name).normalize();
+    if (!folder.startsWith(root) || !java.nio.file.Files.isDirectory(folder))
+      throw new IllegalArgumentException("Example not found");
+    Map<String, Object> files = new TreeMap<>();
+    long total = 0;
+    try (var paths = java.nio.file.Files.walk(folder, 6)) {
+      for (java.nio.file.Path path : paths.filter(java.nio.file.Files::isRegularFile).toList()) {
+        String relative = folder.relativize(path).toString().replace('\\', '/');
+        if (!relative.matches("[A-Za-z0-9_./\\-]+\\.(java|json|md|txt)") || files.size() >= 60)
+          continue;
+        String content = java.nio.file.Files.readString(path, java.nio.charset.StandardCharsets.UTF_8);
+        total += content.length();
+        if (total > 4_000_000) break;
+        files.put(relative, content);
+      }
+    }
+    return Digests.map("name", name, "files", files);
   }
 
   private static JobService.Work withMain(String mainClass, JobService.Work work) {

@@ -146,12 +146,16 @@ export function planModal(plan) {
 }
 
 export function decomposeModal({ module, methods, fileName, className }) {
+  const counts = new Map();
+  for (const method of methods) counts.set(method.owner, (counts.get(method.owner) ?? 0) + 1);
+  const primary = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+  const movable = (method) => method.static && method.name !== "main";
   return modalFrame(
     "Выделить ответственность в класс",
     `<form id="decompose-form"><p class="modal-lead">Методы группы «${e(RESPONSIBILITY[module.id] ?? module.id)}» из ${e(basename(fileName))} будут перенесены в новый класс рядом с исходным файлом. В исходном классе останутся делегаты, поэтому вызывающий код не меняется.</p><label class="modal-field">Имя нового класса<input name="className" value="${e(className)}" required pattern="[A-Z][A-Za-z0-9_]*" maxlength="60" autocomplete="off"/></label><div class="q-method-picks">${methods
       .map(
         (method) =>
-          `<label class="${method.static && method.name !== "main" ? "" : "disabled"}"><input type="checkbox" name="method" value="${e(method.methodId)}" ${method.static && method.name !== "main" ? "checked" : "disabled"}/><span><b>${e(method.name)}()</b><small>стр. ${method.line} · ${method.lines} строк${method.static ? "" : " · метод экземпляра"}${method.name === "main" ? " · точка входа" : ""}</small></span></label>`,
+          `<label class="${movable(method) ? "" : "disabled"}"><input type="checkbox" name="method" value="${e(method.methodId)}" ${movable(method) ? (method.owner === primary ? "checked" : "") : "disabled"}/><span><b>${method.owner !== primary ? e(method.owner) + "." : ""}${e(method.name)}()</b><small>стр. ${method.line} · ${method.lines} строк${method.static ? "" : " · метод экземпляра"}${method.name === "main" ? " · точка входа" : ""}</small></span></label>`,
       )
       .join("")}</div><p class="modal-note">Методы, которые читают поля класса или вызывают оставшиеся методы, будут пропущены с объяснением. После переноса javac собирает проект, затем запускается проверка поведения.</p><div id="decompose-error" class="modal-inline-error" role="alert" hidden></div></form>`,
     `${button("close-modal", "Отмена")}<button type="submit" form="decompose-form" class="ide-button primary">${glyph("layers")}<span>Выделить и проверить</span></button>`,

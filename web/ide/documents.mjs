@@ -6,6 +6,16 @@ import {
   offsetAt,
 } from "./core.mjs";
 
+/** The entry point, otherwise the richest blueprint: more useful than the first declaration. */
+function defaultMethod(methods = []) {
+  return (
+    methods.find((method) => method.name === "main") ??
+    [...methods].sort(
+      (a, b) => (b.graph?.nodes?.length ?? 0) - (a.graph?.nodes?.length ?? 0),
+    )[0]
+  );
+}
+
 export class TextDocument {
   constructor(file) {
     this.path = file.path;
@@ -189,7 +199,7 @@ export class TextDocument {
           (method) =>
             method.name === prior?.name && method.owner === prior?.owner,
         )?.id ??
-        model.methods?.[0]?.id ??
+        defaultMethod(model.methods)?.id ??
         null;
     }
     this.changed.emit({ document: this, kind: "analysis" });

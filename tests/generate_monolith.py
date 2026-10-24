@@ -1,7 +1,7 @@
 from pathlib import Path
 
 root=Path(__file__).resolve().parents[1]
-pair=(root/'examples/PairAnalyzer.java').read_text(encoding='utf-8').replace('public class PairAnalyzer','public class LargeMonolith')
+pair=(root/'examples/pair-analyzer/src/PairAnalyzer.java').read_text(encoding='utf-8').replace('public class PairAnalyzer','public class LargeMonolith')
 pair=pair.replace('System.out.println("Категория: " + classify(n));','System.out.println("Категория: " + classify(n));\n        int checksum = 0;\n'+''.join(f'        checksum += metric{i:02d}(values);\n' for i in range(48))+'        System.out.println("Контрольная сумма: " + checksum);')
 methods=[]
 for i in range(48):
@@ -27,5 +27,5 @@ for i in range(48):
     }}
 ''')
 source=pair.rstrip()[:-1]+''.join(methods)+'}\n'
-(root/'examples/LargeMonolith.java').write_text(source,encoding='utf-8')
+(root/'examples/large-monolith/src/LargeMonolith.java').write_text(source,encoding='utf-8')
 print('Generated',len(source.splitlines()),'lines,',48,'active statistic methods')
