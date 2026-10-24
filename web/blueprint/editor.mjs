@@ -186,7 +186,7 @@ export class BlueprintEditor {
     const body = Array.from({ length: rows }, (_, i) => `<div class="bp-row">${pins.inputs[i] ? pin(pins.inputs[i], "in") : "<span></span>"}${pins.outputs[i] ? pin(pins.outputs[i], "out") : "<span></span>"}</div>`).join("");
     const code = node.type === "code" ? `<pre class="bp-code">${e(String(node.props.code).split("\n").slice(0, codeLines(node)).join("\n"))}</pre>` : "";
     const subtitle = node.type === "call" && node.props.target && !node.props.targetPin ? node.props.target : node.type === "call" ? "функция" : "";
-    return `<div class="bp-node cat-${category} type-${node.type}" data-id="${e(node.id)}" style="${style}"><div class="bp-header"><b>${e(nodeTitle(node, this.graph))}</b>${subtitle ? `<small>${e(subtitle)}</small>` : ""}${node.line ? `<i>L${node.line}</i>` : ""}</div><div class="bp-body">${body}${code}</div></div>`;
+    return `<div class="bp-node cat-${category} type-${node.type}" data-id="${e(node.id)}" style="${style}"><div class="bp-header"><span class="bp-badge">${e(BADGES[category] ?? "·")}</span><b>${e(nodeTitle(node, this.graph))}</b>${subtitle ? `<small>${e(subtitle)}</small>` : ""}${node.line ? `<i>L${node.line}</i>` : ""}</div><div class="bp-body">${body}${code}</div></div>`;
   }
 
   renderWires() {
@@ -209,10 +209,11 @@ export class BlueprintEditor {
         const a = pinPosition(from, this.graph, link.fromPin, "out");
         const b = pinPosition(to, this.graph, link.toPin, "in");
         const execWire = out?.kind === "exec";
-        const color = execWire ? "#e9edf5" : typeColor(out?.type);
-        return `<path class="bp-wire ${execWire ? "exec" : "data"}" data-link="${index}" data-from="${e(link.from)}" data-to="${e(link.to)}" d="${curve(a, b)}" stroke="${color}"/>`;
+        const color = execWire ? "currentColor" : typeColor(out?.type);
+        return `<path class="bp-wire ${execWire ? "exec" : "data"}" data-link="${index}" data-from="${e(link.from)}" data-to="${e(link.to)}" d="${curve(a, b)}" stroke="${color}" ${execWire ? 'marker-end="url(#bp-flow-arrow)"' : ""}/>`;
       })
-      .join("") + `<path class="bp-wire ghost" d="" stroke="#fff"/>`;
+      .join("") + `<path class="bp-wire ghost" d=""/>`;
+    this.svg.insertAdjacentHTML("afterbegin", '<defs><marker id="bp-flow-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path class="bp-arrow" d="M0 0 L8 4 L0 8 z"/></marker></defs>');
   }
 
   renderVariables() {
@@ -720,9 +721,30 @@ function capture(element, pointerId) {
   }
 }
 
+/**
+ * Orthogonal wire with rounded corners: out to the right, a vertical run, in from the left.
+ * When the target lies behind the source the wire detours around both ends.
+ */
 function curve(a, b) {
-  const dx = Math.max(40, Math.abs(b.x - a.x) * 0.5);
-  return `M ${a.x} ${a.y} C ${a.x + dx} ${a.y}, ${b.x - dx} ${b.y}, ${b.x} ${b.y}`;
+  const corner = (x1, y1, x2, y2, x3, y3) => {
+    const r = Math.min(8, Math.abs(x2 - x1) / 2 || 8, Math.abs(y3 - y2) / 2 || 8, Math.abs(x3 - x2) / 2 || 8, Math.abs(y2 - y1) / 2 || 8);
+    const sx = Math.sign(x2 - x1) || Math.sign(x3 - x2);
+    const sy = Math.sign(y3 - y2) || Math.sign(y2 - y1);
+    if (y1 === y2 && x2 === x3) return `L ${x2 - sx * r} ${y2} Q ${x2} ${y2} ${x2} ${y2 + sy * r}`;
+    if (x1 === x2 && y2 === y3) return `L ${x2} ${y2 - sy * r} Q ${x2} ${y2} ${x2 + Math.sign(x3 - x2) * r} ${y2}`;
+    return `L ${x2} ${y2}`;
+  };
+  if (Math.abs(a.y - b.y) < 1) return `M ${a.x} ${a.y} L ${b.x} ${b.y}`;
+  if (b.x - a.x >= 28) {
+    const mid = Math.round(a.x + (b.x - a.x) / 2);
+    return `M ${a.x} ${a.y} ${corner(a.x, a.y, mid, a.y, mid, b.y)} ${corner(mid, a.y, mid, b.y, b.x, b.y)} L ${b.x} ${b.y}`;
+  }
+  const out = a.x + 18;
+  const back = b.x - 18;
+  const midY = Math.round(a.y + (b.y - a.y) / 2);
+  return `M ${a.x} ${a.y} ${corner(a.x, a.y, out, a.y, out, midY)} ${corner(out, a.y, out, midY, back, midY)} ${corner(out, midY, back, midY, back, b.y)} ${corner(back, midY, back, b.y, b.x, b.y)} L ${b.x} ${b.y}`;
 }
+
+const BADGES = { event: "▸", flow: "◇", variable: "x", function: "ƒ", pure: "=", value: "#", code: "{}" };
 
 export { cloneGraph };

@@ -3,20 +3,21 @@
  * coloured data pins carry values. The graph of a method is the source of Java for its body.
  */
 
+/** Value colours by type, tuned to the IDE palette (flow ports use the neutral flow colour). */
 export const PIN_COLORS = {
-  exec: "#f2f4f8",
-  boolean: "#e05b5b",
-  int: "#3fd1b4",
-  long: "#2fb39a",
-  short: "#2fb39a",
-  byte: "#2fb39a",
-  double: "#8ccf4d",
-  float: "#8ccf4d",
-  char: "#4fa3e0",
-  String: "#e05bd6",
-  object: "#5b8de0",
-  array: "#e0a95b",
-  any: "#9aa6ba",
+  exec: "#53607a",
+  boolean: "#c0485a",
+  int: "#1f8f8a",
+  long: "#177571",
+  short: "#177571",
+  byte: "#177571",
+  double: "#5d9a2e",
+  float: "#5d9a2e",
+  char: "#3f86c7",
+  String: "#b5489c",
+  object: "#3767df",
+  array: "#c27c16",
+  any: "#8a94a8",
 };
 
 const NUMERIC = new Set(["int", "long", "short", "byte", "double", "float", "char"]);
