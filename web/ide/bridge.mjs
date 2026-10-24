@@ -166,7 +166,7 @@ export class BrowserBridge {
       );
     } catch {}
     return {
-      version: "4.0.0",
+      version: "4.2.0",
       desktop: false,
       settings: this.savedSettings,
       recent: [],

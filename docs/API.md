@@ -10,10 +10,11 @@
 |---|---|---|
 | `GET /api/health` | — | Версия Java, режим запуска |
 | `GET /api/capabilities` | — | Возможности и окружение |
-| `POST /api/analyze` | `source` | Модель файла: классы, методы с графами и метриками, синтаксические ошибки, базовые находки |
+| `POST /api/analyze` | `source` | Модель файла: классы, методы с графами и метриками, синтаксические ошибки, базовые находки. `valid` означает только «разобрано без синтаксических ошибок», компиляция проверяется отдельно |
+| `POST /api/blueprint` | `source`, `methodId` | Блок-граф метода для редактора: узлы с exec- и data-пинами, связи, переменные, комментарии. Это вторая модель графа: `/api/method` отдаёт граф потока управления для анализа, `/api/blueprint` — редактируемый граф, из которого генерируется Java |
 | `POST /api/method` | `source`, `methodId` | Граф, анализ графа (достижимость, доминаторы, пути), сложность с обоснованием, def-use |
 | `POST /api/edit` | `source`, `methodId`, `nodeId`, `action` (`replace`, `before`, `after`, `delete`), `code` | Новый исходник и модель; правка проверяется парсером |
-| `POST /api/compile` | `files`, `mainClass?` | Результат `javac` |
+| `POST /api/compile` | `files`, `mainClass?` | Результат `javac`, выбранный `mainClass` или `mainError` |
 
 ## Анализ и улучшения
 
@@ -24,22 +25,24 @@
 | `POST /api/plans` | `source` | Планы оптимизации, привязанные к `sourceHash` |
 | `POST /api/plans/apply` | `source`, `sourceHash`, `planIds` | Новый исходник; устаревшие и пересекающиеся планы отклоняются |
 | `POST /api/decompose` | `files`, `fileName`, `methodIds`, `className` | Все файлы проекта после переноса, путь нового класса, перенесённые и пропущенные методы с причинами |
-| `POST /api/extract` | `files`, `fileName`, `methodId` | Перенос одного метода в `BlueprintFunctions` (совместимость) |
+| `POST /api/extract` | `files`, `fileName`, `methodId` | Перенос одного метода в `BlueprintFunctions` (совместимость, те же проверки, что у `decompose`) |
 | `POST /api/sarif` | `files` | Находки в формате SARIF 2.1.0 |
 
 ## Проверка поведения
 
-`POST /api/jobs/submit` с полем `kind` возвращает задание; его состояние читается через `GET /api/jobs/{id}`, пока оно не станет `completed`, `failed` или `cancelled`. Отмена — `POST /api/jobs/cancel {id}`. Во всех заданиях можно передать `mainClass`: полное или простое имя класса с `main`.
+`POST /api/jobs/submit` с полем `kind` возвращает задание; его состояние читается через `GET /api/jobs/{id}`, пока оно не станет `completed`, `failed` или `cancelled`. Отмена — `POST /api/jobs/cancel {id}`. Во всех заданиях можно передать `mainClass`: полное или простое имя класса с `main`. Выбор строгий: указанный, но отсутствующий или неоднозначный класс — ошибка. Без указания берётся единственный `main`, иначе класс `Main`, иначе ошибка.
 
 | `kind` | Поля | Результат |
 |---|---|---|
-| `compare` | `original`, `candidate`, `inputs` (1–30 stdin) | `passed`, сборки обеих версий, по каждому входу stdout/stderr/exitCode/время/хеши, хеши версий |
+| `compare` | `original`, `candidate`, `inputs` (1–30 stdin) | `passed`, `inconclusive`, `mainClass`, `comparison` (политика), сборки обеих версий, по каждому входу stdout/stderr/exitCode/время/хеши, хеши версий |
 | `run` | `files`, `input` | Одна сборка и один запуск |
 | `mutation` | `files`, `fileName`, `methodId`, `inputs`, `maximum` | Мутанты метода: убит, выжил или невалиден; score |
 | `benchmark` | `original`, `candidate`, `fileName`, `methodName`, `sizes`, `repetitions` | Медианы для `static int f(int[])` до и после, совпадение результатов |
 | `minimize` | `original`, `candidate`, `input`, `budget` | Уменьшенный вход, на котором версии различаются, и след шагов |
 
-`POST /api/compare` — синхронный вариант `compare` для совместимости. `POST /api/evidence {original, candidate, jobId?}` выдаёт манифест доказательств; он помечается verified только для завершённого `compare` с совпадающими хешами исходников.
+Политика сравнения: stdout побайтно; stderr побайтно, кроме строк кадров стека JVM (`	at …(File.java:N)`, `... N more`); код завершения; флаг `started`. Если запуск не состоялся по причине инфраструктуры (например, коды Docker 125–127), результат `inconclusive` и `passed=false`.
+
+`POST /api/compare` — синхронный вариант `compare` для совместимости. `POST /api/evidence {original, candidate, jobId?}` выдаёт манифест проверки; он помечается verified только для завершённого `compare` с совпадающими хешами исходников.
 
 ## Прочее
 

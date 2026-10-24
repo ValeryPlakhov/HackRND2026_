@@ -3,8 +3,8 @@
   "method": "UTF-8 splitlines; nonempty excludes whitespace-only lines, includes comments.",
   "newAuthoredProduct": {
     "files": 28,
-    "physical": 13718,
-    "nonempty": 13304
+    "physical": 13809,
+    "nonempty": 13394
   },
   "excluded": [
     "Electron and Java runtimes",
@@ -17,22 +17,22 @@
     {
       "path": "web/ide/app.mjs",
       "language": "JavaScript",
-      "physical": 2078,
-      "nonempty": 2017,
+      "physical": 2118,
+      "nonempty": 2057,
       "category": "product"
     },
     {
       "path": "web/ide/bridge.mjs",
       "language": "JavaScript",
-      "physical": 761,
-      "nonempty": 737,
+      "physical": 756,
+      "nonempty": 732,
       "category": "product"
     },
     {
       "path": "web/ide/commands.mjs",
       "language": "JavaScript",
-      "physical": 407,
-      "nonempty": 405,
+      "physical": 414,
+      "nonempty": 412,
       "category": "product"
     },
     {
@@ -115,8 +115,8 @@
     {
       "path": "web/ide/quality.mjs",
       "language": "JavaScript",
-      "physical": 960,
-      "nonempty": 896,
+      "physical": 1009,
+      "nonempty": 944,
       "category": "product"
     },
     {

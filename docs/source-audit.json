@@ -8,19 +8,19 @@
     "documentation and SVG assets"
   ],
   "total": {
-    "files": 87,
-    "physical": 26460,
-    "nonempty": 25264
+    "files": 89,
+    "physical": 27262,
+    "nonempty": 25998
   },
   "product": {
     "files": 65,
-    "physical": 23301,
-    "nonempty": 22377
+    "physical": 23687,
+    "nonempty": 22750
   },
   "tests": {
-    "files": 22,
-    "physical": 3159,
-    "nonempty": 2887
+    "files": 24,
+    "physical": 3575,
+    "nonempty": 3248
   },
   "languages": {
     "C#": {
@@ -30,8 +30,8 @@
     },
     "CSS": {
       "files": 4,
-      "physical": 4606,
-      "nonempty": 4602
+      "physical": 4681,
+      "nonempty": 4677
     },
     "HTML": {
       "files": 2,
@@ -40,18 +40,18 @@
     },
     "Java": {
       "files": 23,
-      "physical": 6097,
-      "nonempty": 5769
+      "physical": 6258,
+      "nonempty": 5921
     },
     "JavaScript": {
-      "files": 45,
-      "physical": 14156,
-      "nonempty": 13448
+      "files": 46,
+      "physical": 14433,
+      "nonempty": 13710
     },
     "Python": {
-      "files": 12,
-      "physical": 1350,
-      "nonempty": 1202
+      "files": 13,
+      "physical": 1639,
+      "nonempty": 1447
     }
   },
   "files": [
@@ -72,15 +72,15 @@
     {
       "path": "src/BlueprintImport.java",
       "language": "Java",
-      "physical": 375,
-      "nonempty": 354,
+      "physical": 415,
+      "nonempty": 392,
       "category": "product"
     },
     {
       "path": "src/BlueprintServer.java",
       "language": "Java",
-      "physical": 223,
-      "nonempty": 219,
+      "physical": 229,
+      "nonempty": 225,
       "category": "product"
     },
     {
@@ -177,8 +177,8 @@
     {
       "path": "src/RefactorPlans.java",
       "language": "Java",
-      "physical": 733,
-      "nonempty": 692,
+      "physical": 772,
+      "nonempty": 727,
       "category": "product"
     },
     {
@@ -191,8 +191,8 @@
     {
       "path": "src/Runner.java",
       "language": "Java",
-      "physical": 430,
-      "nonempty": 409,
+      "physical": 478,
+      "nonempty": 455,
       "category": "product"
     },
     {
@@ -205,8 +205,8 @@
     {
       "path": "src/Transformations.java",
       "language": "Java",
-      "physical": 498,
-      "nonempty": 479,
+      "physical": 526,
+      "nonempty": 506,
       "category": "product"
     },
     {
@@ -219,22 +219,22 @@
     {
       "path": "web/blueprint/blueprint.css",
       "language": "CSS",
-      "physical": 501,
-      "nonempty": 501,
+      "physical": 576,
+      "nonempty": 576,
       "category": "product"
     },
     {
       "path": "web/blueprint/codegen.mjs",
       "language": "JavaScript",
-      "physical": 195,
-      "nonempty": 183,
+      "physical": 202,
+      "nonempty": 190,
       "category": "product"
     },
     {
       "path": "web/blueprint/editor.mjs",
       "language": "JavaScript",
-      "physical": 719,
-      "nonempty": 673,
+      "physical": 750,
+      "nonempty": 703,
       "category": "product"
     },
     {
@@ -247,8 +247,8 @@
     {
       "path": "web/blueprint/model.mjs",
       "language": "JavaScript",
-      "physical": 290,
-      "nonempty": 273,
+      "physical": 311,
+      "nonempty": 292,
       "category": "product"
     },
     {
@@ -261,22 +261,22 @@
     {
       "path": "web/ide/app.mjs",
       "language": "JavaScript",
-      "physical": 2078,
-      "nonempty": 2017,
+      "physical": 2118,
+      "nonempty": 2057,
       "category": "product"
     },
     {
       "path": "web/ide/bridge.mjs",
       "language": "JavaScript",
-      "physical": 761,
-      "nonempty": 737,
+      "physical": 756,
+      "nonempty": 732,
       "category": "product"
     },
     {
       "path": "web/ide/commands.mjs",
       "language": "JavaScript",
-      "physical": 407,
-      "nonempty": 405,
+      "physical": 414,
+      "nonempty": 412,
       "category": "product"
     },
     {
@@ -359,8 +359,8 @@
     {
       "path": "web/ide/quality.mjs",
       "language": "JavaScript",
-      "physical": 960,
-      "nonempty": 896,
+      "physical": 1009,
+      "nonempty": 944,
       "category": "product"
     },
     {
@@ -513,8 +513,8 @@
     {
       "path": "tests/blueprint_roundtrip.mjs",
       "language": "JavaScript",
-      "physical": 81,
-      "nonempty": 75,
+      "physical": 98,
+      "nonempty": 92,
       "category": "tests"
     },
     {
@@ -576,8 +576,15 @@
     {
       "path": "tests/test_api.py",
       "language": "Python",
-      "physical": 199,
-      "nonempty": 170,
+      "physical": 207,
+      "nonempty": 177,
+      "category": "tests"
+    },
+    {
+      "path": "tests/test_audit_regressions.py",
+      "language": "Python",
+      "physical": 273,
+      "nonempty": 230,
       "category": "tests"
     },
     {
@@ -590,8 +597,8 @@
     {
       "path": "tests/test_ide_api.py",
       "language": "Python",
-      "physical": 301,
-      "nonempty": 262,
+      "physical": 307,
+      "nonempty": 268,
       "category": "tests"
     },
     {
@@ -599,6 +606,13 @@
       "language": "Python",
       "physical": 341,
       "nonempty": 294,
+      "category": "tests"
+    },
+    {
+      "path": "tests/unit/audit.test.mjs",
+      "language": "JavaScript",
+      "physical": 110,
+      "nonempty": 99,
       "category": "tests"
     },
     {
@@ -660,8 +674,8 @@
     {
       "path": "tests/verify.py",
       "language": "Python",
-      "physical": 100,
-      "nonempty": 95,
+      "physical": 102,
+      "nonempty": 97,
       "category": "tests"
     }
   ]
