@@ -85,11 +85,15 @@ public final class BlueprintServer {
                 var files = Runner.sources(r.get("files"));
                 String name = Json.str(r, "fileName", "");
                 if (!files.containsKey(name)) throw new IllegalArgumentException("Unknown file");
+                // Legacy single-method extraction goes through the guarded decomposition.
                 try (JavaModel m = new JavaModel(files.get(name))) {
-                  result =
-                      Map.of(
-                          "files",
-                          Transformations.extract(m, Json.str(r, "methodId", ""), name, files));
+                  if (!m.valid()) throw new IllegalArgumentException("Fix syntax errors first");
+                  String methodId = Json.str(r, "methodId", "");
+                  Map<String, Object> moved =
+                      Transformations.decompose(m, List.of(methodId), name, "BlueprintFunctions", files);
+                  if (((List<?>) moved.get("moved")).isEmpty())
+                    throw new IllegalArgumentException("Метод не переносится автоматически");
+                  result = Map.of("files", moved.get("files"));
                 }
               }
               case "/api/blueprint" -> {
@@ -125,11 +129,13 @@ public final class BlueprintServer {
                 Object values = r.get("inputs");
                 if (!(values instanceof List<?> inputs))
                   throw new IllegalArgumentException("inputs array required");
+                var original = Runner.sources(r.get("original"));
+                var candidate = Runner.sources(r.get("candidate"));
+                var cases = inputs.stream().map(String::valueOf).toList();
+                // Same entry-point contract as the job API.
                 result =
-                    Runner.compare(
-                        Runner.sources(r.get("original")),
-                        Runner.sources(r.get("candidate")),
-                        inputs.stream().map(String::valueOf).toList());
+                    Runner.withMain(
+                        Json.str(r, "mainClass", ""), () -> Runner.compare(original, candidate, cases));
               }
               default -> {
                 if (StudioApi.supports(route)) result = StudioApi.post(route, r);

@@ -364,6 +364,13 @@ export const COMMANDS = [
     java: true,
   },
   {
+    id: "export-project",
+    label: "Скачать проект ZIP (с несохранёнными правками)",
+    detail: "Файл",
+    icon: "download",
+    project: true,
+  },
+  {
     id: "open-example",
     label: "Открыть пример монолита",
     detail: "Файл",

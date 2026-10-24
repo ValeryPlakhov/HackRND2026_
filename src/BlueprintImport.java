@@ -47,7 +47,14 @@ public final class BlueprintImport {
       }
     }.scan(tree.getBody(), null);
     String entry = node("entry", Map.of(), tree);
-    Cursor end = tree.getBody() == null ? null : block(tree.getBody().getStatements(), new Cursor(entry, "then"));
+    Cursor end =
+        tree.getBody() == null
+            ? null
+            : block(
+                tree.getBody().getStatements(),
+                new Cursor(entry, "then"),
+                model.start(tree.getBody()) + 1,
+                model.end(tree.getBody()) - 1);
     String returnType = tree.getReturnType() == null ? "void" : tree.getReturnType().toString();
     if (end != null && returnType.equals("void") && !nodes.isEmpty()) {
       // An explicit end node keeps the exec line readable; it generates no code for void methods.
@@ -100,15 +107,48 @@ public final class BlueprintImport {
   }
 
   private Cursor block(List<? extends StatementTree> statements, Cursor cursor) {
+    return block(statements, cursor, -1, -1);
+  }
+
+  /** Statements in order; comments between them travel with the following statement's node. */
+  private Cursor block(List<? extends StatementTree> statements, Cursor cursor, int from, int to) {
+    int previous = from;
+    int last = -1;
     for (StatementTree statement : statements) {
       if (cursor == null) break;
+      int before = nodes.size();
       cursor = statement(statement, cursor);
+      if (nodes.size() > before) last = before;
+      if (previous >= 0 && nodes.size() > before) {
+        String comment = comments(model.source.substring(previous, Math.max(previous, model.start(statement))));
+        if (!comment.isEmpty()) ((Map<String, Object>) nodes.get(before).get("props")).put("comment", comment);
+      }
+      previous = model.end(statement);
+    }
+    if (previous >= 0 && to > previous) {
+      String trailing = comments(model.source.substring(previous, to));
+      if (!trailing.isEmpty()) {
+        if (last >= 0) ((Map<String, Object>) nodes.get(last).get("props")).put("after", trailing);
+        else if (cursor != null) {
+          String id = attach(cursor, node("code", Map.of("code", trailing), null));
+          cursor = new Cursor(id, "then");
+        }
+      }
     }
     return cursor;
   }
 
+  /** Line and block comments in a gap of source, one per line, in original order. */
+  private static String comments(String gap) {
+    java.util.regex.Matcher m = java.util.regex.Pattern.compile("//[^\\r\\n]*|/\\*[\\s\\S]*?\\*/").matcher(gap);
+    List<String> found = new ArrayList<>();
+    while (m.find()) found.add(m.group().strip());
+    return String.join("\n", found);
+  }
+
   private Cursor body(StatementTree statement, Cursor cursor) {
-    if (statement instanceof BlockTree block) return block(block.getStatements(), cursor);
+    if (statement instanceof BlockTree block)
+      return block(block.getStatements(), cursor, model.start(block) + 1, model.end(block) - 1);
     return statement(statement, cursor);
   }
 

@@ -77,5 +77,22 @@ for (const project of readdirSync(resolve(root, "examples"))) {
   console.log(`${ok ? "PASS" : "FAIL"} ${project}: ${totals.methods} методов, ${totals.nodes} узлов, из них Java-код/выражение ${totals.code}`);
   if (!ok) console.log(JSON.stringify(report.at(-1).error, null, 2).slice(0, 2000));
 }
+// Audit counterexamples (F02, F18): the same program before and after a round-trip.
+const probes = [
+  { name: "double-negation", source: "public class P { static int f(int x) { return -(-x); } public static void main(String[] a) { System.out.println(f(4)); } }" },
+  { name: "ternary-receiver", source: 'public class P { static String f(boolean c) { String a = "yes"; String b = "no"; return (c ? a : b).toUpperCase(); } public static void main(String[] a) { System.out.println(f(true) + f(false)); } }' },
+  { name: "unary-mix", source: "public class P { static int f(int x) { int y = - -x; int z = -(+x); return -(x - 1) + (int) -(double) y + z; } public static void main(String[] a) { System.out.println(f(7)); } }" },
+  { name: "comments", source: "public class P {\n  static int f(int x) {\n    // Business rule: keep this explanation\n    int y = x * 2;\n    /* second note */\n    return y;\n    // trailing note\n  }\n  public static void main(String[] a) { System.out.println(f(3)); }\n}\n", keep: ["// Business rule: keep this explanation", "/* second note */", "// trailing note"] },
+];
+for (const probe of probes) {
+  const { source } = await regenerate(probe.source);
+  const gate = await job("compare", { original: { "P.java": probe.source }, candidate: { "P.java": source }, inputs: [""] });
+  const kept = (probe.keep ?? []).every((text) => source.includes(text));
+  const ok = gate.state === "completed" && gate.result.passed && kept;
+  passed &&= ok;
+  report.push({ project: "probe:" + probe.name, passed: ok, error: ok ? null : { kept, source, tests: gate.result?.tests } });
+  console.log(`${ok ? "PASS" : "FAIL"} probe ${probe.name}`);
+  if (!ok) console.log(source);
+}
 writeFileSync(resolve(root, "docs/blueprint-roundtrip.json"), JSON.stringify({ passed, projects: report }, null, 2));
 process.exit(passed ? 0 : 1);

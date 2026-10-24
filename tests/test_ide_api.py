@@ -240,7 +240,13 @@ class Unsafe {
 }
 '''
         plans = post('plans', {'source': source})
-        self.assertFalse([p for p in plans['plans'] if p['rule'] in ('dedupe-set', 'contains-to-set')])
+        chosen = [p for p in plans['plans'] if p['rule'] in ('dedupe-set', 'contains-to-set')]
+        # `seen` is a parameter that changes inside the loop: never optimised.
+        self.assertFalse([p for p in chosen if 'seen.contains' in p['before']])
+        # `mine` escapes only after its last guard, so the HashSet plan is safe.
+        self.assertEqual([p['rule'] for p in chosen], ['dedupe-set'])
+        inside = source.replace('if (!mine.contains(item)) mine.add(item);', 'if (!mine.contains(item)) mine.add(item); Collections.reverse(mine);')
+        self.assertFalse([p for p in post('plans', {'source': inside})['plans'] if p['rule'] in ('dedupe-set', 'contains-to-set')])
 
     def test_16_every_optimisation_of_the_shop_example_keeps_behaviour(self):
         files = shop_files()

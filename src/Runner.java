@@ -115,23 +115,31 @@ public final class Runner {
             }
         }
       }
+      // An explicit entry point must exist and be unambiguous; without one, only an obvious choice
+      // is taken. The reason is kept so that running (not compiling) reports it.
       String requested = MAIN.get();
-      if (!requested.isEmpty())
-        main =
+      String mainError = "";
+      if (!requested.isEmpty()) {
+        List<String> matches =
             mains.stream()
                 .filter(
                     name ->
                         name.equals(requested)
-                            || name.endsWith("." + requested)
-                            || name.equals(requested.replace('.', '$')))
-                .findFirst()
-                .orElse(mains.isEmpty() ? "" : mains.get(0));
-      else if (!mains.isEmpty())
-        main =
-            mains.stream()
-                .filter(name -> name.equals("Main") || name.endsWith(".Main"))
-                .findFirst()
-                .orElse(mains.get(0));
+                            || name.equals(requested.replace('.', '$'))
+                            || name.endsWith("." + requested))
+                .toList();
+        if (matches.size() == 1) main = matches.get(0);
+        else if (matches.contains(requested)) main = requested;
+        else
+          mainError =
+              (matches.isEmpty() ? "Класс с main не найден: " : "Неоднозначный main: ")
+                  + requested + ". Доступны: " + (mains.isEmpty() ? "нет" : String.join(", ", mains));
+      } else if (mains.size() == 1) main = mains.get(0);
+      else if (!mains.isEmpty()) {
+        List<String> named = mains.stream().filter(name -> name.equals("Main") || name.endsWith(".Main")).toList();
+        if (named.size() == 1) main = named.get(0);
+        else mainError = "Несколько классов с main: " + String.join(", ", mains) + ". Укажите главный класс в параметрах запуска.";
+      }
       // An argument file keeps large projects below the Windows command-line limit.
       Path list = root.resolve("sources.txt");
       Files.write(list, sourceList, StandardCharsets.UTF_8);
@@ -152,7 +160,11 @@ public final class Runner {
               "stdout",
               p.get("stdout"),
               "timeMs",
-              p.get("timeMs")));
+              p.get("timeMs"),
+              "mainClass",
+              main,
+              "mainError",
+              mainError));
     } catch (Exception e) {
       remove(root);
       throw e;
@@ -174,7 +186,10 @@ public final class Runner {
     if (!Boolean.TRUE.equals(b.result.get("success")))
       throw new IllegalArgumentException("Compilation failed");
     if (b.mainClass.isEmpty())
-      throw new IllegalArgumentException("public static void main(String[] args) not found");
+      throw new IllegalArgumentException(
+          String.valueOf(b.result.getOrDefault("mainError", "")).isEmpty()
+              ? "public static void main(String[] args) not found"
+              : String.valueOf(b.result.get("mainError")));
     if (!MODE.equals("local") && !MODE.equals("docker"))
       throw new IllegalArgumentException(
           "Запуск отключён. Используйте start.ps1 -TrustedLocal для своих файлов или"
@@ -213,7 +228,13 @@ public final class Runner {
               "/app",
               b.mainClass);
       try {
-        return process(cmd, b.directory, input, 7000);
+        Map<String, Object> outcome = new LinkedHashMap<>(process(cmd, b.directory, input, 7000));
+        // docker run reports its own failures as 125-127; the program never started then.
+        int code = ((Number) outcome.get("exitCode")).intValue();
+        boolean infrastructure = code == 125 || code == 126 || code == 127;
+        outcome.put("started", !infrastructure);
+        outcome.put("infrastructureError", infrastructure);
+        return outcome;
       } finally {
         try {
           Process clean = new ProcessBuilder("docker", "rm", "-f", container).start();
@@ -236,7 +257,10 @@ public final class Runner {
             "-cp",
             b.directory.resolve("classes").toString(),
             b.mainClass);
-    return process(cmd, b.directory, input, RUN_TIMEOUT_MS);
+    Map<String, Object> outcome = new LinkedHashMap<>(process(cmd, b.directory, input, RUN_TIMEOUT_MS));
+    outcome.put("started", true);
+    outcome.put("infrastructureError", false);
+    return outcome;
   }
 
   static Map<String, Object> compare(
@@ -256,11 +280,13 @@ public final class Runner {
       boolean pass =
           Boolean.TRUE.equals(a.result.get("success"))
               && Boolean.TRUE.equals(b.result.get("success"));
+      boolean inconclusive = false;
       if (pass)
         for (int i = 0; i < inputs.size(); i++) {
           var x = run(a, inputs.get(i));
           var y = run(b, inputs.get(i));
           boolean same = sameBehavior(x, y);
+          inconclusive |= Boolean.TRUE.equals(x.get("infrastructureError")) || Boolean.TRUE.equals(y.get("infrastructureError"));
           pass &= same;
           tests.add(
               Map.of(
@@ -275,7 +301,10 @@ public final class Runner {
                   "candidate",
                   y));
         }
-      out.put("passed", pass);
+      out.put("passed", pass && !inconclusive);
+      out.put("inconclusive", inconclusive);
+      out.put("mainClass", a.mainClass);
+      out.put("comparison", COMPARISON_POLICY);
       out.put("tests", tests);
       out.put("runner", MODE);
       out.put(
@@ -289,17 +318,34 @@ public final class Runner {
     }
   }
 
-  /** Stack frames carry source line numbers, which a refactoring legitimately moves. */
-  static String stderrSignature(Object stderr) {
-    return String.valueOf(stderr)
-        .lines()
-        .filter(line -> !line.matches("\\s+at .*") && !line.matches("\\s+\\.\\.\\. \\d+ more"))
-        .collect(java.util.stream.Collectors.joining("\n"));
+  static final String COMPARISON_POLICY =
+      "stdout: exact bytes; stderr: exact bytes including line endings, except JVM stack-frame"
+          + " lines (TAB at pkg.Class.method(File.java:N) and TAB ... N more), whose line numbers move"
+          + " in refactoring; exit code; both runs must start and finish within limits";
+
+  private static final java.util.regex.Pattern FRAME =
+      java.util.regex.Pattern.compile(
+          "\\tat [^\\s()]+\\((?:[^()\\r\\n]+\\.java:\\d+|[^()\\r\\n]+\\.java|Native Method|Unknown Source)\\)(?:\\r?\\n)?"
+              + "|\\t\\.\\.\\. \\d+ (?:more|common frames omitted)(?:\\r?\\n)?");
+
+  /** Raw stderr bytes with only genuine JVM frame lines removed; line endings are preserved. */
+  static String stderrSignature(byte[] bytes) throws Exception {
+    String latin = new String(bytes, StandardCharsets.ISO_8859_1);
+    StringBuilder kept = new StringBuilder();
+    java.util.regex.Matcher lines = java.util.regex.Pattern.compile("[^\n]*(?:\n|$)").matcher(latin);
+    while (lines.find()) {
+      String line = lines.group();
+      if (line.isEmpty()) continue;
+      if (!FRAME.matcher(line).matches()) kept.append(line);
+    }
+    return digest(kept.toString().getBytes(StandardCharsets.ISO_8859_1));
   }
 
   static boolean sameBehavior(Map<String, Object> x, Map<String, Object> y) {
-    return Objects.equals(x.get("stdoutSha256"), y.get("stdoutSha256"))
-        && stderrSignature(x.get("stderr")).equals(stderrSignature(y.get("stderr")))
+    return Boolean.TRUE.equals(x.getOrDefault("started", true))
+        && Boolean.TRUE.equals(y.getOrDefault("started", true))
+        && Objects.equals(x.get("stdoutSha256"), y.get("stdoutSha256"))
+        && Objects.equals(x.get("stderrSignature"), y.get("stderrSignature"))
         && Objects.equals(x.get("exitCode"), y.get("exitCode"))
         && !Boolean.TRUE.equals(x.get("timedOut"))
         && !Boolean.TRUE.equals(y.get("timedOut"))
@@ -362,6 +408,8 @@ public final class Runner {
         digest(out.bytes()),
         "stderrSha256",
         digest(err.bytes()),
+        "stderrSignature",
+        stderrSignature(err.bytes()),
         "exitCode",
         done ? p.exitValue() : -1,
         "timedOut",

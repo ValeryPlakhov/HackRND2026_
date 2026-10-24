@@ -3,20 +3,21 @@
  * coloured data pins carry values. The graph of a method is the source of Java for its body.
  */
 
+/** Value colours by type, tuned to the IDE palette (flow ports use the neutral flow colour). */
 export const PIN_COLORS = {
-  exec: "#f2f4f8",
-  boolean: "#e05b5b",
-  int: "#3fd1b4",
-  long: "#2fb39a",
-  short: "#2fb39a",
-  byte: "#2fb39a",
-  double: "#8ccf4d",
-  float: "#8ccf4d",
-  char: "#4fa3e0",
-  String: "#e05bd6",
-  object: "#5b8de0",
-  array: "#e0a95b",
-  any: "#9aa6ba",
+  exec: "#53607a",
+  boolean: "#c0485a",
+  int: "#1f8f8a",
+  long: "#177571",
+  short: "#177571",
+  byte: "#177571",
+  double: "#5d9a2e",
+  float: "#5d9a2e",
+  char: "#3f86c7",
+  String: "#b5489c",
+  object: "#3767df",
+  array: "#c27c16",
+  any: "#8a94a8",
 };
 
 const NUMERIC = new Set(["int", "long", "short", "byte", "double", "float", "char"]);
@@ -235,6 +236,25 @@ export function linkKey(link) {
   return `${link.from}:${link.fromPin}->${link.to}:${link.toPin}`;
 }
 
+const NUMERIC_ORDER = ["byte", "short", "char", "int", "long", "float", "double"];
+const BOXED = { Integer: "int", Long: "long", Short: "short", Byte: "byte", Character: "char", Double: "double", Float: "float", Boolean: "boolean" };
+
+/**
+ * Whether a value of type `from` may feed an input of type `to`. Unknown or reference types are
+ * accepted (javac decides later); clear primitive mismatches are rejected at wiring time.
+ */
+export function assignable(from = "any", to = "any") {
+  const a = BOXED[from] ?? from;
+  const b = BOXED[to] ?? to;
+  if (a === "any" || b === "any" || a === b) return true;
+  if (a === "boolean" || b === "boolean") return a === b || b === "object" || to === "Object";
+  if (NUMERIC_ORDER.includes(a) && NUMERIC_ORDER.includes(b)) return NUMERIC_ORDER.indexOf(a) <= NUMERIC_ORDER.indexOf(b);
+  if (a === "String") return b === "String" || b === "object" || b === "Object" || b === "CharSequence";
+  if (b === "String") return a === "object" || a === "Object";
+  if (NUMERIC_ORDER.includes(a) && b === "array") return false;
+  return true;
+}
+
 /** Exec outputs and data inputs accept a single wire; data outputs fan out freely. */
 export function connect(graph, from, fromPin, to, toPin) {
   const source = graph.nodes.find((node) => node.id === from);
@@ -243,6 +263,7 @@ export function connect(graph, from, fromPin, to, toPin) {
   const out = pinsOf(source, graph).outputs.find((pin) => pin.id === fromPin);
   const input = pinsOf(target, graph).inputs.find((pin) => pin.id === toPin);
   if (!out || !input || out.kind !== input.kind) return false;
+  if (out.kind === "data" && !assignable(out.type, input.type)) return false;
   graph.links = graph.links.filter((link) =>
     out.kind === "exec"
       ? !(link.from === from && link.fromPin === fromPin)

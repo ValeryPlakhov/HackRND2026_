@@ -68,20 +68,23 @@ public final class Transformations {
       throw new IllegalArgumentException(
           "Нет безопасного шаблона. Автозамена доступна только для чистого подсчёта упорядоченных"
               + " равных пар int[].");
+    // Helper names must not collide with anything in the file (parameters, fields, types).
+    String frequency = fresh(m.source, "bpFrequency");
+    String value = fresh(m.source, "bpValue");
+    String matches = fresh(m.source, "bpMatches");
+    String count = fresh(m.source, "bpCount");
     // All int arithmetic intentionally stays int: overflow matches Java's modular semantics.
     String body =
         "{\n"
-            + "        java.util.Map<Integer, Integer> bpFrequency = new java.util.HashMap<>();\n"
-            + "        for (int bpValue : "
-            + param
-            + ") {\n"
-            + "            bpFrequency.merge(bpValue, 1, Integer::sum);\n"
+            + "        java.util.Map<Integer, Integer> " + frequency + " = new java.util.HashMap<>();\n"
+            + "        for (int " + value + " : " + param + ") {\n"
+            + "            " + frequency + ".merge(" + value + ", 1, Integer::sum);\n"
             + "        }\n"
-            + "        int bpMatches = 0;\n"
-            + "        for (int bpCount : bpFrequency.values()) {\n"
-            + "            bpMatches += bpCount * bpCount;\n"
+            + "        int " + matches + " = 0;\n"
+            + "        for (int " + count + " : " + frequency + ".values()) {\n"
+            + "            " + matches + " += " + count + " * " + count + ";\n"
             + "        }\n"
-            + "        return bpMatches;\n"
+            + "        return " + matches + ";\n"
             + "    }";
     String result =
         replace(m.source, m.start(method.tree().getBody()), m.end(method.tree().getBody()), body);
@@ -210,6 +213,14 @@ public final class Transformations {
     return files;
   }
 
+  /** A name that does not occur as an identifier anywhere in the source. */
+  static String fresh(String source, String base) {
+    String name = base;
+    for (int i = 2; java.util.regex.Pattern.compile("\\b" + java.util.regex.Pattern.quote(name) + "\\b").matcher(source).find(); i++)
+      name = base + i;
+    return name;
+  }
+
   static String sibling(String fileName, String simple) {
     int slash = fileName.lastIndexOf('/');
     return (slash < 0 ? "" : fileName.substring(0, slash + 1)) + simple + ".java";
@@ -261,6 +272,23 @@ public final class Transformations {
         Set<String> calls = identifiers(t.getBody(), true);
         Set<String> locals = locals(t);
         if (names.contains("this") || names.contains("super")) reason = "ссылка this/super";
+        // Names are compared as strings, not resolved symbols. Where that could change what a name
+        // binds to after the move, the method stays put instead of risking a silent rebinding.
+        for (String name : names) {
+          if (reason != null) break;
+          if (values.containsKey(name) && locals.contains(name))
+            reason = "локальная переменная " + name + " совпадает с полем класса: перенос мог бы изменить привязку имени";
+          else if (owner.getExtendsClause() != null
+              && !values.containsKey(name)
+              && !locals.contains(name)
+              && Character.isLowerCase(name.charAt(0)))
+            reason = "класс наследует члены, а имя " + name + " не разрешено в самом классе";
+        }
+        for (String name : calls) {
+          if (reason != null) break;
+          if (owner.getExtendsClause() != null && !methods.containsKey(name))
+            reason = "класс наследует члены, а метод " + name + "() не объявлен в самом классе";
+        }
         for (String name : names) {
           if (reason != null) break;
           Set<Modifier> modifiers = values.get(name);

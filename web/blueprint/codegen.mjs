@@ -64,7 +64,9 @@ export function generate(graph, { indent = "        " } = {}) {
       case "op": {
         if (p.unary) {
           const a = sub("a");
-          return { code: `${p.op}${wrap(a, 14)}`, precedence: 14 };
+          const operand = wrap(a, 15);
+          const fuses = /^[+-]$/.test(p.op) && /^[+-]/.test(operand);
+          return { code: `${p.op}${fuses ? `(${operand})` : operand}`, precedence: 14 };
         }
         const level = PRECEDENCE[p.op] ?? 1;
         return { code: `${wrap(sub("a"), level)} ${p.op} ${wrap(sub("b"), level, true)}`, precedence: level };
@@ -77,8 +79,10 @@ export function generate(graph, { indent = "        " } = {}) {
         return { code: `${wrap(sub("target"), 16)}.${p.name}`, precedence: 16 };
       case "index":
         return { code: `${wrap(sub("array"), 16)}[${sub("index").code}]`, precedence: 16 };
-      case "cast":
-        return { code: `(${p.type}) ${wrap(sub("value"), 14)}`, precedence: 14 };
+      case "cast": {
+        const operand = wrap(sub("value"), 14);
+        return { code: `(${p.type}) ${/^[+-]/.test(operand) && !/^(int|long|short|byte|char|double|float|boolean)$/.test(p.type) ? `(${operand})` : operand}`, precedence: 14 };
+      }
       case "reroute":
         return sub("a");
       default:
@@ -89,7 +93,8 @@ export function generate(graph, { indent = "        " } = {}) {
   function callCode(node, sub) {
     const p = node.props ?? {};
     const args = Array.from({ length: Number(p.argc ?? 0) }, (_, i) => sub("a" + i).code).join(", ");
-    const target = p.targetPin ? `${sub("target").code}.` : p.target ? `${p.target}.` : "";
+    const receiver = p.targetPin ? sub("target") : null;
+    const target = receiver ? `${receiver.precedence < 16 ? `(${receiver.code})` : receiver.code}.` : p.target ? `${p.target}.` : "";
     return `${target}${p.name}(${args})`;
   }
 
@@ -107,6 +112,7 @@ export function generate(graph, { indent = "        " } = {}) {
       if (!node) break;
       const p = node.props ?? {};
       const sub = (pin, type) => input(node, pin, type).code;
+      if (p.comment) for (const line of reindent(String(p.comment), pad)) lines.push(line);
       const block = (pin) => {
         const inner = chain(next(node.id, pin), depth + 1);
         return inner.length ? inner : [];
@@ -158,6 +164,7 @@ export function generate(graph, { indent = "        " } = {}) {
         default:
           throw new CodegenError(`Узел «${node.type}» нельзя подключать к exec-проводу`, node.id);
       }
+      if (p.after) for (const line of reindent(String(p.after), pad)) lines.push(line);
       if (["return", "throw", "break", "continue"].includes(node.type)) break;
       id = next(node.id, "then");
     }

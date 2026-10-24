@@ -191,36 +191,65 @@ public final class RefactorPlans {
 
   // ---------------------------------------------------------------- collection plans
 
+  /** Immutable value types: equals/hashCode are fixed for an element's lifetime. */
   private static final Set<String> VALUE_TYPES =
       Set.of(
           "String", "Integer", "Long", "Short", "Byte", "Character", "Boolean", "Double", "Float",
-          "java.lang.String", "java.lang.Integer", "java.lang.Long", "UUID", "BigInteger",
-          "BigDecimal", "LocalDate");
+          "java.lang.String", "java.lang.Integer", "java.lang.Long", "java.lang.Character");
+  /** Calls that neither change the list nor hand out a view through which it could change. */
   private static final Set<String> READ_ONLY =
-      Set.of(
-          "size", "get", "isEmpty", "iterator", "stream", "forEach", "toString", "toArray",
-          "indexOf", "lastIndexOf", "contains", "getFirst", "getLast", "subList", "hashCode");
+      Set.of("size", "get", "isEmpty", "toString", "toArray", "indexOf", "lastIndexOf", "contains", "getFirst", "getLast", "hashCode");
 
-  /** Types whose equals and hashCode agree, so a HashSet answers like List.contains. */
+  /** Value types plus enums declared here; user classes with equals/hashCode may have mutable keys. */
   private Set<String> hashableTypes() {
     Set<String> types = new HashSet<>(VALUE_TYPES);
     for (Tree type : model.unit.getTypeDecls())
-      if (type instanceof ClassTree c) {
-        String name = c.getSimpleName().toString();
-        if (c.getKind() == Tree.Kind.RECORD || c.getKind() == Tree.Kind.ENUM) types.add(name);
-        boolean equals = false;
-        boolean hash = false;
-        for (Tree member : c.getMembers())
-          if (member instanceof MethodTree m) {
-            if (m.getName().contentEquals("equals") && m.getParameters().size() == 1) equals = true;
-            if (m.getName().contentEquals("hashCode") && m.getParameters().isEmpty()) hash = true;
-          }
-        if (equals && hash) types.add(name);
-      }
+      if (type instanceof ClassTree c && c.getKind() == Tree.Kind.ENUM) types.add(c.getSimpleName().toString());
     return types;
   }
 
-  private record ListVariable(VariableTree declaration, String element, boolean fresh) {}
+  /**
+   * Offset of the first use of the local list that is not the receiver of a direct method call
+   * (alias, argument, reassignment); -1 when a lambda, local class or method reference captures it.
+   * Integer.MAX_VALUE when every use is a direct call on it.
+   */
+  private int firstEscape(JavaModel.Method method, VariableTree declaration) {
+    String name = declaration.getName().toString();
+    int[] first = {Integer.MAX_VALUE};
+    boolean[] ok = {true};
+    new com.sun.source.util.TreePathScanner<Void, Integer>() {
+      public Void visitIdentifier(IdentifierTree x, Integer nested) {
+        if (!x.getName().contentEquals(name)) return null;
+        var path = getCurrentPath();
+        Tree parent = path.getParentPath().getLeaf();
+        Tree grand = path.getParentPath().getParentPath() == null ? null : path.getParentPath().getParentPath().getLeaf();
+        boolean receiver =
+            parent instanceof MemberSelectTree select
+                && select.getExpression() == x
+                && grand instanceof MethodInvocationTree call
+                && call.getMethodSelect() == parent;
+        if (nested > 0) ok[0] = false;
+        else if (!receiver) first[0] = Math.min(first[0], model.start(x));
+        return null;
+      }
+
+      public Void visitLambdaExpression(LambdaExpressionTree x, Integer nested) {
+        return super.visitLambdaExpression(x, nested + 1);
+      }
+
+      public Void visitClass(ClassTree x, Integer nested) {
+        return super.visitClass(x, nested + 1);
+      }
+
+      public Void visitMemberReference(MemberReferenceTree x, Integer nested) {
+        if (x.getQualifierExpression() instanceof IdentifierTree id && id.getName().contentEquals(name)) ok[0] = false;
+        return super.visitMemberReference(x, nested);
+      }
+    }.scan(new com.sun.source.util.TreePath(new com.sun.source.util.TreePath(model.unit), method.tree().getBody()), 0);
+    return ok[0] ? first[0] : -1;
+  }
+
+  private record ListVariable(VariableTree declaration, String element, boolean fresh, int escape) {}
 
   /** Local lists and parameters of a method with a hash-safe element type. */
   private Map<String, ListVariable> lists(JavaModel.Method method) {
@@ -254,12 +283,17 @@ public final class RefactorPlans {
           || type.getTypeArguments().size() != 1) continue;
       String element = type.getTypeArguments().get(0).toString();
       if (!hashable.contains(element)) continue;
-      boolean fresh =
-          variable.getInitializer() instanceof NewClassTree created
-              && created.getArguments().isEmpty()
+      // Only a list created here (empty or as a copy) is known to be non-null and unshared.
+      boolean created =
+          variable.getInitializer() instanceof NewClassTree construction
+              && construction.getArguments().size() <= 1
+              && construction.getClassBody() == null
               && Set.of("ArrayList", "LinkedList")
-                  .contains(created.getIdentifier().toString().replaceAll("<.*", ""));
-      lists.put(name, new ListVariable(variable, element, fresh));
+                  .contains(construction.getIdentifier().toString().replaceAll("<.*", ""));
+      int escape = created ? firstEscape(method, variable) : -1;
+      if (escape < 0) continue;
+      boolean empty = ((NewClassTree) variable.getInitializer()).getArguments().isEmpty();
+      lists.put(name, new ListVariable(variable, element, empty, escape));
     }
     return lists;
   }
@@ -323,7 +357,9 @@ public final class RefactorPlans {
             && member(add).equals("add")
             && receiver(contains).equals(receiver(add))
             && add.getArguments().size() == 1
-            && add.getArguments().get(0).toString().equals(contains.getArguments().get(0).toString())) {
+            && contains.getArguments().get(0) instanceof IdentifierTree checked
+            && add.getArguments().get(0) instanceof IdentifierTree added
+            && checked.getName().contentEquals(added.getName())) {
           guards.computeIfAbsent(receiver(contains), key -> new ArrayList<>()).add(tree);
           guardedAdds.add(add);
           guardedContains.add(contains);
@@ -339,9 +375,7 @@ public final class RefactorPlans {
         if (target != null && guards.containsKey(target)
             && !guardedAdds.contains(call) && !guardedContains.contains(call)
             && !READ_ONLY.contains(member(call))) safe.put(target, false);
-        for (ExpressionTree argument : call.getArguments())
-          if (unwrap(argument) instanceof IdentifierTree id && guards.containsKey(id.getName().toString()))
-            safe.put(id.getName().toString(), false);
+        // Passing the list on is judged by position: ListVariable.escape must follow the last guard.
         return super.visitMethodInvocation(call, v);
       }
 
@@ -361,6 +395,11 @@ public final class RefactorPlans {
       String list = entry.getKey();
       ListVariable variable = lists.get(list);
       if (Boolean.FALSE.equals(safe.get(list)) || !variable.fresh()) continue;
+      int lastGuard = entry.getValue().stream().mapToInt(model::end).max().orElse(-1);
+      int scopeEnd = lastGuard;
+      for (StatementTree top : method.tree().getBody().getStatements())
+        if (model.start(top) <= lastGuard && lastGuard <= model.end(top)) scopeEnd = model.end(top);
+      if (variable.escape() < scopeEnd) continue;
       String set = fresh(list + "Seen", taken);
       int start = model.start(variable.declaration());
       int end = entry.getValue().stream().mapToInt(model::end).max().orElse(-1);
@@ -413,7 +452,7 @@ public final class RefactorPlans {
     if (lists.isEmpty()) return;
     Set<String> taken = names(method.tree());
     new TreeScanner<Void, Void>() {
-      void loop(StatementTree loop, StatementTree body) {
+      void loop(StatementTree loop, Tree body) {
         Map<String, List<MethodInvocationTree>> lookups = new LinkedHashMap<>();
         Set<String> modified = new HashSet<>();
         new TreeScanner<Void, Void>() {
@@ -452,7 +491,7 @@ public final class RefactorPlans {
           String list = entry.getKey();
           if (modified.contains(list)) continue;
           ListVariable variable = lists.get(list);
-          if (model.start(variable.declaration()) > start) continue;
+          if (model.start(variable.declaration()) > start || variable.escape() < end) continue;
           String set = fresh(list + "Set", taken);
           StringBuilder text = new StringBuilder(model.source.substring(start, end));
           List<MethodInvocationTree> calls = new ArrayList<>(entry.getValue());
@@ -485,17 +524,17 @@ public final class RefactorPlans {
       }
 
       public Void visitEnhancedForLoop(EnhancedForLoopTree x, Void v) {
-        loop(x, x.getStatement());
+        loop(x, x);
         return super.visitEnhancedForLoop(x, v);
       }
 
       public Void visitForLoop(ForLoopTree x, Void v) {
-        loop(x, x.getStatement());
+        loop(x, x);
         return super.visitForLoop(x, v);
       }
 
       public Void visitWhileLoop(WhileLoopTree x, Void v) {
-        loop(x, x.getStatement());
+        loop(x, x);
         return super.visitWhileLoop(x, v);
       }
 

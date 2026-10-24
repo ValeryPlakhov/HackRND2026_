@@ -68,6 +68,7 @@ def main():
             run([sys.executable, 'tests/test_studio_api.py'], env=environment, log='studio-integration.log')
             run([sys.executable, 'tests/test_ide_api.py'], env=environment, log='ide-integration.log')
             run([executable('node'), 'tests/blueprint_roundtrip.mjs', environment['BLUEPRINTS_URL']], env=environment, log='blueprint-roundtrip.log')
+            run([sys.executable, 'tests/test_audit_regressions.py'], env=environment, log='audit-regressions.log')
         finally:
             server.terminate()
             try:
@@ -84,10 +85,11 @@ def main():
     studio = json.loads((ROOT / 'docs/studio-test-summary.json').read_text())
     ide = json.loads((ROOT / 'docs/ide-test-summary.json').read_text())
     roundtrip = json.loads((ROOT / 'docs/blueprint-roundtrip.json').read_text(encoding='utf-8'))
+    audit = json.loads((ROOT / 'docs/audit-test-summary.json').read_text(encoding='utf-8'))
     roundtrip = {'tests': len(roundtrip['projects']), 'passed': roundtrip['passed'], 'projects': roundtrip['projects']}
-    summary = {'passed': unit['passed'] and legacy['passed'] and studio['passed'] and ide['passed'] and roundtrip['passed'],
-               'tests': unit['tests'] + legacy['tests'] + studio['tests'] + ide['tests'] + roundtrip['tests'] + (desktop['tests'] if desktop else 0),
-               'unit': unit, 'api': legacy, 'studioApi': studio, 'ideApi': ide, 'blueprintRoundTrip': roundtrip,
+    summary = {'passed': unit['passed'] and legacy['passed'] and studio['passed'] and ide['passed'] and roundtrip['passed'] and audit['passed'],
+               'tests': unit['tests'] + legacy['tests'] + studio['tests'] + ide['tests'] + roundtrip['tests'] + audit['tests'] + (desktop['tests'] if desktop else 0),
+               'unit': unit, 'api': legacy, 'studioApi': studio, 'ideApi': ide, 'blueprintRoundTrip': roundtrip, 'auditRegressions': audit,
                'desktopRuntime': desktop,
                'durationSeconds': round(time.monotonic() - started, 2),
                'environment': {'python': sys.version.split()[0], 'platform': sys.platform,

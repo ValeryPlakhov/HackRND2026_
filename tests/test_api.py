@@ -96,8 +96,16 @@ class IntegrationTests(unittest.TestCase):
         report = compare(FILES,result['files'],['0\n','5\n1 2 1 2 1\n','-1\n'])
         self.assertTrue(report['passed'],report)
 
-    def test_09_extraction_rejects_hidden_field_dependency(self):
-        source = 'public class Field { static int x=3; static int f(int n) { return x+n; } }'
+    def test_09_extraction_qualifies_hidden_field_dependency(self):
+        source = 'public class Field { static int x=3; static int f(int n) { return x+n; } public static void main(String[] a){ System.out.println(f(4)); } }'
+        model = post('analyze', {'source':source})
+        result = post('extract', {'files':{'Field.java':source},'fileName':'Field.java','methodId':method(model,'f')['id']})
+        self.assertIn('Field.x', result['files']['BlueprintFunctions.java'])
+        report = compare({'Field.java':source}, result['files'], [''])
+        self.assertTrue(report['passed'], report)
+
+    def test_09b_extraction_rejects_instance_dependency(self):
+        source = 'public class Field { int x=3; int f(int n) { return x+n; } public static void main(String[] a){ System.out.println(new Field().f(4)); } }'
         model = post('analyze', {'source':source})
         with self.assertRaises(urllib.error.HTTPError) as caught:
             post('extract', {'files':{'Field.java':source},'fileName':'Field.java','methodId':method(model,'f')['id']})
