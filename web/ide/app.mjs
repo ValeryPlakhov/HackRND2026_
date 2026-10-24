@@ -23,6 +23,8 @@ import {
   normalizeEol,
 } from "./core.mjs";
 import * as view from "./views.mjs";
+import { QualityLab } from "./quality.mjs";
+import { nodeFindings } from "./quality-views.mjs";
 
 const DEFAULT_SETTINGS = {
   theme: "light",
@@ -90,6 +92,7 @@ export class IdeApplication {
       this.overviewState = null;
     }, 1000);
     this.controller = new AbortController();
+    this.quality = new QualityLab(this);
   }
 
   async start() {
@@ -212,6 +215,8 @@ export class IdeApplication {
       explorer: "Проект",
       search: "Поиск",
       outline: "Структура",
+      analysis: "Анализ проекта",
+      improve: "Улучшения",
       git: "Изменения",
       history: "История",
     };
@@ -236,7 +241,9 @@ export class IdeApplication {
           ? view.iconButton("refresh-git", "Обновить Git", "loop")
           : this.sidebar === "history"
             ? view.iconButton("refresh-history", "Обновить историю", "loop")
-            : "";
+            : this.sidebar === "analysis" && this.project
+              ? view.iconButton("quality-analyse", "Проанализировать заново", "loop")
+              : "";
     const body = $("#ide-sidebar-body", this.root);
     if (this.sidebar === "explorer")
       body.innerHTML = view.projectTree(
@@ -252,6 +259,8 @@ export class IdeApplication {
         : view.projectTree(null);
     if (this.sidebar === "outline")
       body.innerHTML = view.outlineSidebar(this.documents.active);
+    if (this.sidebar === "analysis" || this.sidebar === "improve")
+      body.innerHTML = this.quality.sidebarHtml(this.sidebar);
     if (this.sidebar === "git")
       body.innerHTML = view.gitSidebar(this.gitState, false);
     if (this.sidebar === "history")
@@ -334,11 +343,20 @@ export class IdeApplication {
       this.selectedNode =
         method.graph.nodes.find((node) => node.id === file.selectedNode) ??
         null;
-      $("#ide-node-inspector", target).innerHTML = view.nodeInspector(
+      $("#ide-node-inspector", target).innerHTML = this.inspectorHtml(
         this.selectedNode,
         file,
       );
+      this.quality.decorateGraph(this.graph, file, method);
     }
+  }
+
+  inspectorHtml(node, file) {
+    return view.nodeInspector(
+      node,
+      file,
+      node && file ? nodeFindings(this.quality.methodFindings(file, node)) : "",
+    );
   }
 
   renderPanel() {
@@ -365,6 +383,8 @@ export class IdeApplication {
     }
     if (this.panel === "problems")
       target.innerHTML = view.problemsPanel(problems);
+    target.classList.toggle("quality-panel", this.panel === "verify");
+    if (this.panel === "verify") this.quality.renderPanel(target);
     if (this.panel === "run")
       target.innerHTML = view.runSettingsPanel(
         this.runConfig,
@@ -406,6 +426,7 @@ export class IdeApplication {
     git.hidden = !this.gitState?.available;
     if (this.gitState?.available)
       git.innerHTML = view.glyph("branch", 12) + e(this.gitState.branch);
+    this.quality.renderStatus();
     this.bridge.dirty(this.documents.hasDirty).catch(() => {});
     document.title = `${file ? file.name + (file.dirty ? " ●" : "") + " — " : ""}${this.project ? this.project.name + " — " : ""}Blueprints IDE`;
   }
@@ -416,6 +437,8 @@ export class IdeApplication {
   }
 
   documentChanged(event) {
+    if (["content", "external", "renamed"].includes(event.kind))
+      this.quality.invalidate();
     if (
       ["content", "metadata", "external", "renamed"].includes(event.kind) &&
       this.taskState
@@ -455,7 +478,7 @@ export class IdeApplication {
       if (this.selectedNode) {
         this.selectedNode = null;
         const inspector = $("#ide-node-inspector", this.root);
-        if (inspector) inspector.innerHTML = view.nodeInspector(null, file);
+        if (inspector) inspector.innerHTML = this.inspectorHtml(null, file);
       }
     }
     this.overviewSoon();
@@ -523,6 +546,8 @@ export class IdeApplication {
     this.taskState = null;
     this.taskOutdated = false;
     this.searchState.result = null;
+    this.runConfig = { mainClass: "", input: "" };
+    this.quality.reset(null);
     this.sidebar = "explorer";
     this.sidebarHidden = false;
     this.panelHidden = true;
@@ -543,6 +568,7 @@ export class IdeApplication {
     }
     this.renderAll();
     if (this.documents.active?.language === "java") await this.analyse();
+    await this.quality.open(this.project);
     this.notify(
       this.bridge.desktop
         ? `Открыт проект «${this.project.name}»`
@@ -702,6 +728,8 @@ export class IdeApplication {
 
   async filesChanged(event) {
     if (event.id !== this.project?.id) return;
+    if (event.paths.some((path) => path.endsWith(".java")))
+      this.quality.invalidate();
     if (
       this.taskState &&
       event.paths.some(
@@ -874,7 +902,7 @@ export class IdeApplication {
       this.documents.active.selectedNode = node?.id ?? null;
     const target = $("#ide-node-inspector", this.root);
     if (target)
-      target.innerHTML = view.nodeInspector(node, this.documents.active);
+      target.innerHTML = this.inspectorHtml(node, this.documents.active);
   }
 
   async selectMethod(id) {
@@ -884,7 +912,7 @@ export class IdeApplication {
     file.selectedNode = null;
     this.selectedNode = null;
     this.renderGraph();
-    if (this.sidebar === "outline") this.renderSidebar();
+    if (["outline", "improve"].includes(this.sidebar)) this.renderSidebar();
   }
 
   setMode(mode) {
@@ -1058,6 +1086,7 @@ export class IdeApplication {
               this.disposeCenter();
               this.documents.clear();
               this.project = null;
+              this.quality.reset(null);
               this.tree.clear();
               this.renderAll();
             }
@@ -1195,11 +1224,14 @@ export class IdeApplication {
       case "about":
         this.showModal(view.aboutModal(this.bootInfo));
         break;
-      case "open-builder":
-        await this.bridge.openPage("builder");
+      case "open-example":
+        await this.switchProject(() =>
+          this.bridge.openExample(element?.dataset.example ?? "shop-monolith"),
+        );
         break;
-      case "open-expert":
-        await this.bridge.openPage("expert");
+      case "verify-open":
+        if (!this.project) await this.action("open-folder");
+        else this.quality.openPanel();
         break;
       case "close-modal":
         this.closeModal();
@@ -1244,14 +1276,41 @@ export class IdeApplication {
         }
         break;
       case "edit-node":
+      case "node-insert-before":
+      case "node-insert-after":
         if (this.selectedNode && file?.currentModel && !file.readOnly) {
+          const action =
+            name === "edit-node"
+              ? "replace"
+              : name === "node-insert-before"
+                ? "before"
+                : "after";
           this.modalContext = {
             kind: "node",
             file,
             node: { ...this.selectedNode },
             revision: file.revision,
+            action,
           };
-          this.showModal(view.nodeEditModal(this.selectedNode, file));
+          this.showModal(view.nodeEditModal(this.selectedNode, file, action));
+        }
+        break;
+      case "node-delete":
+        if (this.selectedNode && file?.currentModel && !file.readOnly) {
+          const result = await this.client.edit(
+            file.content,
+            file.methodId,
+            this.selectedNode.id,
+            "delete",
+            "",
+          );
+          file.update(result.source);
+          file.applyModel(result.model, file.revision);
+          file.selectedNode = null;
+          this.selectedNode = null;
+          this.editor?.refresh();
+          this.renderGraph();
+          this.notify("Блок удалён из Java-кода. Сохраните файл, когда проверите результат.");
         }
         break;
       case "graph-fit":
@@ -1476,6 +1535,8 @@ export class IdeApplication {
         if (this.mode === "blueprint") this.setMode("split");
         this.editor?.command(name);
         break;
+      default:
+        await this.quality.action(name, element);
     }
   }
 
@@ -1598,7 +1659,7 @@ export class IdeApplication {
             context.file.content,
             context.file.methodId,
             context.node.id,
-            "replace",
+            context.action ?? "replace",
             String(data.get("code")),
           );
           if (context.file.revision !== context.revision)
@@ -1608,7 +1669,9 @@ export class IdeApplication {
           this.closeModal();
           this.editor?.refresh();
           this.notify(
-            "Блок изменён. Нажмите «Сохранить», чтобы записать Java-файл.",
+            context.action && context.action !== "replace"
+              ? "Новый блок добавлен в Java-код. Сохраните файл, когда проверите результат."
+              : "Блок изменён. Нажмите «Сохранить», чтобы записать Java-файл.",
           );
         } catch (error) {
           const target = $("#node-edit-error", this.dialog);
@@ -1621,11 +1684,14 @@ export class IdeApplication {
         }
         break;
       }
+      default:
+        await this.quality.submit(form);
     }
   }
 
   bind() {
     const signal = this.controller.signal;
+    this.quality.bind(this.root, signal);
     document.addEventListener(
       "click",
       (event) => {
@@ -1825,7 +1891,7 @@ const root = typeof document === "undefined" ? null : $("#ide-root");
 if (root) {
   const application = new IdeApplication(root);
   application.start().catch((error) => {
-    root.innerHTML = `<div class="ide-start-error"><h1>Не удалось открыть IDE</h1><p>${e(readableError(error))}</p><a href="/index.html">Открыть визуальный конструктор</a></div>`;
+    root.innerHTML = `<div class="ide-start-error"><h1>Не удалось открыть IDE</h1><p>${e(readableError(error))}</p></div>`;
     console.error(error);
   });
 }

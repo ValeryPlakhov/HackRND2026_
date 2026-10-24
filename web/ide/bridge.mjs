@@ -129,8 +129,11 @@ export class NativeBridge {
   dirty(value) {
     return this.call("dirty", value);
   }
-  openPage(page) {
-    return this.call("openPage", page);
+  projectState(id, value) {
+    return this.call("projectState", id, value);
+  }
+  openExample(name) {
+    return this.call("openExample", name);
   }
   smokeReady(value) {
     return this.api.smokeReady?.(value);
@@ -163,7 +166,7 @@ export class BrowserBridge {
       );
     } catch {}
     return {
-      version: "3.0.0",
+      version: "4.0.0",
       desktop: false,
       settings: this.savedSettings,
       recent: [],
@@ -175,6 +178,7 @@ export class BrowserBridge {
   async demo() {
     this.files = new Map(Object.entries(DEMO_FILES));
     this.versions.clear();
+    this.qualityState = null;
     this.imported = false;
     this.project = {
       id: crypto.randomUUID(),
@@ -604,13 +608,13 @@ export class BrowserBridge {
   async dirty() {
     return {};
   }
-  async openPage(page) {
-    window.open(
-      page === "builder" ? "/index.html" : "/expert.html",
-      "_blank",
-      "noopener",
-    );
-    return { opened: true };
+  async projectState(id, value) {
+    this.require(id);
+    if (value) this.qualityState = structuredClone(value);
+    return structuredClone(this.qualityState ?? { baseline: null, cases: [] });
+  }
+  async openExample() {
+    return this.demo();
   }
 
   async startTask(id, request) {

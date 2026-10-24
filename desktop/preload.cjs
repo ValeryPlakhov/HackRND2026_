@@ -13,7 +13,7 @@ const subscribe = (channel) => (callback) => {
 contextBridge.exposeInMainWorld(
   "blueprintsDesktop",
   Object.freeze({
-    version: "3.0.0",
+    version: "4.0.0",
     smokeReady: (value) => invoke("smoke-ready", value),
     boot: () => invoke("boot"),
     chooseFolder: () => invoke("choose-folder"),
@@ -46,7 +46,8 @@ contextBridge.exposeInMainWorld(
     task: (id) => invoke("task-get", { taskId: id }),
     stopTask: (id) => invoke("task-stop", { taskId: id }),
     dirty: (value) => invoke("dirty", { value: value === true }),
-    openPage: (page) => invoke("open-page", { page }),
+    projectState: (id, value) => invoke("project-state", { id, value }),
+    openExample: (name) => invoke("open-example", { name }),
     onFilesChanged: subscribe("files-changed"),
     onTaskChanged: subscribe("task-changed"),
     onCommand: subscribe("command"),

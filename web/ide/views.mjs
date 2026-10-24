@@ -25,12 +25,14 @@ export const iconButton = (action, label, name, attributes = "") =>
 
 export function shell(desktop) {
   return `<div class="ide-shell">
-    <header class="ide-titlebar"><button class="ide-brand" data-action="overview" aria-label="Blueprints IDE"><img src="/ide/mark.svg" alt=""/><span>Blueprints <b>IDE</b></span><small>3</small></button><button class="ide-command-trigger" data-action="palette">${glyph("search", 15)}<span>Найти файл или команду</span><kbd>Ctrl K</kbd></button><div class="ide-title-actions"><button class="ide-language" data-action="languages"><span class="language-dot"></span>Java ${glyph("down", 12)}</button>${iconButton("settings", "Настройки", "settings")}</div></header>
-    ${!desktop ? `<div class="ide-preview-banner"><span>${glyph("info", 13)}Веб-предпросмотр интерфейса · сохранение в выбранную папку доступно в EXE</span><a href="/index.html">Визуальный конструктор ${glyph("external", 12)}</a></div>` : ""}
+    <header class="ide-titlebar"><button class="ide-brand" data-action="overview" aria-label="Blueprints IDE"><img src="/ide/mark.svg" alt=""/><span>Blueprints <b>IDE</b></span><small>4</small></button><button class="ide-command-trigger" data-action="palette">${glyph("search", 15)}<span>Найти файл или команду</span><kbd>Ctrl K</kbd></button><div class="ide-title-actions"><button class="ide-language" data-action="languages"><span class="language-dot"></span>Java ${glyph("down", 12)}</button>${iconButton("settings", "Настройки", "settings")}</div></header>
+    ${!desktop ? `<div class="ide-preview-banner"><span>${glyph("info", 13)}Веб-предпросмотр интерфейса · сохранение в выбранную папку доступно в EXE</span></div>` : ""}
     <div class="ide-body"><nav class="ide-activity" aria-label="Разделы IDE">${[
       ["explorer", "Файлы проекта", "folder"],
       ["search", "Поиск по проекту", "search"],
       ["outline", "Структура Java", "layers"],
+      ["analysis", "Анализ проекта", "target"],
+      ["improve", "Улучшения кода", "sparkle"],
       ["git", "Изменения Git", "diff"],
       ["history", "История файла", "history"],
     ]
@@ -40,17 +42,17 @@ export function shell(desktop) {
       )
       .join(
         "",
-      )}<div class="activity-spacer"></div><button class="activity-item" data-action="open-builder" title="Визуальный конструктор" aria-label="Визуальный конструктор">${glyph("graph", 21)}<span>Создать</span></button><button class="activity-item" data-action="shortcuts" title="Горячие клавиши" aria-label="Горячие клавиши">${glyph("info", 21)}<span>Помощь</span></button></nav>
+      )}<div class="activity-spacer"></div><button class="activity-item" data-action="verify-open" title="Проверка поведения" aria-label="Проверка поведения">${glyph("shield", 21)}<span>Проверка</span></button><button class="activity-item" data-action="shortcuts" title="Горячие клавиши" aria-label="Горячие клавиши">${glyph("info", 21)}<span>Помощь</span></button></nav>
     <aside class="ide-sidebar"><div class="ide-sidebar-head"><h2 id="ide-sidebar-title">Проект</h2><div id="ide-sidebar-actions"></div></div><div id="ide-sidebar-body" class="ide-sidebar-body"></div></aside><div class="ide-sidebar-resizer" role="separator" aria-orientation="vertical" aria-label="Ширина дерева файлов" tabindex="0"></div>
-    <main class="ide-main"><div id="ide-tabs" class="ide-tabs" role="tablist" aria-label="Открытые файлы"></div><div id="ide-toolbar" class="ide-toolbar"></div><div id="ide-content" class="ide-content"></div><div class="ide-panel-resizer" role="separator" aria-orientation="horizontal" aria-label="Высота панели вывода" tabindex="0"></div><section id="ide-panel" class="ide-panel" aria-label="Результаты работы"><div class="ide-panel-head"><div role="tablist" aria-label="Панели результатов"><button data-action="panel" data-panel="output" role="tab" class="active">Вывод</button><button data-action="panel" data-panel="problems" role="tab">Проблемы <span id="ide-problem-count">0</span></button><button data-action="panel" data-panel="run" role="tab">Параметры запуска</button></div><div class="ide-panel-tools">${iconButton("clear-output", "Очистить вывод", "close")}${iconButton("toggle-panel", "Скрыть панель", "down")}</div></div><div id="ide-panel-body" class="ide-panel-body"></div></section></main></div>
-    <footer class="ide-statusbar"><div><button data-action="overview" id="ide-project-status">${glyph("folder", 12)}Нет проекта</button><button data-action="sidebar" data-view="git" id="ide-git-status" hidden></button><span id="ide-save-status">Готово</span></div><div><button data-action="goto-line" id="ide-cursor-status">Стр 1, стлб 1</button><button data-action="toggle-eol" id="ide-eol-status">UTF-8 · LF</button><button data-action="languages">Java 21</button><span class="ide-local-status"><i></i>Локально</span></div></footer>
+    <main class="ide-main"><div id="ide-tabs" class="ide-tabs" role="tablist" aria-label="Открытые файлы"></div><div id="ide-toolbar" class="ide-toolbar"></div><div id="ide-content" class="ide-content"></div><div class="ide-panel-resizer" role="separator" aria-orientation="horizontal" aria-label="Высота панели вывода" tabindex="0"></div><section id="ide-panel" class="ide-panel" aria-label="Результаты работы"><div class="ide-panel-head"><div role="tablist" aria-label="Панели результатов"><button data-action="panel" data-panel="output" role="tab" class="active">Вывод</button><button data-action="panel" data-panel="problems" role="tab">Проблемы <span id="ide-problem-count">0</span></button><button data-action="panel" data-panel="verify" role="tab">Проверка поведения</button><button data-action="panel" data-panel="run" role="tab">Параметры запуска</button></div><div class="ide-panel-tools">${iconButton("clear-output", "Очистить вывод", "close")}${iconButton("toggle-panel", "Скрыть панель", "down")}</div></div><div id="ide-panel-body" class="ide-panel-body"></div></section></main></div>
+    <footer class="ide-statusbar"><div><button data-action="overview" id="ide-project-status">${glyph("folder", 12)}Нет проекта</button><button data-action="sidebar" data-view="git" id="ide-git-status" hidden></button><span id="ide-save-status">Готово</span><button data-action="verify-open" id="ide-quality-status" hidden></button></div><div><button data-action="goto-line" id="ide-cursor-status">Стр 1, стлб 1</button><button data-action="toggle-eol" id="ide-eol-status">UTF-8 · LF</button><button data-action="languages">Java 21</button><span class="ide-local-status"><i></i>Локально</span></div></footer>
   </div>`;
 }
 
 export function welcome({ desktop, recent = [], project = null }) {
   if (project)
     return `<section class="ide-empty-editor"><div class="empty-art">${glyph("graph", 50)}</div><h1>Проект открыт</h1><p>Выберите Java-файл слева.<br>IDE покажет его методы в виде блупринтов.</p>${button("quick-open", "Найти файл", "search", "ide-button primary")}<small><kbd>Ctrl P</kbd> Быстрый переход · <kbd>Ctrl Shift P</kbd> Команды</small></section>`;
-  return `<section class="ide-welcome"><div class="welcome-content"><div class="welcome-eyebrow"><img src="/ide/mark.svg" alt=""/>JAVA, КОТОРУЮ ВИДНО</div><h1>Ваш проект.<br><span>На языке блупринтов.</span></h1><p class="welcome-lead">Откройте папку с Java-кодом. Разбирайтесь в логике через понятные блоки, меняйте код и сразу проверяйте результат.</p><div class="welcome-actions">${button("open-folder", "Открыть папку", "folder", "ide-button primary large")}${button("new-project", "Новый проект", "plus", "ide-button large")}</div>${!desktop ? `<button class="welcome-demo-link" data-action="demo">Посмотреть на готовом примере ${glyph("arrow", 16)}</button>` : ""}<div class="welcome-flow"><div><span>01</span><b>Выберите папку</b><small>Обычный Java-проект</small></div><i>→</i><div><span>02</span><b>Откройте файл</b><small>Методы станут блоками</small></div><i>→</i><div><span>03</span><b>Измените и запустите</b><small>Всё остаётся у вас</small></div></div><div class="welcome-bottom"><span>${glyph("shield", 15)}Без аккаунта и облака</span><span>${glyph("bolt", 15)}Java уже в EXE</span><span>${glyph("code", 15)}Исходники остаются Java</span></div></div><aside class="welcome-right"><div class="welcome-graph"><div class="welcome-node entry">${glyph("method", 16)}Рассчитать заказ</div><span class="welcome-wire"></span><div class="welcome-node condition">${glyph("branch", 16)}Сумма от 2000?</div><div class="welcome-branches"><div><small>Да</small><span class="welcome-wire"></span><div class="welcome-node result">Скидка 10%</div></div><div><small>Нет</small><span class="welcome-wire"></span><div class="welcome-node">Обычная цена</div></div></div><span class="welcome-graph-caption">Реальная логика из вашего кода</span></div><div class="welcome-recent"><h2>Недавние проекты</h2>${
+  return `<section class="ide-welcome"><div class="welcome-content"><div class="welcome-eyebrow"><img src="/ide/mark.svg" alt=""/>JAVA ↔ БЛУПРИНТ · АНАЛИЗ · ПРОВЕРКА ПОВЕДЕНИЯ</div><h1>Разберите монолит.<br><span>Улучшите — и докажите.</span></h1><p class="welcome-lead">Откройте Java-проект: методы станут блок-схемами, IDE найдёт дефекты и сложные места, предложит оптимизацию и декомпозицию, а затем запустит эталон и новую версию на тестах и сравнит поведение.</p><div class="welcome-actions">${button("open-folder", "Открыть папку", "folder", "ide-button primary large")}${button("open-example", "Открыть пример монолита", "rocket", "ide-button large", 'data-example="shop-monolith"')}${button("new-project", "Новый проект", "plus", "ide-button large subtle")}</div><div class="welcome-flow"><div><span>01</span><b>Загрузить и разобрать</b><small>javac AST, граф методов</small></div><i>→</i><div><span>02</span><b>Исследовать и править</b><small>Код ↔ блоки в обе стороны</small></div><i>→</i><div><span>03</span><b>Диагноз и Big O</b><small>Строка, узел, рекомендация</small></div><i>→</i><div><span>04</span><b>Улучшить и проверить</b><small>Сборка + тесты = то же поведение</small></div></div><div class="welcome-bottom"><span>${glyph("shield", 15)}Без облака: код остаётся на компьютере</span><span>${glyph("bolt", 15)}Java 21 уже внутри</span><span>${glyph("code", 15)}Исходники остаются обычной Java</span></div></div><aside class="welcome-right"><div class="welcome-graph"><div class="welcome-node entry">${glyph("method", 16)}countPairs(values)</div><span class="welcome-wire"></span><div class="welcome-node condition">${glyph("loop", 16)}for a · for b · O(n²)</div><div class="welcome-branches"><div><small>было</small><span class="welcome-wire"></span><div class="welcome-node">Сравнить каждую пару</div></div><div><small>стало</small><span class="welcome-wire"></span><div class="welcome-node result">Индекс частот · O(n)</div></div></div><span class="welcome-graph-caption">Диагноз → патч → проверка поведения ✓</span></div><div class="welcome-recent"><h2>Примеры</h2>${EXAMPLES.map((item) => `<button data-action="open-example" data-example="${item.id}">${glyph(item.icon, 17)}<span><b>${e(item.title)}</b><small>${e(item.detail)}</small></span>${glyph("chevron", 14)}</button>`).join("")}<h2>Недавние проекты</h2>${
     recent.length
       ? recent
           .slice(0, 4)
@@ -59,9 +61,30 @@ export function welcome({ desktop, recent = [], project = null }) {
               `<button data-action="recent" data-root="${e(item.root)}">${glyph("folder", 17)}<span><b>${e(item.name)}</b><small>${e(item.root)}</small></span>${glyph("chevron", 14)}</button>`,
           )
           .join("")
-      : `<p>Здесь появятся папки, которые вы откроете в настольном приложении.</p>`
+      : `<p>Здесь появятся папки, которые вы откроете.</p>`
   }</div></aside></section>`;
 }
+
+export const EXAMPLES = [
+  {
+    id: "shop-monolith",
+    title: "Интернет-магазин · монолит",
+    detail: "~1000 строк: классы, коллекции, исключения, команды из stdin",
+    icon: "layers",
+  },
+  {
+    id: "large-monolith",
+    title: "Статистика · 1000 строк",
+    detail: "51 метод, O(n²) подсчёт пар, декомпозиция вычислений",
+    icon: "chart",
+  },
+  {
+    id: "language-showcase",
+    title: "Обязательный Java scope",
+    detail: "Интерфейсы, исключения, коллекции, record, enum, лямбды",
+    icon: "code",
+  },
+];
 
 export function tabs(store) {
   if (!store.tabs.length)
@@ -76,7 +99,7 @@ export function tabs(store) {
 
 export function toolbar(document, mode, project, busy) {
   if (!project)
-    return `<span class="toolbar-hint">Добро пожаловать в Blueprints IDE</span><span class="toolbar-spacer"></span>${button("open-builder", "Собрать без кода", "graph", "ide-button subtle small")}`;
+    return `<span class="toolbar-hint">Добро пожаловать в Blueprints IDE</span><span class="toolbar-spacer"></span>`;
   const path = document?.path;
   const breadcrumbs = path
     ? path
@@ -100,7 +123,7 @@ export function toolbar(document, mode, project, busy) {
           )
           .join("")}</div>`
       : ""
-  }${button("save", "Сохранить", "download", "ide-button small", `${!document || !document.dirty || document.readOnly ? "disabled" : ""}`)}${button(busy ? "stop" : "run", busy ? "Стоп" : "Запустить", busy ? "close" : "play", `ide-button small ${busy ? "danger" : "run"}`)}`;
+  }${button("save", "Сохранить", "download", "ide-button small", `${!document || !document.dirty || document.readOnly ? "disabled" : ""}`)}${button("verify", "Проверить", "shield", "ide-button small", 'title="Сравнить поведение с эталоном (F6)"')}${button(busy ? "stop" : "run", busy ? "Стоп" : "Запустить", busy ? "close" : "play", `ide-button small ${busy ? "danger" : "run"}`)}`;
 }
 
 export function projectTree(
@@ -170,7 +193,7 @@ export function historySidebar(document, entries, loading) {
 export function graphHeader(document) {
   const model = document.currentModel;
   const methods = model?.methods ?? [];
-  return `<div class="ide-graph-header"><div><span class="graph-header-icon">${glyph("graph", 17)}</span><b>Блупринт</b><span class="graph-live-label ${!model ? "stale" : ""}">${model ? "Из Java-кода" : "Нужно обновить"}</span></div><label class="sr-only" for="ide-method-select">Метод</label><select id="ide-method-select" ${!methods.length ? "disabled" : ""}>${methods.map((method) => `<option value="${e(method.id)}" ${method.id === document.methodId ? "selected" : ""}>${e(method.owner + " · " + method.name)}</option>`).join("") || "<option>Нет методов</option>"}</select>${iconButton("analyse", "Обновить блупринт", "loop")}</div>`;
+  return `<div class="ide-graph-header"><div><span class="graph-header-icon">${glyph("graph", 17)}</span><b>Блупринт</b><span class="graph-live-label ${!model ? "stale" : ""}">${model ? "Из Java-кода" : "Нужно обновить"}</span></div><label class="sr-only" for="ide-method-select">Метод</label><select id="ide-method-select" ${!methods.length ? "disabled" : ""}>${methods.map((method) => `<option value="${e(method.id)}" ${method.id === document.methodId ? "selected" : ""}>${e(method.owner + " · " + method.name)}</option>`).join("") || "<option>Нет методов</option>"}</select><span id="ide-method-metrics" class="q-metrics"></span>${iconButton("improve", "Улучшения и декомпозиция", "sparkle")}${iconButton("analyse", "Обновить блупринт", "loop")}</div><div id="ide-method-why"></div>`;
 }
 
 export function graphEmpty(document, analysing) {
@@ -186,12 +209,17 @@ export function graphEmpty(document, analysing) {
   return `<div class="graph-empty">${glyph("graph", 35)}<h3>Код изменился</h3><p>Обновите блупринт, чтобы увидеть текущую логику.</p>${button("analyse", "Построить блупринт", "loop", "ide-button primary small")}</div>`;
 }
 
-export function nodeInspector(node, document) {
+export function nodeInspector(node, document, findingsHtml = "") {
   if (!node)
-    return `<div class="node-inspector-hint">${glyph("info", 14)}Нажмите блок для объяснения · перетаскивайте фон · Ctrl + колесо — масштаб</div>`;
+    return `<div class="node-inspector-hint">${glyph("info", 14)}Нажмите блок для объяснения · двойной щелчок — изменить · перетаскивайте фон · Ctrl + колесо — масштаб</div>`;
   const editable =
     node.editStart >= 0 && !document.readOnly && document.currentModel;
-  return `<div class="node-inspector-detail"><div><span class="node-kind-badge ${e(node.kind)}">${glyph(nodeIcon(node.kind), 15)}${e(nodeLabel(node.kind))}</span><button data-action="close-node" aria-label="Закрыть описание">×</button></div><p>${e(describeNode(node))}</p>${node.code ? `<code>${e(node.code.length > 450 ? node.code.slice(0, 450) + "…" : node.code)}</code>` : ""}<footer><span>${node.line > 0 ? "Строка " + node.line : "Структурный блок"}</span>${node.start >= 0 ? button("node-source", "К строке", "code", "ide-button small") : ""}${editable ? button("edit-node", "Изменить блок", "edit", "ide-button small primary") : ""}</footer></div>`;
+  const insertable =
+    editable &&
+    ["operation", "return", "throw", "break", "continue"].includes(node.kind);
+  const deletable =
+    editable && ["operation", "variable", "return", "throw"].includes(node.kind);
+  return `<div class="node-inspector-detail"><div><span class="node-kind-badge ${e(node.kind)}">${glyph(nodeIcon(node.kind), 15)}${e(nodeLabel(node.kind))}</span><button data-action="close-node" aria-label="Закрыть описание">×</button></div><p>${e(describeNode(node))}</p>${node.code ? `<code>${e(node.code.length > 450 ? node.code.slice(0, 450) + "…" : node.code)}</code>` : ""}${findingsHtml}<footer><span>${node.line > 0 ? "Строка " + node.line : "Структурный блок"}</span>${node.start >= 0 ? button("node-source", "К строке", "code", "ide-button small") : ""}${insertable ? button("node-insert-before", "Блок до", "plus", "ide-button small") + button("node-insert-after", "Блок после", "plus", "ide-button small") : ""}${deletable ? button("node-delete", "Удалить", "close", "ide-button small") : ""}${editable ? button("edit-node", "Изменить блок", "edit", "ide-button small primary") : ""}</footer></div>`;
 }
 
 export function problemsPanel(problems) {
@@ -311,19 +339,24 @@ export function newFileModal(folder = "") {
   );
 }
 
-export function nodeEditModal(node, document) {
+export function nodeEditModal(node, document, action = "replace") {
+  const insert = action !== "replace";
   return modalFrame(
-    "Изменить блок",
-    `<p class="modal-lead">${e(nodeLabel(node.kind))} · строка ${node.line}. Изменение сначала проверит Java-парсер, затем оно появится в редакторе. Сохраните файл, чтобы записать его на диск.</p><form id="edit-node-form"><label class="modal-field">Java для этого блока<textarea name="code" class="modal-code" rows="9" required spellcheck="false">${e(node.editCode)}</textarea></label><div id="node-edit-error" class="modal-inline-error" role="alert" hidden></div></form>`,
-    '<button type="submit" form="edit-node-form" class="ide-button primary">Применить к блупринту</button>',
+    insert
+      ? action === "before"
+        ? "Новый блок перед выбранным"
+        : "Новый блок после выбранного"
+      : "Изменить блок",
+    `<p class="modal-lead">${e(nodeLabel(node.kind))} · строка ${node.line}. ${insert ? "Введите Java-инструкцию: она станет новым блоком на схеме." : "Изменение сначала проверит Java-парсер, затем оно появится в редакторе."} Сохраните файл, чтобы записать его на диск.</p><form id="edit-node-form"><label class="modal-field">${insert ? "Java-инструкция" : "Java для этого блока"}<textarea name="code" class="modal-code" rows="9" required spellcheck="false">${e(insert ? 'System.out.println("Шаг");' : node.editCode)}</textarea></label><div id="node-edit-error" class="modal-inline-error" role="alert" hidden></div></form>`,
+    `<button type="submit" form="edit-node-form" class="ide-button primary">${insert ? "Добавить блок" : "Применить к блупринту"}</button>`,
     "wide",
   );
 }
 
 export function aboutModal(boot) {
   return modalFrame(
-    "Blueprints IDE 3",
-    `<div class="about-brand"><img src="/ide/mark.svg" alt=""/><div><h3>Java, которую видно</h3><p>Локальная IDE для чтения и изменения Java через блупринты.</p></div></div><dl class="about-facts"><dt>Версия</dt><dd>${e(boot.version)}</dd><dt>Java</dt><dd>${e(boot.runtime?.java ?? "21")}</dd><dt>Среда</dt><dd>${boot.desktop ? "Настольное приложение · Electron " + e(boot.runtime?.electron) : "Веб-предпросмотр"}</dd><dt>Данные</dt><dd>Локальные папки, без аккаунта и сервера в облаке</dd></dl><p class="modal-note">Java → структурный граф методов → правки → Java. Полноценный отладчик JVM, разрешение всех зависимостей Maven/Gradle и поддержка других языков в эту версию не входят.</p>`,
+    "Blueprints IDE 4",
+    `<div class="about-brand"><img src="/ide/mark.svg" alt=""/><div><h3>Java, которую видно и можно проверить</h3><p>Локальная IDE: Java ↔ блупринты, диагностика и Big O, оптимизация и декомпозиция, проверка сохранения поведения.</p></div></div><dl class="about-facts"><dt>Версия</dt><dd>${e(boot.version)}</dd><dt>Java</dt><dd>${e(boot.runtime?.java ?? "21")}</dd><dt>Среда</dt><dd>${boot.desktop ? "Настольное приложение · Electron " + e(boot.runtime?.electron) : "Веб-предпросмотр"}</dd><dt>Данные</dt><dd>Локальные папки, без аккаунта и сервера в облаке</dd></dl><p class="modal-note">Java → AST javac → граф методов → правки → Java → javac + JVM → сравнение с эталоном. Полноценный отладчик JVM, загрузка зависимостей Maven/Gradle и другие языки в эту версию не входят.</p>`,
     button("close-modal", "Готово", null, "ide-button primary"),
   );
 }

@@ -333,6 +333,16 @@ export class GraphWidget {
     });
   }
 
+  /** Severity markers from diagnostics: Map(nodeId -> "error" | "warning" | "info"). */
+  mark(marks) {
+    this.marks = marks;
+    this.container.querySelectorAll("[data-node]").forEach((node) => {
+      const severity = marks?.get(node.dataset.node);
+      node.classList.toggle("has-finding", Boolean(severity));
+      node.dataset.finding = severity ?? "";
+    });
+  }
+
   destroy() {
     this.controller.abort();
     this.resizeObserver.disconnect();

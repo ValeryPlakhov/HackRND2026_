@@ -298,16 +298,76 @@ export const COMMANDS = [
   },
   { id: "shortcuts", label: "Горячие клавиши", detail: "Помощь", icon: "info" },
   {
-    id: "open-builder",
-    label: "Открыть визуальный конструктор без кода",
-    detail: "Инструменты",
-    icon: "graph",
+    id: "quality-analyse",
+    label: "Анализ проекта: дефекты, Big O, декомпозиция",
+    detail: "Анализ",
+    shortcut: "Ctrl Shift A",
+    icon: "target",
+    project: true,
   },
   {
-    id: "open-expert",
-    label: "Открыть лабораторию анализа Java",
-    detail: "Инструменты",
-    icon: "flask",
+    id: "improve",
+    label: "Улучшения и декомпозиция текущего файла",
+    detail: "Анализ",
+    shortcut: "Ctrl Shift I",
+    icon: "sparkle",
+    java: true,
+  },
+  {
+    id: "verify",
+    label: "Проверить поведение против эталона",
+    detail: "Проверка",
+    shortcut: "F6",
+    icon: "shield",
+    project: true,
+  },
+  {
+    id: "verify-open",
+    label: "Тестовые входы и результаты проверки",
+    detail: "Проверка",
+    icon: "table",
+    project: true,
+  },
+  {
+    id: "baseline-set-current",
+    label: "Сделать текущую версию эталоном",
+    detail: "Проверка",
+    icon: "bookmark",
+    project: true,
+  },
+  {
+    id: "baseline-diff",
+    label: "Показать изменения относительно эталона",
+    detail: "Проверка",
+    icon: "diff",
+    project: true,
+  },
+  {
+    id: "export-evidence",
+    label: "Экспортировать отчёт о проверке (ZIP)",
+    detail: "Проверка",
+    icon: "download",
+    project: true,
+  },
+  {
+    id: "lab-mutation",
+    label: "Мутационное тестирование выбранного метода",
+    detail: "Проверка",
+    icon: "beaker",
+    java: true,
+  },
+  {
+    id: "extract-method",
+    label: "Вынести выбранный метод в отдельный класс",
+    detail: "Анализ",
+    icon: "layers",
+    java: true,
+  },
+  {
+    id: "open-example",
+    label: "Открыть пример монолита",
+    detail: "Файл",
+    icon: "rocket",
   },
   { id: "about", label: "О Blueprints IDE", detail: "Помощь", icon: "info" },
 ];
@@ -325,6 +385,7 @@ export function shortcutCommand(event) {
   const control = event.ctrlKey || event.metaKey;
   const key = event.key.toLocaleLowerCase();
   if (event.key === "F5") return event.shiftKey ? "stop" : "run";
+  if (event.key === "F6") return "verify";
   if (control && event.key === "F9") return "compile";
   if (!control || event.altKey) return null;
   if (key === "o") return "open-folder";
@@ -332,6 +393,8 @@ export function shortcutCommand(event) {
   if (key === "p") return event.shiftKey ? "palette" : "quick-open";
   if (key === "k") return "palette";
   if (key === "f" && event.shiftKey) return "search";
+  if (key === "a" && event.shiftKey) return "quality-analyse";
+  if (key === "i" && event.shiftKey) return "improve";
   if (key === "g") return "goto-line";
   if (key === "w") return "close-tab";
   if (key === "t" && event.shiftKey) return "reopen-tab";

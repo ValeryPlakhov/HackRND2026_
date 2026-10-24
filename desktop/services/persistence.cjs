@@ -56,6 +56,44 @@ function normalizeSettings(input) {
   return result;
 }
 
+function normalizeProjectState(input) {
+  const result = { baseline: null, cases: [] };
+  if (!input || typeof input !== "object") return result;
+  const baseline = input.baseline;
+  if (baseline && typeof baseline === "object" && baseline.files) {
+    const files = {};
+    for (const [name, source] of Object.entries(baseline.files).slice(0, 300))
+      if (
+        typeof name === "string" &&
+        name.endsWith(".java") &&
+        name.length <= 400 &&
+        typeof source === "string"
+      )
+        files[name] = source;
+    if (Object.keys(files).length)
+      result.baseline = {
+        files,
+        takenAt: typeof baseline.takenAt === "string" ? baseline.takenAt : null,
+        label: typeof baseline.label === "string" ? baseline.label.slice(0, 120) : "",
+      };
+  }
+  if (Array.isArray(input.cases))
+    result.cases = input.cases
+      .filter((item) => item && typeof item.input === "string")
+      .slice(0, 30)
+      .map((item, index) => ({
+        id: typeof item.id === "string" ? item.id.slice(0, 80) : `case-${index}`,
+        name:
+          typeof item.name === "string" && item.name
+            ? item.name.slice(0, 80)
+            : `Вход ${index + 1}`,
+        input: item.input.slice(0, 32768),
+        enabled: item.enabled !== false,
+        category: typeof item.category === "string" ? item.category.slice(0, 40) : "manual",
+      }));
+  return result;
+}
+
 class Persistence {
   constructor(directory) {
     this.directory = directory;
@@ -66,7 +104,7 @@ class Persistence {
     try {
       const bytes = await fs.readFile(path.join(this.directory, name), "utf8");
       ensure(
-        bytes.length <= 4 * 1024 * 1024,
+        bytes.length <= 16 * 1024 * 1024,
         "LIMIT",
         "Файл настроек слишком большой",
       );
@@ -151,6 +189,22 @@ class Persistence {
             .slice(0, 200)
         : [],
     };
+  }
+
+  /** Behaviour baseline and stdin cases are IDE data, so they stay out of the user's folder. */
+  async projectState(root) {
+    const value = await this.read(`quality-${sha(root).slice(0, 24)}.json`, {});
+    return normalizeProjectState(value);
+  }
+
+  async saveProjectState(root, value) {
+    const normalized = normalizeProjectState(value);
+    ensure(
+      JSON.stringify(normalized).length <= 12 * 1024 * 1024,
+      "LIMIT",
+      "Эталон проекта слишком большой для сохранения",
+    );
+    return this.write(`quality-${sha(root).slice(0, 24)}.json`, normalized);
   }
 
   async saveSession(root, value) {

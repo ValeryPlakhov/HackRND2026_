@@ -35,7 +35,6 @@ let persistence;
 let dirty = false;
 let quitting = false;
 let baseUrl;
-const auxiliary = new Set();
 const smoke = process.argv.includes("--smoke-test");
 if (smoke && process.env.BLUEPRINTS_SMOKE_PROFILE) {
   app.setPath("userData", path.resolve(process.env.BLUEPRINTS_SMOKE_PROFILE));
@@ -247,37 +246,40 @@ function wire(engine) {
     dirty = request.value === true;
     return { dirty };
   });
-  handle("open-page", (request) => {
-    ensure(
-      ["builder", "expert"].includes(request.page),
-      "PAGE",
-      "Неизвестный раздел",
-    );
-    const window = new BrowserWindow({
-      width: 1300,
-      height: 860,
-      minWidth: 800,
-      minHeight: 600,
-      backgroundColor: "#f7f8fa",
-      title:
-        request.page === "builder"
-          ? "Визуальный конструктор"
-          : "Java Blueprints · Лаборатория",
-      webPreferences: {
-        nodeIntegration: false,
-        contextIsolation: true,
-        sandbox: true,
-        webviewTag: false,
-      },
-    });
-    secureWindow(window);
-    auxiliary.add(window);
-    window.on("closed", () => auxiliary.delete(window));
-    window.loadURL(
-      baseUrl + (request.page === "builder" ? "/index.html" : "/expert.html"),
-    );
-    return { opened: true };
+  handle("project-state", (request) => {
+    const snapshot = workspace.require(request.id);
+    return request.value
+      ? persistence.saveProjectState(snapshot.root, record(request.value))
+      : persistence.projectState(snapshot.root);
   });
+  handle("open-example", async (request) => {
+    const name = text(request.name, "Пример", 60);
+    ensure(/^[a-z0-9-]+$/.test(name), "PATH", "Неизвестный пример");
+    const source = await examplesDirectory(name);
+    if (!(await maySwitch())) return { cancelled: true };
+    // Examples are copied so experiments never modify the bundled originals.
+    const target = path.join(app.getPath("documents"), "Blueprints IDE", name);
+    try {
+      await fs.access(target);
+    } catch {
+      await fs.mkdir(path.dirname(target), { recursive: true });
+      await fs.cp(source, target, { recursive: true, errorOnExist: false });
+    }
+    return openFolder(target);
+  });
+}
+
+async function examplesDirectory(name) {
+  const candidates = [
+    path.resolve(__dirname, "..", "..", "examples", name),
+    path.resolve(__dirname, "..", "examples", name),
+  ];
+  for (const candidate of candidates) {
+    try {
+      if ((await fs.stat(candidate)).isDirectory()) return candidate;
+    } catch {}
+  }
+  ensure(false, "MISSING", "Пример не найден в комплекте IDE");
 }
 
 function secureWindow(window) {
@@ -374,6 +376,32 @@ function menu() {
       ],
     },
     {
+      label: "Анализ",
+      submenu: [
+        {
+          label: "Анализ проекта",
+          accelerator: "CmdOrCtrl+Shift+A",
+          click: command("quality-analyse"),
+        },
+        {
+          label: "Улучшения и декомпозиция",
+          accelerator: "CmdOrCtrl+Shift+I",
+          click: command("improve"),
+        },
+        { type: "separator" },
+        {
+          label: "Проверить поведение",
+          accelerator: "F6",
+          click: command("verify"),
+        },
+        {
+          label: "Сделать текущую версию эталоном",
+          click: command("baseline-set-current"),
+        },
+        { label: "Экспорт отчёта о проверке", click: command("export-evidence") },
+      ],
+    },
+    {
       label: "Запуск",
       submenu: [
         { label: "Запустить Java", accelerator: "F5", click: command("run") },
@@ -421,7 +449,7 @@ async function start() {
     const owner = contents ? BrowserWindow.fromWebContents(contents) : null;
     const urls = item.getURLChain();
     const allowed =
-      (owner === mainWindow || auxiliary.has(owner)) &&
+      owner === mainWindow &&
       urls.length > 0 &&
       urls.every((value) => {
         try {
@@ -482,7 +510,6 @@ async function start() {
   });
   mainWindow.on("closed", () => {
     mainWindow = null;
-    for (const window of auxiliary) window.close();
     app.quit();
   });
   if (smoke) {
