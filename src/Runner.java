@@ -7,8 +7,12 @@ import java.util.concurrent.*;
 /** Each version gets a separate class directory and JVM. No code runs in the server JVM. */
 public final class Runner {
   static final int OUTPUT_LIMIT = 64 * 1024;
+  static final long RUN_TIMEOUT_MS = 5000;
+  static final int MAX_FILES = 300;
   static final Semaphore SLOTS = new Semaphore(2);
   static final String MODE = System.getenv().getOrDefault("BLUEPRINTS_RUNNER", "disabled");
+  /** Entry point requested by the IDE run configuration; empty means the first main found. */
+  private static final ThreadLocal<String> MAIN = ThreadLocal.withInitial(() -> "");
 
   static record Build(Path directory, String mainClass, Map<String, Object> result)
       implements AutoCloseable {
@@ -17,26 +21,54 @@ public final class Runner {
     }
   }
 
+  static <T> T withMain(String mainClass, Callable<T> work) throws Exception {
+    String previous = MAIN.get();
+    MAIN.set(mainClass == null ? "" : mainClass.trim());
+    try {
+      return work.call();
+    } finally {
+      MAIN.set(previous);
+    }
+  }
+
+  /** Project-relative paths such as src/app/Main.java; no traversal, drives or empty segments. */
+  static boolean validPath(String name) {
+    if (!name.endsWith(".java") || name.length() > 400) return false;
+    String[] parts = name.split("/", -1);
+    for (int i = 0; i < parts.length; i++) {
+      String part = parts[i];
+      if (i == parts.length - 1) {
+        if (!part.matches("[A-Za-z_$][A-Za-z0-9_$]*\\.java")) return false;
+      } else if (!part.matches("[A-Za-z0-9_$][A-Za-z0-9_$.\\-]*") || part.equals("..")) return false;
+    }
+    return true;
+  }
+
   static Map<String, String> sources(Object value) {
-    if (!(value instanceof Map<?, ?> m) || m.isEmpty() || m.size() > 30)
-      throw new IllegalArgumentException("Provide 1..30 Java files");
+    if (!(value instanceof Map<?, ?> m) || m.isEmpty() || m.size() > MAX_FILES)
+      throw new IllegalArgumentException("Нужны от 1 до " + MAX_FILES + " Java-файлов");
     Map<String, String> out = new LinkedHashMap<>();
-    int total = 0;
+    long total = 0;
     for (var e : m.entrySet()) {
       String name = String.valueOf(e.getKey());
-      if (!name.matches("[A-Za-z_$][A-Za-z0-9_$]*\\.java"))
-        throw new IllegalArgumentException("Only simple .java filenames allowed");
+      if (!validPath(name))
+        throw new IllegalArgumentException("Недопустимый путь Java-файла: " + name);
       String code = String.valueOf(e.getValue());
       total += code.length();
       out.put(name, code);
     }
-    if (total > 500_000) throw new IllegalArgumentException("Project too large");
+    if (total > 8_000_000) throw new IllegalArgumentException("Project too large");
     return out;
+  }
+
+  static String simpleName(String path) {
+    return path.substring(path.lastIndexOf('/') + 1);
   }
 
   static Build compile(Map<String, String> files) throws Exception {
     Path root = Files.createTempDirectory("blueprints-");
     Path output = Files.createDirectory(root.resolve("classes"));
+    Path sourceRoot = Files.createDirectory(root.resolve("src"));
     List<String> args =
         new ArrayList<>(
             List.of(
@@ -50,11 +82,16 @@ public final class Runner {
                 "-d",
                 output.toString()));
     String main = "";
+    List<String> mains = new ArrayList<>();
+    List<String> sourceList = new ArrayList<>();
     try {
       for (var e : files.entrySet()) {
-        Path p = root.resolve(e.getKey());
+        Path p = sourceRoot.resolve(e.getKey()).normalize();
+        if (!p.startsWith(sourceRoot)) throw new IllegalArgumentException("Path escapes project");
+        Files.createDirectories(p.getParent());
         Files.writeString(p, e.getValue(), StandardCharsets.UTF_8);
-        args.add(p.toString());
+        sourceList.add("\"" + p.toString().replace('\\', '/') + "\"");
+        if (!e.getValue().contains("main") || e.getValue().length() > 250_000) continue;
         try (JavaModel m = new JavaModel(e.getValue())) {
           for (var method : m.methods)
             if (method.tree().getName().contentEquals("main")
@@ -74,11 +111,32 @@ public final class Runner {
                 && Set.of("String[]", "java.lang.String[]")
                     .contains(method.tree().getParameters().get(0).getType().toString())) {
               String pkg = m.unit.getPackageName() == null ? "" : m.unit.getPackageName() + ".";
-              if (main.isEmpty()) main = pkg + method.owner().replace('.', '$');
+              mains.add(pkg + method.owner().replace('.', '$'));
             }
         }
       }
-      Map<String, Object> p = process(args, root, "", 15_000);
+      String requested = MAIN.get();
+      if (!requested.isEmpty())
+        main =
+            mains.stream()
+                .filter(
+                    name ->
+                        name.equals(requested)
+                            || name.endsWith("." + requested)
+                            || name.equals(requested.replace('.', '$')))
+                .findFirst()
+                .orElse(mains.isEmpty() ? "" : mains.get(0));
+      else if (!mains.isEmpty())
+        main =
+            mains.stream()
+                .filter(name -> name.equals("Main") || name.endsWith(".Main"))
+                .findFirst()
+                .orElse(mains.get(0));
+      // An argument file keeps large projects below the Windows command-line limit.
+      Path list = root.resolve("sources.txt");
+      Files.write(list, sourceList, StandardCharsets.UTF_8);
+      args.add("@" + list);
+      Map<String, Object> p = process(args, root, "", 30_000);
       boolean ok =
           ((Number) p.get("exitCode")).intValue() == 0
               && !Boolean.TRUE.equals(p.get("timedOut"))
@@ -178,7 +236,7 @@ public final class Runner {
             "-cp",
             b.directory.resolve("classes").toString(),
             b.mainClass);
-    return process(cmd, b.directory, input, 2500);
+    return process(cmd, b.directory, input, RUN_TIMEOUT_MS);
   }
 
   static Map<String, Object> compare(

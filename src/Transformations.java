@@ -168,7 +168,7 @@ public final class Transformations {
       throw new IllegalArgumentException(
           "Рекурсивный метод или ссылка this/super не переносится автоматически");
     String helper = "BlueprintFunctions";
-    if (existing.containsKey(helper + ".java")
+    if (existing.containsKey(sibling(fileName, helper))
         || m.source.matches("(?s).*\\b(class|interface|record|enum)\\s+" + helper + "\\b.*"))
       throw new IllegalArgumentException("Имя BlueprintFunctions уже занято");
     String args =
@@ -191,7 +191,7 @@ public final class Transformations {
     Map<String, String> files = new LinkedHashMap<>(existing);
     files.put(fileName, replace(m.source, m.start(t.getBody()), m.end(t.getBody()), delegate));
     files.put(
-        helper + ".java",
+        sibling(fileName, helper),
         pkg
             + imports
             + "\n\nfinal class "
@@ -208,6 +208,149 @@ public final class Transformations {
       throw new IllegalArgumentException(
           "Метод зависит от контекста класса и не переносится: " + compiled.get("diagnostics"));
     return files;
+  }
+
+  static String sibling(String fileName, String simple) {
+    int slash = fileName.lastIndexOf('/');
+    return (slash < 0 ? "" : fileName.substring(0, slash + 1)) + simple + ".java";
+  }
+
+  /**
+   * Moves a group of independent static methods into a new top-level class and leaves delegates.
+   * Candidates that depend on class state, nested types or methods outside the group are skipped;
+   * the final javac run is the dependency check.
+   */
+  static Map<String, Object> decompose(
+      JavaModel m, List<String> ids, String fileName, String className, Map<String, String> existing)
+      throws Exception {
+    if (!className.matches("[A-Z][A-Za-z0-9_]{0,60}"))
+      throw new IllegalArgumentException("Имя класса: латиница с заглавной буквы, например OrderParser");
+    String target = sibling(fileName, className);
+    if (existing.containsKey(target)
+        || existing.values().stream()
+            .anyMatch(s -> s.matches("(?s).*\\b(class|interface|record|enum)\\s+" + className + "\\b.*")))
+      throw new IllegalArgumentException("Класс " + className + " уже существует");
+    Set<String> ownerNames = new HashSet<>();
+    Set<String> nestedTypes = new HashSet<>();
+    for (Tree type : m.unit.getTypeDecls())
+      if (type instanceof ClassTree c) {
+        for (Tree member : c.getMembers()) {
+          if (member instanceof VariableTree v) ownerNames.add(v.getName().toString());
+          if (member instanceof ClassTree nested) nestedTypes.add(nested.getSimpleName().toString());
+        }
+      }
+    Map<String, JavaModel.Method> byName = new LinkedHashMap<>();
+    for (JavaModel.Method method : m.methods) byName.putIfAbsent(method.tree().getName().toString(), method);
+    List<JavaModel.Method> candidates = new ArrayList<>();
+    List<Object> skipped = new ArrayList<>();
+    for (String id : ids) {
+      JavaModel.Method method;
+      try {
+        method = m.method(id);
+      } catch (IllegalArgumentException missing) {
+        continue;
+      }
+      MethodTree t = method.tree();
+      Set<Modifier> flags = t.getModifiers().getFlags();
+      String reason = null;
+      if (t.getName().contentEquals("main")) reason = "точка входа остаётся на месте";
+      else if (!flags.contains(Modifier.STATIC)) reason = "метод экземпляра использует состояние объекта";
+      else if (t.getBody() == null
+          || flags.contains(Modifier.SYNCHRONIZED)
+          || flags.contains(Modifier.NATIVE)
+          || !t.getModifiers().getAnnotations().isEmpty()) reason = "особые модификаторы или аннотации";
+      else if (method.owner().contains(".")) reason = "метод вложенного класса";
+      if (reason == null) {
+        Set<String> used = new HashSet<>();
+        new TreeScanner<Void, Void>() {
+          public Void visitIdentifier(IdentifierTree x, Void v) {
+            used.add(x.getName().toString());
+            return null;
+          }
+        }.scan(t.getBody(), null);
+        Set<String> locals = new HashSet<>();
+        for (VariableTree p : t.getParameters()) locals.add(p.getName().toString());
+        new TreeScanner<Void, Void>() {
+          public Void visitVariable(VariableTree x, Void v) {
+            locals.add(x.getName().toString());
+            return super.visitVariable(x, v);
+          }
+        }.scan(t.getBody(), null);
+        if (used.contains("this") || used.contains("super")) reason = "ссылка this/super";
+        else if (used.stream().anyMatch(name -> ownerNames.contains(name) && !locals.contains(name)))
+          reason = "читает поля исходного класса";
+        else if (used.stream().anyMatch(nestedTypes::contains)) reason = "использует вложенные типы класса";
+      }
+      if (reason != null) skipped.add(Digests.map("methodId", id, "name", t.getName().toString(), "reason", reason));
+      else candidates.add(method);
+    }
+    // Calls to methods of the original class that stay behind would no longer resolve.
+    boolean changed = true;
+    while (changed) {
+      changed = false;
+      Set<String> moving = new HashSet<>();
+      for (JavaModel.Method c : candidates) moving.add(c.tree().getName().toString());
+      for (Iterator<JavaModel.Method> it = candidates.iterator(); it.hasNext(); ) {
+        JavaModel.Method c = it.next();
+        Set<String> calls = new HashSet<>();
+        new TreeScanner<Void, Void>() {
+          public Void visitMethodInvocation(MethodInvocationTree x, Void v) {
+            if (x.getMethodSelect() instanceof IdentifierTree id) calls.add(id.getName().toString());
+            return super.visitMethodInvocation(x, v);
+          }
+        }.scan(c.tree().getBody(), null);
+        String blocked =
+            calls.stream().filter(name -> byName.containsKey(name) && !moving.contains(name)).findFirst().orElse(null);
+        if (blocked != null) {
+          it.remove();
+          skipped.add(
+              Digests.map(
+                  "methodId", c.id(), "name", c.tree().getName().toString(),
+                  "reason", "вызывает " + blocked + "(), который остаётся в исходном классе"));
+          changed = true;
+        }
+      }
+    }
+    if (candidates.isEmpty())
+      throw new IllegalArgumentException("Нет методов, которые можно перенести без изменения контекста");
+    candidates.sort(Comparator.comparingInt(c -> m.start(c.tree())));
+    String imports = String.join("\n", m.unit.getImports().stream().map(Object::toString).toList());
+    String pkg = m.unit.getPackageName() == null ? "" : "package " + m.unit.getPackageName() + ";\n";
+    StringBuilder helper = new StringBuilder();
+    helper.append(pkg).append(imports).append(imports.isEmpty() ? "" : "\n").append("\n");
+    helper.append("/** Выделено из ").append(Runner.simpleName(fileName)).append(" инструментом Blueprints. */\n");
+    helper.append("final class ").append(className).append(" {\n    private ").append(className).append("() {}\n");
+    String source = m.source;
+    for (int i = candidates.size() - 1; i >= 0; i--) {
+      MethodTree t = candidates.get(i).tree();
+      String args = String.join(", ", t.getParameters().stream().map(p -> p.getName().toString()).toList());
+      String delegate =
+          "{\n        "
+              + (t.getReturnType().toString().equals("void") ? "" : "return ")
+              + className + "." + t.getName() + "(" + args + ");\n    }";
+      source = replace(source, m.start(t.getBody()), m.end(t.getBody()), delegate);
+    }
+    for (JavaModel.Method c : candidates) {
+      MethodTree t = c.tree();
+      String original = m.text(t);
+      int rel = m.start(t.getBody()) - m.start(t);
+      String head = original.substring(0, rel).replaceFirst("\\b(public|private|protected)\\s+", "");
+      helper.append("\n    ").append(head).append(m.text(t.getBody())).append("\n");
+    }
+    helper.append("}\n");
+    Map<String, String> files = new LinkedHashMap<>(existing);
+    files.put(fileName, source);
+    files.put(target, helper.toString());
+    var compiled = Runner.compileOnly(files);
+    if (!Boolean.TRUE.equals(compiled.get("success")))
+      throw new IllegalArgumentException(
+          "После переноса проект не собирается, изменения не применены: " + compiled.get("diagnostics"));
+    return Digests.map(
+        "files", files,
+        "created", target,
+        "className", className,
+        "moved", candidates.stream().map(c -> c.tree().getName().toString()).toList(),
+        "skipped", skipped);
   }
 
   static String replace(String source, int start, int end, String replacement) {

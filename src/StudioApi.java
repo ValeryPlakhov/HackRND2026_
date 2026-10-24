@@ -123,28 +123,45 @@ public final class StudioApi {
         request.containsKey("files") ? Runner.sources(request.get("files")) : null;
     List<String> inputs =
         request.containsKey("inputs") ? strings(request.get("inputs"), 30) : List.of();
+    String mainClass = Json.str(request, "mainClass", "");
+    if (mainClass.length() > 300) throw new IllegalArgumentException("Слишком длинное имя класса");
+    return submit(kind, request, original, candidate, files, inputs, mainClass);
+  }
+
+  private static Map<String, Object> submit(
+      String kind,
+      Map<String, Object> request,
+      Map<String, String> original,
+      Map<String, String> candidate,
+      Map<String, String> files,
+      List<String> inputs,
+      String mainClass) {
     return switch (kind) {
       case "run" -> {
         if (files == null) throw new IllegalArgumentException("Нужны файлы программы");
         String input = Json.str(request, "input", "");
         if (input.length() > 32768) throw new IllegalArgumentException("Слишком длинные ответы");
-        yield JOBS.submit(kind, context -> VisualExecution.run(files, input, context));
+        yield JOBS.submit(kind, withMain(mainClass, context -> VisualExecution.run(files, input, context)));
       }
       case "compare" -> {
         if (original == null || candidate == null)
           throw new IllegalArgumentException("Нужны обе версии проекта");
         yield JOBS.submit(
             kind,
+            withMain(
+            mainClass,
             context -> {
               context.stage("Компиляция и дифференциальные запуски", 0, 1);
               return Evidence.report(
                   original, candidate, inputs, Runner.compare(original, candidate, inputs));
-            });
+            }));
       }
       case "mutation" -> {
         if (files == null) throw new IllegalArgumentException("Нужны файлы проекта");
         yield JOBS.submit(
             kind,
+            withMain(
+            mainClass,
             context ->
                 MutationLab.run(
                     files,
@@ -152,20 +169,22 @@ public final class StudioApi {
                     Json.str(request, "methodId", ""),
                     inputs,
                     InputCases.bounded(request, "maximum", 5, 1, 8),
-                    context));
+                    context)));
       }
       case "minimize" -> {
         if (original == null || candidate == null)
           throw new IllegalArgumentException("Нужны обе версии проекта");
         yield JOBS.submit(
             kind,
+            withMain(
+            mainClass,
             context ->
                 CounterexampleLab.minimize(
                     original,
                     candidate,
                     Json.str(request, "input", ""),
                     InputCases.bounded(request, "budget", 16, 2, 40),
-                    context));
+                    context)));
       }
       case "benchmark" -> {
         if (original == null || candidate == null)
@@ -176,6 +195,8 @@ public final class StudioApi {
                 .toList();
         yield JOBS.submit(
             kind,
+            withMain(
+            mainClass,
             context ->
                 BenchmarkLab.run(
                     original,
@@ -184,10 +205,14 @@ public final class StudioApi {
                     Json.str(request, "methodName", ""),
                     sizes,
                     InputCases.bounded(request, "repetitions", 5, 3, 9),
-                    context));
+                    context)));
       }
       default -> throw new IllegalArgumentException("Unknown job kind");
     };
+  }
+
+  private static JobService.Work withMain(String mainClass, JobService.Work work) {
+    return context -> Runner.withMain(mainClass, () -> work.run(context));
   }
 
   static List<String> strings(Object value, int maximum) {

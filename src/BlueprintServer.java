@@ -7,7 +7,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 public final class BlueprintServer {
-  static final int MAX_BODY = 2_000_000;
+  static final int MAX_BODY = 16_000_000;
 
   public static void main(String[] args) throws Exception {
     int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
@@ -92,7 +92,29 @@ public final class BlueprintServer {
                           Transformations.extract(m, Json.str(r, "methodId", ""), name, files));
                 }
               }
-              case "/api/compile" -> result = Runner.compileOnly(Runner.sources(r.get("files")));
+              case "/api/decompose" -> {
+                var files = Runner.sources(r.get("files"));
+                String name = Json.str(r, "fileName", "");
+                if (!files.containsKey(name)) throw new IllegalArgumentException("Unknown file");
+                Object ids = r.get("methodIds");
+                if (!(ids instanceof List<?> list) || list.isEmpty() || list.size() > 200)
+                  throw new IllegalArgumentException("methodIds: 1..200 методов");
+                try (JavaModel m = new JavaModel(files.get(name))) {
+                  if (!m.valid()) throw new IllegalArgumentException("Fix syntax errors first");
+                  result =
+                      Transformations.decompose(
+                          m,
+                          list.stream().map(String::valueOf).toList(),
+                          name,
+                          Json.str(r, "className", ""),
+                          files);
+                }
+              }
+              case "/api/compile" ->
+                  result =
+                      Runner.withMain(
+                          Json.str(r, "mainClass", ""),
+                          () -> Runner.compileOnly(Runner.sources(r.get("files"))));
               case "/api/compare" -> {
                 Object values = r.get("inputs");
                 if (!(values instanceof List<?> inputs))

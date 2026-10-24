@@ -95,7 +95,7 @@ public final class Evidence {
         "outputLimitBytes",
         Runner.OUTPUT_LIMIT,
         "runTimeoutMs",
-        Runner.MODE.equals("docker") ? 7000 : 2500,
+        Runner.MODE.equals("docker") ? 7000 : Runner.RUN_TIMEOUT_MS,
         "encoding",
         "UTF-8",
         "compilerRelease",
