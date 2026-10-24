@@ -253,9 +253,49 @@ class Unsafe {
         self.assertTrue(result['result']['passed'], [t['passed'] for t in result['result']['tests']])
 
 
+NESTED = '''import java.util.*;
+public class Catalog {
+    static class Item {
+        final String name; final int price;
+        Item(String name, int price) { this.name = name; this.price = price; }
+    }
+    static final List<Item> ITEMS = new ArrayList<>();
+    public static void main(String[] args) {
+        Scanner in = new Scanner(System.in);
+        while (in.hasNext()) ITEMS.add(new Item(in.next(), in.hasNextInt() ? in.nextInt() : 0));
+        System.out.println(total(ITEMS) + " " + cheapest(ITEMS).name);
+    }
+    static int total(List<Item> items) {
+        int sum = 0;
+        for (Item item : items) sum += item.price;
+        return sum;
+    }
+    static Item cheapest(List<Item> items) {
+        Item best = new Item("-", Integer.MAX_VALUE);
+        for (Item item : items) if (item.price < best.price) best = item;
+        return best;
+    }
+}
+'''
+
+
+class SignatureTests(unittest.TestCase):
+    def test_17_nested_types_in_signatures_are_qualified_on_move(self):
+        files = {'Catalog.java': NESTED}
+        model = post('analyze', {'source': NESTED})
+        ids = [m['id'] for m in model['methods'] if m['name'] in ('total', 'cheapest')]
+        result = post('decompose', {'files': files, 'fileName': 'Catalog.java', 'methodIds': ids, 'className': 'Pricing'})
+        self.assertEqual(sorted(result['moved']), ['cheapest', 'total'])
+        helper = result['files']['Pricing.java']
+        self.assertIn('static int total(List<Catalog.Item> items)', helper)
+        self.assertIn('static Catalog.Item cheapest(List<Catalog.Item> items)', helper)
+        gate = job('compare', {'original': files, 'candidate': result['files'], 'inputs': ['tea 30 cake 120 bun 15\n', '']})
+        self.assertTrue(gate['result']['passed'])
+
+
 if __name__ == '__main__':
     loader = unittest.defaultTestLoader
-    suite = unittest.TestSuite([loader.loadTestsFromTestCase(IdeApiTests), loader.loadTestsFromTestCase(CollectionRulesTests)])
+    suite = unittest.TestSuite([loader.loadTestsFromTestCase(case) for case in (IdeApiTests, CollectionRulesTests, SignatureTests)])
     result = unittest.TextTestRunner(verbosity=2).run(suite)
     (ROOT / 'docs/ide-test-summary.json').write_text(json.dumps({'tests': result.testsRun, 'failures': len(result.failures), 'errors': len(result.errors), 'passed': result.wasSuccessful()}, indent=2), encoding='utf-8')
     raise SystemExit(0 if result.wasSuccessful() else 1)

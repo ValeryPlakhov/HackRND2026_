@@ -3,8 +3,8 @@
   "method": "UTF-8 splitlines; nonempty excludes whitespace-only lines, includes comments.",
   "newAuthoredProduct": {
     "files": 28,
-    "physical": 13470,
-    "nonempty": 13065
+    "physical": 13553,
+    "nonempty": 13147
   },
   "excluded": [
     "Electron and Java runtimes",
@@ -17,8 +17,8 @@
     {
       "path": "web/ide/app.mjs",
       "language": "JavaScript",
-      "physical": 1897,
-      "nonempty": 1840,
+      "physical": 1966,
+      "nonempty": 1908,
       "category": "product"
     },
     {
@@ -136,15 +136,15 @@
     {
       "path": "desktop/Launcher.cs",
       "language": "C#",
-      "physical": 217,
-      "nonempty": 209,
+      "physical": 218,
+      "nonempty": 210,
       "category": "product"
     },
     {
       "path": "desktop/main.cjs",
       "language": "JavaScript",
-      "physical": 601,
-      "nonempty": 589,
+      "physical": 614,
+      "nonempty": 602,
       "category": "product"
     },
     {

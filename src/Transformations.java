@@ -386,34 +386,43 @@ public final class Transformations {
   }
 
   /** Body text where members that stay behind are qualified with the original class name. */
-  private static String qualifiedBody(
-      JavaModel m, MethodTree method, String owner, Set<String> values, Set<String> methods) {
-    int base = m.start(method.getBody());
+  /** Text of [base, base + text) with members that stay behind qualified by the original class. */
+  private static String qualified(
+      JavaModel m,
+      List<? extends Tree> scopes,
+      int base,
+      String text,
+      String owner,
+      Set<String> values,
+      Set<String> methods) {
+    int limit = base + text.length();
     List<int[]> spots = new ArrayList<>();
     Set<Tree> labels = Collections.newSetFromMap(new IdentityHashMap<>());
     Set<Tree> selects = Collections.newSetFromMap(new IdentityHashMap<>());
-    new TreeScanner<Void, Void>() {
-      public Void visitCase(CaseTree x, Void v) {
-        labels.addAll(x.getExpressions());
-        return super.visitCase(x, v);
-      }
+    TreeScanner<Void, Void> scanner =
+        new TreeScanner<>() {
+          public Void visitCase(CaseTree x, Void v) {
+            labels.addAll(x.getExpressions());
+            return super.visitCase(x, v);
+          }
 
-      public Void visitMethodInvocation(MethodInvocationTree x, Void v) {
-        selects.add(x.getMethodSelect());
-        return super.visitMethodInvocation(x, v);
-      }
+          public Void visitMethodInvocation(MethodInvocationTree x, Void v) {
+            selects.add(x.getMethodSelect());
+            return super.visitMethodInvocation(x, v);
+          }
 
-      public Void visitIdentifier(IdentifierTree x, Void v) {
-        String name = x.getName().toString();
-        boolean call = selects.contains(x);
-        if (!labels.contains(x) && (call ? methods.contains(name) : values.contains(name))) {
-          int start = m.start(x);
-          if (start >= 0) spots.add(new int[] {start - base, m.end(x) - base});
-        }
-        return null;
-      }
-    }.scan(method.getBody(), null);
-    String text = m.text(method.getBody());
+          public Void visitIdentifier(IdentifierTree x, Void v) {
+            String name = x.getName().toString();
+            boolean call = selects.contains(x);
+            if (!labels.contains(x) && (call ? methods.contains(name) : values.contains(name))) {
+              int start = m.start(x);
+              if (start >= base && start < limit)
+                spots.add(new int[] {start - base, m.end(x) - base});
+            }
+            return null;
+          }
+        };
+    for (Tree scope : scopes) if (scope != null) scanner.scan(scope, null);
     spots.sort((a, b) -> Integer.compare(b[0], a[0]));
     for (int[] spot : spots)
       text = text.substring(0, spot[0]) + owner + "." + text.substring(spot[0]);
@@ -457,9 +466,20 @@ public final class Transformations {
         if (!moving.contains(c.owner() + "#" + name)) methods.add(name);
       String original = m.text(t);
       int rel = m.start(t.getBody()) - m.start(t);
-      String head = original.substring(0, rel).replaceFirst("\\b(public|private|protected)\\s+", "");
+      // Signatures may name nested types of the original class, so they are qualified too.
+      List<Tree> signature = new ArrayList<>();
+      signature.add(t.getReturnType());
+      signature.addAll(t.getTypeParameters());
+      for (VariableTree parameter : t.getParameters()) signature.add(parameter.getType());
+      signature.addAll(t.getThrows());
+      String head =
+          qualified(m, signature, m.start(t), original.substring(0, rel), c.owner(), values, Set.of())
+              .replaceFirst("\\b(public|private|protected)\\s+", "");
+      String body =
+          qualified(
+              m, List.of(t.getBody()), m.start(t.getBody()), m.text(t.getBody()), c.owner(), values, methods);
       int first = (int) helper.chars().filter(ch -> ch == '\n').count() + 2;
-      helper.append("\n    ").append(head).append(qualifiedBody(m, t, c.owner(), values, methods)).append("\n");
+      helper.append("\n    ").append(head).append(body).append("\n");
       int last = (int) helper.chars().filter(ch -> ch == '\n').count();
       lines.put(c, new int[] {first, last});
     }

@@ -9,24 +9,24 @@
   ],
   "total": {
     "files": 79,
-    "physical": 23724,
-    "nonempty": 22666
+    "physical": 23867,
+    "nonempty": 22804
   },
   "product": {
     "files": 59,
-    "physical": 20830,
-    "nonempty": 20023
+    "physical": 20924,
+    "nonempty": 20116
   },
   "tests": {
     "files": 20,
-    "physical": 2894,
-    "nonempty": 2643
+    "physical": 2943,
+    "nonempty": 2688
   },
   "languages": {
     "C#": {
       "files": 1,
-      "physical": 217,
-      "nonempty": 209
+      "physical": 218,
+      "nonempty": 210
     },
     "CSS": {
       "files": 3,
@@ -40,18 +40,18 @@
     },
     "Java": {
       "files": 22,
-      "physical": 5704,
-      "nonempty": 5397
+      "physical": 5715,
+      "nonempty": 5408
     },
     "JavaScript": {
       "files": 39,
-      "physical": 12368,
-      "nonempty": 11773
+      "physical": 12450,
+      "nonempty": 11854
     },
     "Python": {
       "files": 12,
-      "physical": 1298,
-      "nonempty": 1154
+      "physical": 1347,
+      "nonempty": 1199
     }
   },
   "files": [
@@ -177,8 +177,8 @@
     {
       "path": "src/RuleCatalog.java",
       "language": "Java",
-      "physical": 617,
-      "nonempty": 577,
+      "physical": 608,
+      "nonempty": 568,
       "category": "product"
     },
     {
@@ -198,8 +198,8 @@
     {
       "path": "src/Transformations.java",
       "language": "Java",
-      "physical": 478,
-      "nonempty": 459,
+      "physical": 498,
+      "nonempty": 479,
       "category": "product"
     },
     {
@@ -219,8 +219,8 @@
     {
       "path": "web/ide/app.mjs",
       "language": "JavaScript",
-      "physical": 1897,
-      "nonempty": 1840,
+      "physical": 1966,
+      "nonempty": 1908,
       "category": "product"
     },
     {
@@ -394,15 +394,15 @@
     {
       "path": "desktop/Launcher.cs",
       "language": "C#",
-      "physical": 217,
-      "nonempty": 209,
+      "physical": 218,
+      "nonempty": 210,
       "category": "product"
     },
     {
       "path": "desktop/main.cjs",
       "language": "JavaScript",
-      "physical": 601,
-      "nonempty": 589,
+      "physical": 614,
+      "nonempty": 602,
       "category": "product"
     },
     {
@@ -534,15 +534,15 @@
     {
       "path": "tests/test_desktop_smoke.py",
       "language": "Python",
-      "physical": 51,
-      "nonempty": 48,
+      "physical": 56,
+      "nonempty": 53,
       "category": "tests"
     },
     {
       "path": "tests/test_ide_api.py",
       "language": "Python",
-      "physical": 257,
-      "nonempty": 222,
+      "physical": 301,
+      "nonempty": 262,
       "category": "tests"
     },
     {

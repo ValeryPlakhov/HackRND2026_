@@ -5,40 +5,40 @@
     {
       "name": "bundled Java compiles and runs a packaged multi-file project in a Unicode path",
       "passed": true,
-      "durationMs": 2645
+      "durationMs": 826
     },
     {
       "name": "compiler errors include actionable project-relative diagnostics",
       "passed": true,
-      "durationMs": 1956
+      "durationMs": 613
     },
     {
       "name": "explicit main class resolves multiple project entry points",
       "passed": true,
-      "durationMs": 2220
+      "durationMs": 686
     },
     {
       "name": "native run passes stdin as UTF-8",
       "passed": true,
-      "durationMs": 2581
+      "durationMs": 772
     },
     {
       "name": "output flooding is stopped and reported as a failed task",
       "passed": true,
-      "durationMs": 2377
+      "durationMs": 708
     },
     {
       "name": "cancellation terminates the active JVM task",
       "passed": true,
-      "durationMs": 2031
+      "durationMs": 652
     },
     {
       "name": "run timeout stops non-terminating Java",
       "passed": true,
-      "durationMs": 11962
+      "durationMs": 10633
     }
   ],
-  "durationSeconds": 25.792,
+  "durationSeconds": 14.895,
   "runtime": "bundled Java 21",
   "platform": "win32"
 }
