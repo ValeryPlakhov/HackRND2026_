@@ -260,14 +260,7 @@ public final class Runner {
         for (int i = 0; i < inputs.size(); i++) {
           var x = run(a, inputs.get(i));
           var y = run(b, inputs.get(i));
-          boolean same =
-              Objects.equals(x.get("stdoutSha256"), y.get("stdoutSha256"))
-                  && Objects.equals(x.get("stderrSha256"), y.get("stderrSha256"))
-                  && Objects.equals(x.get("exitCode"), y.get("exitCode"))
-                  && !Boolean.TRUE.equals(x.get("timedOut"))
-                  && !Boolean.TRUE.equals(y.get("timedOut"))
-                  && !Boolean.TRUE.equals(x.get("outputLimit"))
-                  && !Boolean.TRUE.equals(y.get("outputLimit"));
+          boolean same = sameBehavior(x, y);
           pass &= same;
           tests.add(
               Map.of(
@@ -287,12 +280,31 @@ public final class Runner {
       out.put("runner", MODE);
       out.put(
           "contract",
-          "Exact UTF-8 stdout + stderr + exitCode. Timeout/output overflow always fail. Finite"
-              + " tests are evidence, not a proof for all inputs.");
+          "Exact UTF-8 stdout + exitCode; stderr without stack-frame lines (source line numbers"
+              + " move during refactoring). Timeout/output overflow always fail. Finite tests are"
+              + " evidence, not a proof for all inputs.");
       return out;
     } finally {
       SLOTS.release();
     }
+  }
+
+  /** Stack frames carry source line numbers, which a refactoring legitimately moves. */
+  static String stderrSignature(Object stderr) {
+    return String.valueOf(stderr)
+        .lines()
+        .filter(line -> !line.matches("\\s+at .*") && !line.matches("\\s+\\.\\.\\. \\d+ more"))
+        .collect(java.util.stream.Collectors.joining("\n"));
+  }
+
+  static boolean sameBehavior(Map<String, Object> x, Map<String, Object> y) {
+    return Objects.equals(x.get("stdoutSha256"), y.get("stdoutSha256"))
+        && stderrSignature(x.get("stderr")).equals(stderrSignature(y.get("stderr")))
+        && Objects.equals(x.get("exitCode"), y.get("exitCode"))
+        && !Boolean.TRUE.equals(x.get("timedOut"))
+        && !Boolean.TRUE.equals(y.get("timedOut"))
+        && !Boolean.TRUE.equals(x.get("outputLimit"))
+        && !Boolean.TRUE.equals(y.get("outputLimit"));
   }
 
   static Map<String, Object> process(List<String> args, Path cwd, String input, long timeout)

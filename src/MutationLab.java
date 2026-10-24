@@ -236,12 +236,6 @@ public final class MutationLab {
   }
 
   static boolean equivalent(Map<String, Object> first, Map<String, Object> second) {
-    return Objects.equals(first.get("stdoutSha256"), second.get("stdoutSha256"))
-        && Objects.equals(first.get("stderrSha256"), second.get("stderrSha256"))
-        && Objects.equals(first.get("exitCode"), second.get("exitCode"))
-        && !Boolean.TRUE.equals(first.get("timedOut"))
-        && !Boolean.TRUE.equals(second.get("timedOut"))
-        && !Boolean.TRUE.equals(first.get("outputLimit"))
-        && !Boolean.TRUE.equals(second.get("outputLimit"));
+    return Runner.sameBehavior(first, second);
   }
 }
