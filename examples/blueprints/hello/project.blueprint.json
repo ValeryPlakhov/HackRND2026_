@@ -1,0 +1,29 @@
+{
+  "schema": "blueprints.visual/1",
+  "title": "Приветствие",
+  "steps": [
+    {
+      "id": "hello_name",
+      "type": "input",
+      "config": {
+        "name": "Как вас зовут?",
+        "dataType": "text",
+        "example": "Анна"
+      }
+    },
+    {
+      "id": "hello_result",
+      "type": "print",
+      "config": {
+        "text": "Привет, ",
+        "value": {
+          "kind": "ref",
+          "id": "hello_name"
+        }
+      }
+    }
+  ],
+  "inputs": {
+    "hello_name": "Анна"
+  }
+}

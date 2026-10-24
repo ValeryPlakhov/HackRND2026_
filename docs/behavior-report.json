@@ -1,0 +1,219 @@
+{
+  "baselineBuild": {
+    "success": true,
+    "diagnostics": "",
+    "stdout": "",
+    "timeMs": 709
+  },
+  "candidateBuild": {
+    "success": true,
+    "diagnostics": "",
+    "stdout": "",
+    "timeMs": 733
+  },
+  "passed": true,
+  "tests": [
+    {
+      "baseline": {
+        "stderr": "",
+        "stdoutSha256": "7f321c1e006d28eae0a45e311c114a56f43bd499f521a2c15c82dc8ebdc60319",
+        "timeMs": 128,
+        "timedOut": false,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "outputLimit": false,
+        "stdout": "Совпадающих пар: 0\r\nКатегория: пустой набор\r\n",
+        "exitCode": 0
+      },
+      "candidate": {
+        "stderr": "",
+        "stdoutSha256": "7f321c1e006d28eae0a45e311c114a56f43bd499f521a2c15c82dc8ebdc60319",
+        "timeMs": 147,
+        "timedOut": false,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "outputLimit": false,
+        "stdout": "Совпадающих пар: 0\r\nКатегория: пустой набор\r\n",
+        "exitCode": 0
+      },
+      "passed": true,
+      "name": "Вход 1",
+      "input": "0\n"
+    },
+    {
+      "baseline": {
+        "stderr": "",
+        "stdoutSha256": "40f85e0f311f2b5391860f0240371ed135b0bc2a7ec6b693337bef8b449cac98",
+        "timeMs": 140,
+        "timedOut": false,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "outputLimit": false,
+        "stdout": "Совпадающих пар: 1\r\nКатегория: малый набор\r\n",
+        "exitCode": 0
+      },
+      "candidate": {
+        "stderr": "",
+        "stdoutSha256": "40f85e0f311f2b5391860f0240371ed135b0bc2a7ec6b693337bef8b449cac98",
+        "timeMs": 140,
+        "timedOut": false,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "outputLimit": false,
+        "stdout": "Совпадающих пар: 1\r\nКатегория: малый набор\r\n",
+        "exitCode": 0
+      },
+      "passed": true,
+      "name": "Вход 2",
+      "input": "1\n7\n"
+    },
+    {
+      "baseline": {
+        "stderr": "",
+        "stdoutSha256": "1682ee9dde12e30e7dc198c86d4318e9b4b470bb6ff3755f6db82191d2b025d4",
+        "timeMs": 138,
+        "timedOut": false,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "outputLimit": false,
+        "stdout": "Совпадающих пар: 13\r\nКатегория: малый набор\r\n",
+        "exitCode": 0
+      },
+      "candidate": {
+        "stderr": "",
+        "stdoutSha256": "1682ee9dde12e30e7dc198c86d4318e9b4b470bb6ff3755f6db82191d2b025d4",
+        "timeMs": 140,
+        "timedOut": false,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "outputLimit": false,
+        "stdout": "Совпадающих пар: 13\r\nКатегория: малый набор\r\n",
+        "exitCode": 0
+      },
+      "passed": true,
+      "name": "Вход 3",
+      "input": "5\n1 2 1 2 1\n"
+    },
+    {
+      "baseline": {
+        "stderr": "",
+        "stdoutSha256": "fc4360907c22f6b918f8f411fd85b46cece0df569d9e6db57633c8bf10091f71",
+        "timeMs": 141,
+        "timedOut": false,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "outputLimit": false,
+        "stdout": "Совпадающих пар: 10\r\nКатегория: малый набор\r\n",
+        "exitCode": 0
+      },
+      "candidate": {
+        "stderr": "",
+        "stdoutSha256": "fc4360907c22f6b918f8f411fd85b46cece0df569d9e6db57633c8bf10091f71",
+        "timeMs": 139,
+        "timedOut": false,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "outputLimit": false,
+        "stdout": "Совпадающих пар: 10\r\nКатегория: малый набор\r\n",
+        "exitCode": 0
+      },
+      "passed": true,
+      "name": "Вход 4",
+      "input": "6\n-3 0 -3 2147483647 -2147483648 0\n"
+    },
+    {
+      "baseline": {
+        "stderr": "Некорректный размер\r\n",
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "timeMs": 118,
+        "timedOut": false,
+        "stderrSha256": "e1f35f8db7060131f81519c538e294190220b60b6f8f2010d30c22847d69a9ff",
+        "outputLimit": false,
+        "stdout": "",
+        "exitCode": 0
+      },
+      "candidate": {
+        "stderr": "Некорректный размер\r\n",
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "timeMs": 130,
+        "timedOut": false,
+        "stderrSha256": "e1f35f8db7060131f81519c538e294190220b60b6f8f2010d30c22847d69a9ff",
+        "outputLimit": false,
+        "stdout": "",
+        "exitCode": 0
+      },
+      "passed": true,
+      "name": "Вход 5",
+      "input": "-1\n"
+    },
+    {
+      "baseline": {
+        "stderr": "",
+        "stdoutSha256": "19fba93ce6bb64e68197fd24e546bc9d27c0c48e97354f019c0401aacd2d51b8",
+        "timeMs": 139,
+        "timedOut": false,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "outputLimit": false,
+        "stdout": "Совпадающих пар: 64\r\nКатегория: малый набор\r\n",
+        "exitCode": 0
+      },
+      "candidate": {
+        "stderr": "",
+        "stdoutSha256": "19fba93ce6bb64e68197fd24e546bc9d27c0c48e97354f019c0401aacd2d51b8",
+        "timeMs": 140,
+        "timedOut": false,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "outputLimit": false,
+        "stdout": "Совпадающих пар: 64\r\nКатегория: малый набор\r\n",
+        "exitCode": 0
+      },
+      "passed": true,
+      "name": "Вход 6",
+      "input": "8\n4 4 4 4 4 4 4 4\n"
+    },
+    {
+      "baseline": {
+        "stderr": "",
+        "stdoutSha256": "a66ab6e923c04683977f59a6f89e2cfb7cae28e9cf076f16109f2827c0a28249",
+        "timeMs": 139,
+        "timedOut": false,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "outputLimit": false,
+        "stdout": "Совпадающих пар: 6\r\nКатегория: малый набор\r\n",
+        "exitCode": 0
+      },
+      "candidate": {
+        "stderr": "",
+        "stdoutSha256": "a66ab6e923c04683977f59a6f89e2cfb7cae28e9cf076f16109f2827c0a28249",
+        "timeMs": 118,
+        "timedOut": false,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "outputLimit": false,
+        "stdout": "Совпадающих пар: 6\r\nКатегория: малый набор\r\n",
+        "exitCode": 0
+      },
+      "passed": true,
+      "name": "Вход 7",
+      "input": "4\n1 2\n"
+    },
+    {
+      "baseline": {
+        "stderr": "",
+        "stdoutSha256": "e493b79524aa0136c2f70e213814a9ee398a3f35619fde988a9994f835ef3c5d",
+        "timeMs": 130,
+        "timedOut": false,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "outputLimit": false,
+        "stdout": "Совпадающих пар: 10\r\nКатегория: большой набор\r\n",
+        "exitCode": 0
+      },
+      "candidate": {
+        "stderr": "",
+        "stdoutSha256": "e493b79524aa0136c2f70e213814a9ee398a3f35619fde988a9994f835ef3c5d",
+        "timeMs": 140,
+        "timedOut": false,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "outputLimit": false,
+        "stdout": "Совпадающих пар: 10\r\nКатегория: большой набор\r\n",
+        "exitCode": 0
+      },
+      "passed": true,
+      "name": "Вход 8",
+      "input": "10\n0 1 2 3 4 5 6 7 8 9\n"
+    }
+  ],
+  "runner": "local",
+  "contract": "Exact UTF-8 stdout + stderr + exitCode. Timeout/output overflow always fail. Finite tests are evidence, not a proof for all inputs."
+}

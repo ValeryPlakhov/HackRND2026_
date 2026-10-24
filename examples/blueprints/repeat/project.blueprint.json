@@ -1,0 +1,32 @@
+{
+  "schema": "blueprints.visual/1",
+  "title": "Три напоминания",
+  "steps": [
+    {
+      "id": "reminder_loop",
+      "type": "repeat",
+      "config": {
+        "times": {
+          "kind": "literal",
+          "type": "number",
+          "value": 3
+        },
+        "itemName": "Номер напоминания"
+      },
+      "body": [
+        {
+          "id": "reminder_message",
+          "type": "print",
+          "config": {
+            "text": "Напоминание № ",
+            "value": {
+              "kind": "ref",
+              "id": "reminder_loop_item"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "inputs": {}
+}

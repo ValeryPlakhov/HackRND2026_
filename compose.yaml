@@ -1,0 +1,15 @@
+services:
+  blueprints:
+    build: .
+    ports:
+      - "127.0.0.1:8080:8080"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,size=256m
+    mem_limit: 768m
+    cpus: 2
+    pids_limit: 160
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    init: true
+    restart: unless-stopped

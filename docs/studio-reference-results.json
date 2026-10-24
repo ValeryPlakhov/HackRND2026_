@@ -1,0 +1,79 @@
+{
+  "pairs": {
+    "passed": true,
+    "inputs": 8,
+    "benchmark": [
+      {
+        "size": 128,
+        "baselineNs": 55600.0,
+        "candidateNs": 71700.0,
+        "speedup": 0.7754532775453278,
+        "sameResult": true
+      },
+      {
+        "size": 1024,
+        "baselineNs": 334400.0,
+        "candidateNs": 158700.0,
+        "speedup": 2.1071203528670446,
+        "sameResult": true
+      },
+      {
+        "size": 4096,
+        "baselineNs": 4806800.0,
+        "candidateNs": 387300.0,
+        "speedup": 12.411050864962561,
+        "sameResult": true
+      }
+    ],
+    "mutationScore": 100.0,
+    "reduction": {
+      "beforeLength": 6,
+      "afterLength": 1,
+      "stillFails": true
+    }
+  },
+  "monolith": {
+    "passed": true,
+    "inputs": 8,
+    "benchmark": [
+      {
+        "size": 128,
+        "baselineNs": 48200.0,
+        "candidateNs": 71200.0,
+        "speedup": 0.6769662921348315,
+        "sameResult": true
+      },
+      {
+        "size": 1024,
+        "baselineNs": 305000.0,
+        "candidateNs": 132100.0,
+        "speedup": 2.3088569265707797,
+        "sameResult": true
+      },
+      {
+        "size": 4096,
+        "baselineNs": 4728500.0,
+        "candidateNs": 405600.0,
+        "speedup": 11.658037475345168,
+        "sameResult": true
+      }
+    ],
+    "mutationScore": 100.0,
+    "reduction": {
+      "beforeLength": 6,
+      "afterLength": 1,
+      "stillFails": true
+    }
+  },
+  "text": {
+    "passed": true,
+    "inputs": 5,
+    "benchmark": null,
+    "mutationScore": null,
+    "reduction": {
+      "beforeLength": null,
+      "afterLength": null,
+      "stillFails": null
+    }
+  }
+}

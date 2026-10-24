@@ -1,0 +1,193 @@
+{
+  "baselineCommit": "d0624b3",
+  "method": "UTF-8 splitlines; nonempty excludes whitespace-only lines, includes comments.",
+  "newAuthoredProduct": {
+    "files": 25,
+    "physical": 11005,
+    "nonempty": 10702
+  },
+  "excluded": [
+    "Electron and Java runtimes",
+    "dependencies",
+    "demo-data.mjs",
+    "tests and documentation",
+    "build outputs"
+  ],
+  "files": [
+    {
+      "path": "web/ide/app.mjs",
+      "language": "JavaScript",
+      "physical": 1831,
+      "nonempty": 1775,
+      "category": "product"
+    },
+    {
+      "path": "web/ide/bridge.mjs",
+      "language": "JavaScript",
+      "physical": 720,
+      "nonempty": 696,
+      "category": "product"
+    },
+    {
+      "path": "web/ide/commands.mjs",
+      "language": "JavaScript",
+      "physical": 344,
+      "nonempty": 342,
+      "category": "product"
+    },
+    {
+      "path": "web/ide/core.mjs",
+      "language": "JavaScript",
+      "physical": 246,
+      "nonempty": 230,
+      "category": "product"
+    },
+    {
+      "path": "web/ide/documents.mjs",
+      "language": "JavaScript",
+      "physical": 333,
+      "nonempty": 311,
+      "category": "product"
+    },
+    {
+      "path": "web/ide/editor-actions.mjs",
+      "language": "JavaScript",
+      "physical": 223,
+      "nonempty": 212,
+      "category": "product"
+    },
+    {
+      "path": "web/ide/editor.mjs",
+      "language": "JavaScript",
+      "physical": 610,
+      "nonempty": 581,
+      "category": "product"
+    },
+    {
+      "path": "web/ide/graph-export.mjs",
+      "language": "JavaScript",
+      "physical": 27,
+      "nonempty": 26,
+      "category": "product"
+    },
+    {
+      "path": "web/ide/graph.css",
+      "language": "CSS",
+      "physical": 553,
+      "nonempty": 553,
+      "category": "product"
+    },
+    {
+      "path": "web/ide/ide.css",
+      "language": "CSS",
+      "physical": 2661,
+      "nonempty": 2661,
+      "category": "product"
+    },
+    {
+      "path": "web/ide/language.mjs",
+      "language": "JavaScript",
+      "physical": 295,
+      "nonempty": 291,
+      "category": "product"
+    },
+    {
+      "path": "web/ide/palette.mjs",
+      "language": "JavaScript",
+      "physical": 108,
+      "nonempty": 102,
+      "category": "product"
+    },
+    {
+      "path": "web/ide/views.mjs",
+      "language": "JavaScript",
+      "physical": 329,
+      "nonempty": 304,
+      "category": "product"
+    },
+    {
+      "path": "web/ide.html",
+      "language": "HTML",
+      "physical": 19,
+      "nonempty": 19,
+      "category": "product"
+    },
+    {
+      "path": "desktop/Launcher.cs",
+      "language": "C#",
+      "physical": 217,
+      "nonempty": 209,
+      "category": "product"
+    },
+    {
+      "path": "desktop/main.cjs",
+      "language": "JavaScript",
+      "physical": 574,
+      "nonempty": 563,
+      "category": "product"
+    },
+    {
+      "path": "desktop/preload.cjs",
+      "language": "JavaScript",
+      "physical": 54,
+      "nonempty": 52,
+      "category": "product"
+    },
+    {
+      "path": "desktop/services/backend.cjs",
+      "language": "JavaScript",
+      "physical": 95,
+      "nonempty": 89,
+      "category": "product"
+    },
+    {
+      "path": "desktop/services/contracts.cjs",
+      "language": "JavaScript",
+      "physical": 244,
+      "nonempty": 229,
+      "category": "product"
+    },
+    {
+      "path": "desktop/services/git.cjs",
+      "language": "JavaScript",
+      "physical": 147,
+      "nonempty": 140,
+      "category": "product"
+    },
+    {
+      "path": "desktop/services/persistence.cjs",
+      "language": "JavaScript",
+      "physical": 267,
+      "nonempty": 249,
+      "category": "product"
+    },
+    {
+      "path": "desktop/services/project-info.cjs",
+      "language": "JavaScript",
+      "physical": 87,
+      "nonempty": 83,
+      "category": "product"
+    },
+    {
+      "path": "desktop/services/search.cjs",
+      "language": "JavaScript",
+      "physical": 144,
+      "nonempty": 138,
+      "category": "product"
+    },
+    {
+      "path": "desktop/services/tasks.cjs",
+      "language": "JavaScript",
+      "physical": 389,
+      "nonempty": 377,
+      "category": "product"
+    },
+    {
+      "path": "desktop/services/workspace.cjs",
+      "language": "JavaScript",
+      "physical": 488,
+      "nonempty": 470,
+      "category": "product"
+    }
+  ]
+}

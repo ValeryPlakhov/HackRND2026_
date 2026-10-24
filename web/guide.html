@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Blueprints Studio / Field guide</title>
+    <meta
+      name="description"
+      content="Запуск, сценарий проверки и технические границы Java Blueprints Studio."
+    />
+    <link rel="stylesheet" href="studio.css" />
+    <style>
+      body {
+        overflow: auto;
+      }
+      .guide {
+        max-width: 1040px;
+        margin: auto;
+        padding: 48px 32px 100px;
+      }
+      .guide nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 72px;
+      }
+      .guide a {
+        color: var(--lime, #b6f36d);
+        text-decoration: none;
+      }
+      .guide h1 {
+        font-size: clamp(40px, 7vw, 76px);
+        line-height: 1.06;
+        letter-spacing: -3px;
+        max-width: 800px;
+        margin: 24px 0;
+      }
+      .guide h2 {
+        font-size: 26px;
+        margin: 56px 0 20px;
+        letter-spacing: -0.7px;
+      }
+      .guide p,
+      .guide li {
+        color: var(--text-secondary, #9ba5b5);
+        font-size: 16px;
+        line-height: 1.9;
+      }
+      .guide strong {
+        color: var(--text-primary, #edf2e6);
+      }
+      .guide code,
+      .guide pre {
+        font-family: Consolas, monospace;
+      }
+      .guide pre {
+        padding: 24px;
+        background: #151b25;
+        border: 1px solid #303948;
+        border-radius: 12px;
+        overflow: auto;
+        font-size: 15px;
+        color: #c7f39f;
+      }
+      .guide-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+      .guide-card {
+        padding: 24px;
+        border: 1px solid #303948;
+        border-radius: 12px;
+        background: #111720;
+      }
+      .guide-card h3 {
+        font-size: 18px;
+        margin: 0 0 12px;
+      }
+      .guide-card p {
+        font-size: 14px;
+        margin: 0;
+      }
+      .guide-label {
+        font-size: 11px;
+        letter-spacing: 3px;
+        color: #b6f36d;
+      }
+      .guide table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 14px;
+      }
+      .guide td,
+      .guide th {
+        text-align: left;
+        padding: 16px;
+        border-bottom: 1px solid #303948;
+        line-height: 1.7;
+      }
+      .guide td {
+        color: #a7b1c1;
+      }
+      .guide ol {
+        padding-left: 24px;
+      }
+      .guide li {
+        padding: 8px 0 8px 8px;
+      }
+      .guide-note {
+        padding: 20px 24px;
+        border-left: 3px solid #b6f36d;
+        background: #151d22;
+        border-radius: 0 10px 10px 0;
+        margin: 28px 0;
+      }
+      @media (max-width: 640px) {
+        .guide {
+          padding: 24px 20px 60px;
+        }
+        .guide-grid {
+          grid-template-columns: 1fr;
+        }
+        .guide nav {
+          margin-bottom: 48px;
+        }
+        .guide h1 {
+          letter-spacing: -1.5px;
+        }
+      }
+    </style>
+  </head>
+  <body data-theme="dark">
+    <main class="guide">
+      <nav>
+        <a href="./"><strong>↖ blueprints studio</strong></a
+        ><span class="guide-label">FIELD GUIDE / 2.0</span>
+      </nav>
+      <div class="guide-label">UNDERSTAND · REFACTOR · VERIFY</div>
+      <h1>Доверие можно<br />воспроизвести.</h1>
+      <p>
+        Короткий путь от запуска Studio до изменения, которое можно проверить и
+        передать на review.
+      </p>
+      <h2>01 / Полная локальная версия</h2>
+      <p>
+        Нужен <strong>JDK 21+</strong>. Откройте
+        <code>start-local.cmd</code> либо выполните:
+      </p>
+      <pre>
+.\start.ps1 -TrustedLocal
+# Затем http://localhost:8080</pre
+      >
+      <p>
+        Linux/macOS: <code>BLUEPRINTS_RUNNER=local sh start.sh</code>.
+        Приложение работает без npm, Maven и ключей API. Python и Node нужны
+        только разработчику для тестов.
+      </p>
+      <div class="guide-note">
+        <p>
+          <strong>Trusted local</strong> запускает Java с вашими правами.
+          Используйте доверенные исходники. Docker runner подготовлен, но в этой
+          среде не проверен.
+        </p>
+      </div>
+      <h2>02 / От модели к проверке</h2>
+      <ol>
+        <li>
+          Откройте <strong>Monolith / 1K</strong> и метод countPairs. Canvas
+          связывает AST-узлы с исходными строками.
+        </li>
+        <li>
+          <strong>Рефакторинг и diff → Просмотреть патч</strong>. Изучите
+          before/after, причину применимости и допущения.
+        </li>
+        <li>
+          <strong>Применить и проверить</strong>. Обе версии отдельно
+          компилируются и исполняются. Успех относится к указанным входам.
+        </li>
+        <li>
+          <strong>Test Lab → Бенчмарк</strong>. Укажите countPairs и размеры
+          массива. Сравните samples и медианы.
+        </li>
+        <li>
+          <strong>Mutation</strong> покажет, какие изменения замечает набор
+          тестов. Invalid mutants не участвуют в score.
+        </li>
+        <li>
+          Для FAIL откройте <strong>Контрпример</strong>. Протокол reducer: n,
+          затем n целых чисел.
+        </li>
+        <li>
+          Сохраните checkpoint, выделите независимый static-метод в helper,
+          повторите gate и скачайте <strong>Evidence ZIP</strong>.
+        </li>
+      </ol>
+      <h2>03 / Инструменты инженера</h2>
+      <div class="guide-grid">
+        <article class="guide-card">
+          <h3>Живой canvas</h3>
+          <p>
+            Pan, zoom, minimap, поиск узлов, source location, структурные пути.
+            Двойной клик открывает редактирование поддерживаемого узла.
+          </p>
+        </article>
+        <article class="guide-card">
+          <h3>План с source hash</h3>
+          <p>
+            Пять семейств rewrite. Сервер отклоняет устаревшие и пересекающиеся
+            планы; после правки старый gate теряет силу.
+          </p>
+        </article>
+        <article class="guide-card">
+          <h3>Архитектура и данные</h3>
+          <p>
+            Вызовы, SCC, hotspots, fan-in/out, lexical def/use, доминаторы и
+            объяснимая сложность.
+          </p>
+        </article>
+        <article class="guide-card">
+          <h3>Переносимый review</h3>
+          <p>
+            ZIP с обеими версиями, stdin, patch, manifest и автономным HTML.
+            Диагностика SARIF; граф SVG, Mermaid, DOT.
+          </p>
+        </article>
+      </div>
+      <h2>04 / Клавиши</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Команда</th>
+            <th>Действие</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Ctrl / ⌘ + K</td>
+            <td>Поиск действий, файлов, методов и правил</td>
+          </tr>
+          <tr>
+            <td>Ctrl / ⌘ + Enter</td>
+            <td>Запуск quality gate</td>
+          </tr>
+          <tr>
+            <td>Ctrl / ⌘ + S</td>
+            <td>Checkpoint</td>
+          </tr>
+          <tr>
+            <td>F в графе</td>
+            <td>Вписать граф в окно</td>
+          </tr>
+          <tr>
+            <td>Escape</td>
+            <td>Закрыть диалог</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        Поиск поддерживает
+        <code
+          >file:Main.java method:count severity:warning rule:BP101
+          line:5-20</code
+        >. История сохраняется в браузере; серверные jobs живут до рестарта.
+      </p>
+      <h2>05 / Что означает зелёный статус</h2>
+      <p>
+        Raw bytes stdout и stderr, а также exitCode совпали на выбранных stdin.
+        Compile error, timeout и output flood не могут дать PASS. Хеши
+        привязывают отчёт к содержимому исходников.
+      </p>
+      <p>
+        Конечные тесты не доказывают все входы. SHA-256 не цифровая подпись.
+        Mutation score не coverage. Benchmark harness не JMH. Статические Big O,
+        call graph и data flow имеют допущения; exception flow структурный.
+      </p>
+      <h2>06 / Проверка сборки</h2>
+      <pre>
+python tests/verify.py
+# 108 unit + 22 API + 36 Studio API = 166 tests
+python tests/source_audit.py</pre
+      >
+      <p>
+        Verify сам поднимает отдельный сервер на loopback:18080 и останавливает
+        после тестов. Нужны JDK21, Node22+, Python3.10+. Подробные отчёты
+        включены в архив.
+      </p>
+      <div class="guide-note">
+        <p>
+          <strong>Статическое демо</strong> содержит помеченные записи настоящих
+          прогонов трёх примеров. JVM там нет; для произвольного Java
+          используйте локальную версию.
+        </p>
+      </div>
+      <p>
+        <a href="java-blueprints-source.zip"
+          >Скачать полный комплект исходников ↗</a
+        >
+        · <a href="./">Вернуться в Studio ↗</a>
+      </p>
+    </main>
+  </body>
+</html>

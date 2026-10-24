@@ -1,0 +1,8 @@
+{
+  "name": "blueprints-ide",
+  "version": "3.0.0",
+  "description": "Local Java Blueprint IDE",
+  "main": "main.cjs",
+  "private": true,
+  "license": "UNLICENSED"
+}
