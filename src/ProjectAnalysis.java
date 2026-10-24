@@ -109,9 +109,20 @@ public final class ProjectAnalysis {
       allFindings.addAll(extended);
       description.put("findings", allFindings);
       models.put(fileName, description);
+      List<RefactorPlans.Plan> plans =
+          model.valid() ? new RefactorPlans(model).collect() : List.of();
       for (Object item : allFindings) {
         Map<String, Object> finding = new LinkedHashMap<>((Map<String, Object>) item);
         finding.put("fileName", fileName);
+        int start = ((Number) finding.getOrDefault("start", -1)).intValue();
+        int end = ((Number) finding.getOrDefault("end", -1)).intValue();
+        // A finding is fixable when a rewrite plan touches its span (plans stay narrow).
+        boolean methodWide =
+            Set.of("LONG_METHOD", "BP103", "BP104", "BP118").contains(finding.get("rule"));
+        if (start >= 0
+            && !methodWide
+            && plans.stream().anyMatch(plan -> plan.start() < Math.max(end, start + 1) && start < plan.end()))
+          finding.put("canOptimize", true);
         findings.add(finding);
       }
       for (JavaModel.Method method : model.methods) {

@@ -122,7 +122,7 @@ export function improveSidebar(state) {
         ? plans
             .map(
               (plan) =>
-                `<article class="q-plan"><div class="q-plan-head"><span>${glyph("sparkle", 14)}</span><div><b>${e(plan.title)}</b><small>${e(plan.description)}</small></div></div><div class="q-plan-meta"><code>${e(plan.rule)}</code><span>стр. ${plan.line}</span>${plan.timeBefore && plan.timeBefore !== "unchanged" ? `<span class="q-big-o bad">${e(plan.timeBefore)}</span>→<span class="q-big-o good">${e(plan.timeAfter)}</span>` : '<span class="q-muted">упрощение структуры</span>'}</div><div class="q-plan-actions">${button("plan-preview", "Посмотреть изменение", "diff", "ide-button small", `data-id="${e(plan.id)}"`)}${button("plan-apply", "Применить", "check", "ide-button small primary", `data-id="${e(plan.id)}" ${document.readOnly ? "disabled" : ""}`)}</div></article>`,
+                `<article class="q-plan"><div class="q-plan-head"><span>${glyph("sparkle", 14)}</span><div><b>${e(plan.title)}</b><small>${e(plan.rationale)}</small></div></div><div class="q-plan-meta"><code>${e(plan.rule)}</code><span>стр. ${plan.line}</span>${plan.timeBefore && plan.timeBefore !== "unchanged" ? `<span class="q-big-o bad">${e(plan.timeBefore)}</span>→<span class="q-big-o good">${e(plan.timeAfter)}</span>` : '<span class="q-muted">упрощение структуры</span>'}</div><div class="q-plan-actions">${button("plan-preview", "Посмотреть изменение", "diff", "ide-button small", `data-id="${e(plan.id)}"`)}${button("plan-apply", "Применить", "check", "ide-button small primary", `data-id="${e(plan.id)}" ${document.readOnly ? "disabled" : ""}`)}</div></article>`,
             )
             .join("") +
           (plans.length > 1
@@ -139,7 +139,7 @@ export function improveSidebar(state) {
 export function planModal(plan) {
   return modalFrame(
     plan.title,
-    `<div class="q-plan-meta"><code>${e(plan.rule)}</code><span>строка ${plan.line}</span>${plan.timeBefore && plan.timeBefore !== "unchanged" ? `<span class="q-big-o bad">${e(plan.timeBefore)}</span>→<span class="q-big-o good">${e(plan.timeAfter)}</span>` : ""}<span>память: ${e(plan.memoryAfter ?? "—")}</span></div><p class="modal-lead">${e(plan.rationale)}</p>${diffView(plan.before, plan.after, { before: "Сейчас", after: "После преобразования" })}<p class="modal-note">Патч привязан к хешу исходника. Если код изменится, предложение будет пересчитано.</p>`,
+    `<div class="q-plan-meta"><code>${e(plan.rule)}</code><span>строка ${plan.line}</span>${plan.timeBefore && plan.timeBefore !== "unchanged" ? `<span class="q-big-o bad">${e(plan.timeBefore)}</span>→<span class="q-big-o good">${e(plan.timeAfter)}</span>` : ""}<span>память: ${e(plan.memoryAfter ?? "—")}</span></div><p class="modal-lead">${e(plan.rationale)}</p>${diffView(plan.before, plan.after, { before: "Сейчас", after: "После преобразования" })}<p class="modal-note"><b>Условия применимости.</b> ${e(plan.description)} Патч привязан к хешу исходника: если код изменится, предложение будет пересчитано, а после применения запустится проверка поведения.</p>`,
     `${button("close-modal", "Закрыть")}${button("plan-apply", "Применить и проверить", "check", "ide-button primary", `data-id="${e(plan.id)}"`)}`,
     "wide",
   );
@@ -155,7 +155,7 @@ export function decomposeModal({ module, methods, fileName, className }) {
     `<form id="decompose-form"><p class="modal-lead">Методы группы «${e(RESPONSIBILITY[module.id] ?? module.id)}» из ${e(basename(fileName))} будут перенесены в новый класс рядом с исходным файлом. В исходном классе останутся делегаты, поэтому вызывающий код не меняется.</p><label class="modal-field">Имя нового класса<input name="className" value="${e(className)}" required pattern="[A-Z][A-Za-z0-9_]*" maxlength="60" autocomplete="off"/></label><div class="q-method-picks">${methods
       .map(
         (method) =>
-          `<label class="${movable(method) ? "" : "disabled"}"><input type="checkbox" name="method" value="${e(method.methodId)}" ${movable(method) ? (method.owner === primary ? "checked" : "") : "disabled"}/><span><b>${method.owner !== primary ? e(method.owner) + "." : ""}${e(method.name)}()</b><small>стр. ${method.line} · ${method.lines} строк${method.static ? "" : " · метод экземпляра"}${method.name === "main" ? " · точка входа" : ""}</small></span></label>`,
+          `<label class="${movable(method) ? "" : "disabled"}"><input type="checkbox" name="method" value="${e(method.methodId)}" ${movable(method) ? (method.owner === primary ? "checked" : "") : "disabled"}/><span><b>${method.name === "<init>" ? "new " + e(method.owner) : (method.owner !== primary ? e(method.owner) + "." : "") + e(method.name)}()</b><small>стр. ${method.line} · ${method.lines} строк${method.static ? "" : " · метод экземпляра"}${method.name === "main" ? " · точка входа" : ""}</small></span></label>`,
       )
       .join("")}</div><p class="modal-note">Методы, которые читают поля класса или вызывают оставшиеся методы, будут пропущены с объяснением. После переноса javac собирает проект, затем запускается проверка поведения.</p><div id="decompose-error" class="modal-inline-error" role="alert" hidden></div></form>`,
     `${button("close-modal", "Отмена")}<button type="submit" form="decompose-form" class="ide-button primary">${glyph("layers")}<span>Выделить и проверить</span></button>`,

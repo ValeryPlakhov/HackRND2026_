@@ -162,8 +162,100 @@ class IdeApiTests(unittest.TestCase):
             self.assertTrue(result['result']['passed'], folder.name)
 
 
+LOOKUP = '''import java.util.*;
+public class Lookup {
+    public static void main(String[] args) {
+        Scanner in = new Scanner(System.in);
+        List<String> banned = new ArrayList<>(List.of("spam", "ads", "x"));
+        List<String> words = new ArrayList<>();
+        while (in.hasNext()) words.add(in.next());
+        int hits = 0;
+        for (String word : words) {
+            if (banned.contains(word)) {
+                hits++;
+            }
+        }
+        List<Integer> unique = new ArrayList<>();
+        for (String word : words) {
+            Integer length = word.length();
+            if (!unique.contains(length)) {
+                unique.add(length);
+            }
+        }
+        LinkedList<String> queue = new LinkedList<>(words);
+        for (int i = 0; i < queue.size(); i++) {
+            String head = queue.get(i);
+            String last = queue.getLast();
+            if (head == "stop") System.out.println("stop at " + i);
+            if (head == last) System.out.println("last at " + i);
+        }
+        try { Integer.parseInt("x"); } catch (NumberFormatException e) { }
+        System.out.println(hits + " " + unique);
+    }
+}
+'''
+
+
+class CollectionRulesTests(unittest.TestCase):
+    def test_13_real_world_defects_are_reported(self):
+        project = post('project', {'files': {'Lookup.java': LOOKUP}})
+        rules = {(f['rule'], f['line']) for f in project['findings']}
+        self.assertIn(('BP121', 10), rules)
+        self.assertIn(('BP121', 17), rules)
+        self.assertIn(('BP125', 23), rules)
+        self.assertIn(('STRING_IDENTITY', 25), rules)
+        self.assertIn(('BP122', 26), rules)
+        self.assertIn(('EMPTY_CATCH', 28), rules)
+        self.assertNotIn(('BP122', 25), rules)
+        fixable = {f['line'] for f in project['findings'] if f['rule'] == 'BP121' and f['canOptimize']}
+        self.assertEqual(fixable, {10, 17})
+
+    def test_14_collection_plans_rewrite_lookups_and_keep_behaviour(self):
+        plans = post('plans', {'source': LOOKUP})
+        chosen = [p for p in plans['plans'] if p['rule'] in ('dedupe-set', 'contains-to-set')]
+        self.assertEqual({p['rule'] for p in chosen}, {'dedupe-set', 'contains-to-set'})
+        applied = post('plans/apply', {'source': LOOKUP, 'sourceHash': plans['sourceHash'], 'planIds': [p['id'] for p in chosen]})
+        self.assertIn('bannedSet.contains(word)', applied['source'])
+        self.assertIn('if (uniqueSeen.add(length))', applied['source'])
+        result = job('compare', {'original': {'Lookup.java': LOOKUP}, 'candidate': {'Lookup.java': applied['source']},
+                                 'inputs': ['spam a bb ads ccc a stop\n', '', 'x x x y\n']})
+        self.assertTrue(result['result']['passed'])
+
+    def test_15_collection_plans_refuse_lists_that_change_or_escape(self):
+        source = '''import java.util.*;
+class Unsafe {
+    static int f(List<String> items, List<String> seen) {
+        int n = 0;
+        for (String item : items) {
+            if (seen.contains(item)) n++;
+            seen.add(item);
+        }
+        List<String> mine = new ArrayList<>();
+        for (String item : items) {
+            if (!mine.contains(item)) mine.add(item);
+        }
+        Collections.reverse(mine);
+        return n + mine.size();
+    }
+}
+'''
+        plans = post('plans', {'source': source})
+        self.assertFalse([p for p in plans['plans'] if p['rule'] in ('dedupe-set', 'contains-to-set')])
+
+    def test_16_every_optimisation_of_the_shop_example_keeps_behaviour(self):
+        files = shop_files()
+        source = files['src/ShopMonolith.java']
+        plans = post('plans', {'source': source})
+        self.assertTrue({'histogram-pairs', 'dedupe-set', 'string-builder'} <= {p['rule'] for p in plans['plans']})
+        applied = post('plans/apply', {'source': source, 'sourceHash': plans['sourceHash'], 'planIds': [p['id'] for p in plans['plans']]})
+        result = job('compare', {'original': files, 'candidate': {'src/ShopMonolith.java': applied['source']},
+                                 'inputs': shop_inputs(), 'mainClass': 'ShopMonolith'})
+        self.assertTrue(result['result']['passed'], [t['passed'] for t in result['result']['tests']])
+
+
 if __name__ == '__main__':
-    suite = unittest.defaultTestLoader.loadTestsFromTestCase(IdeApiTests)
+    loader = unittest.defaultTestLoader
+    suite = unittest.TestSuite([loader.loadTestsFromTestCase(IdeApiTests), loader.loadTestsFromTestCase(CollectionRulesTests)])
     result = unittest.TextTestRunner(verbosity=2).run(suite)
     (ROOT / 'docs/ide-test-summary.json').write_text(json.dumps({'tests': result.testsRun, 'failures': len(result.failures), 'errors': len(result.errors), 'passed': result.wasSuccessful()}, indent=2), encoding='utf-8')
     raise SystemExit(0 if result.wasSuccessful() else 1)

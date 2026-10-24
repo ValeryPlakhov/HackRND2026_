@@ -199,7 +199,59 @@ public final class RuleCatalog {
               "error",
               "throw null всегда приводит к NullPointerException.",
               "Если это не тестовый сценарий, создайте исключение с понятным сообщением.",
-              "syntactic"));
+              "syntactic"),
+          new Rule(
+              "BP121",
+              "Линейный поиск в коллекции внутри цикла",
+              "performance",
+              "warning",
+              "contains/indexOf/remove(Object) у списка перебирает элементы; внутри цикла это"
+                  + " O(n·m) вместо O(n + m).",
+              "Постройте HashSet/HashMap до цикла или храните индекс по ключу. Если IDE предлагает"
+                  + " автоматическое улучшение, проверьте его на тестах.",
+              "type-lexical"),
+          new Rule(
+              "BP122",
+              "Строки сравниваются через ==",
+              "reliability",
+              "error",
+              "== сравнивает ссылки, а не текст: строка из ввода не равна литералу, даже если"
+                  + " символы совпадают.",
+              "Используйте equals или Objects.equals. Это меняет поведение — исправление ошибки"
+                  + " должно быть видно в проверке.",
+              "type-lexical"),
+          new Rule(
+              "BP123",
+              "Объекты-обёртки сравниваются через ==",
+              "reliability",
+              "warning",
+              "Integer/Long/Character через == совпадают только внутри кэша (обычно -128..127).",
+              "Сравнивайте через equals или распакуйте значения в примитивы.",
+              "type-lexical"),
+          new Rule(
+              "BP125",
+              "Доступ по индексу к LinkedList в цикле",
+              "performance",
+              "warning",
+              "LinkedList.get(i) проходит список от края: цикл по индексам становится O(n²).",
+              "Итерируйтесь через for-each/Iterator или используйте ArrayList.",
+              "type-lexical"),
+          new Rule(
+              "BP126",
+              "Сортировка внутри цикла",
+              "performance",
+              "warning",
+              "Сортировка на каждой итерации даёт O(k·n log n).",
+              "Отсортируйте один раз после накопления данных или используйте TreeMap/PriorityQueue.",
+              "syntactic"),
+          new Rule(
+              "BP127",
+              "Удаление из начала ArrayList в цикле",
+              "performance",
+              "warning",
+              "remove(0) сдвигает все элементы массива: очередь на ArrayList работает за O(n²).",
+              "Используйте ArrayDeque или LinkedList для очереди.",
+              "type-lexical"));
 
   private static final Map<String, Rule> BY_ID = new LinkedHashMap<>();
 
@@ -269,12 +321,78 @@ public final class RuleCatalog {
     private boolean deepReported;
     private boolean io;
     private boolean hasLoop;
+    private final Map<String, String> types = new HashMap<>();
+    /** Names declared inside loop bodies: a fresh collection per iteration is not repeated work. */
+    private final Set<String> loopLocals = new HashSet<>();
 
     Scan(JavaModel model, JavaModel.Method method, List<Object> findings) {
       this.model = model;
       this.method = method;
       this.findings = findings;
+      for (Tree type : model.unit.getTypeDecls())
+        if (type instanceof ClassTree c)
+          for (Tree member : c.getMembers())
+            if (member instanceof VariableTree field) declare(field);
+      for (VariableTree parameter : method.tree().getParameters()) declare(parameter);
+      new TreeScanner<Void, Void>() {
+        int depth;
+
+        public Void visitVariable(VariableTree x, Void v) {
+          declare(x);
+          if (depth > 0) loopLocals.add(x.getName().toString());
+          return super.visitVariable(x, v);
+        }
+
+        Void body(Tree tree) {
+          depth++;
+          scan(tree, null);
+          depth--;
+          return null;
+        }
+
+        public Void visitForLoop(ForLoopTree x, Void v) {
+          scan(x.getInitializer(), null);
+          return body(x.getStatement());
+        }
+
+        public Void visitEnhancedForLoop(EnhancedForLoopTree x, Void v) {
+          return body(x.getStatement());
+        }
+
+        public Void visitWhileLoop(WhileLoopTree x, Void v) {
+          return body(x.getStatement());
+        }
+
+        public Void visitDoWhileLoop(DoWhileLoopTree x, Void v) {
+          return body(x.getStatement());
+        }
+      }.scan(method.tree().getBody(), null);
     }
+
+    private void declare(VariableTree variable) {
+      String type = variable.getType() == null ? "var" : variable.getType().toString();
+      if ((type.equals("var") || type.isEmpty())
+          && variable.getInitializer() instanceof NewClassTree created)
+        type = created.getIdentifier().toString();
+      types.put(variable.getName().toString(), simpleType(type));
+    }
+
+    private static String simpleType(String type) {
+      int generic = type.indexOf('<');
+      String raw = generic < 0 ? type : type.substring(0, generic);
+      return raw.substring(raw.lastIndexOf('.') + 1).trim();
+    }
+
+    private String typeOf(ExpressionTree expression) {
+      ExpressionTree value = unwrap(expression);
+      if (value instanceof IdentifierTree identifier) return types.get(identifier.getName().toString());
+      if (value instanceof LiteralTree literal && literal.getValue() instanceof String) return "String";
+      return null;
+    }
+
+    private static final Set<String> LISTS =
+        Set.of("List", "ArrayList", "LinkedList", "Collection", "Vector", "CopyOnWriteArrayList");
+    private static final Set<String> BOXES = Set.of("Integer", "Long", "Short", "Byte", "Character");
 
     void emit(Tree tree, String rule) {
       RuleCatalog.emit(findings, model, method, tree, rule);
@@ -397,6 +515,17 @@ public final class RuleCatalog {
           && right instanceof LiteralTree literal
           && literal.getValue() instanceof Integer value
           && value == 0) emit(tree, "BP107");
+      if (tree.getKind() == Tree.Kind.EQUAL_TO || tree.getKind() == Tree.Kind.NOT_EQUAL_TO) {
+        ExpressionTree left = unwrap(tree.getLeftOperand());
+        boolean nullCheck =
+            left.getKind() == Tree.Kind.NULL_LITERAL || right.getKind() == Tree.Kind.NULL_LITERAL;
+        String a = typeOf(left);
+        String b = typeOf(right);
+        // Literal comparisons are STRING_IDENTITY in the base analyzer; this covers two variables.
+        if (!nullCheck && "String".equals(a) && "String".equals(b)
+            && !(left instanceof LiteralTree) && !(right instanceof LiteralTree)) emit(tree, "BP122");
+        else if (!nullCheck && a != null && a.equals(b) && BOXES.contains(a)) emit(tree, "BP123");
+      }
       return super.visitBinary(tree, ignored);
     }
 
@@ -413,6 +542,32 @@ public final class RuleCatalog {
       if (loops > 0 && (name.equals("String.format") || name.endsWith(".printf")))
         emit(tree, "BP110");
       if (name.equals("System.exit") || name.equals("java.lang.System.exit")) emit(tree, "BP115");
+      if (loops > 0 && tree.getMethodSelect() instanceof MemberSelectTree select) {
+        String member = select.getIdentifier().toString();
+        String receiver = typeOf(select.getExpression());
+        if (receiver != null && LISTS.contains(receiver)) {
+          boolean byObject =
+              member.equals("remove")
+                  && tree.getArguments().size() == 1
+                  && !"int".equals(typeOf(tree.getArguments().get(0)))
+                  && !(unwrap(tree.getArguments().get(0)) instanceof LiteralTree);
+          if (Set.of("contains", "indexOf", "lastIndexOf", "containsAll").contains(member) || byObject)
+            emit(tree, "BP121");
+          if (member.equals("get") && receiver.equals("LinkedList")) emit(tree, "BP125");
+          if (member.equals("remove")
+              && tree.getArguments().size() == 1
+              && unwrap(tree.getArguments().get(0)) instanceof LiteralTree zero
+              && Integer.valueOf(0).equals(zero.getValue())
+              && !receiver.equals("LinkedList")) emit(tree, "BP127");
+        }
+        ExpressionTree sorted =
+            name.equals("Collections.sort") || name.equals("Arrays.sort")
+                ? (tree.getArguments().isEmpty() ? null : unwrap(tree.getArguments().get(0)))
+                : receiver != null && LISTS.contains(receiver) ? select.getExpression() : null;
+        if (member.equals("sort")
+            && sorted instanceof IdentifierTree target
+            && !loopLocals.contains(target.getName().toString())) emit(tree, "BP126");
+      }
       return super.visitMethodInvocation(tree, ignored);
     }
 

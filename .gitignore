@@ -5,7 +5,5 @@ dist/
 tmp/
 *.log
 __pycache__/
-.site-workflow/
-output/*.tar.gz
-output/desktop/
+output/
 node_modules/

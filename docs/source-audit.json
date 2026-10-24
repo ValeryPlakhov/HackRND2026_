@@ -8,19 +8,19 @@
     "documentation and SVG assets"
   ],
   "total": {
-    "files": 112,
-    "physical": 33792,
-    "nonempty": 32119
+    "files": 79,
+    "physical": 23724,
+    "nonempty": 22666
   },
   "product": {
-    "files": 84,
-    "physical": 30048,
-    "nonempty": 28642
+    "files": 59,
+    "physical": 20830,
+    "nonempty": 20023
   },
   "tests": {
-    "files": 28,
-    "physical": 3744,
-    "nonempty": 3477
+    "files": 20,
+    "physical": 2894,
+    "nonempty": 2643
   },
   "languages": {
     "C#": {
@@ -29,29 +29,29 @@
       "nonempty": 209
     },
     "CSS": {
-      "files": 4,
-      "physical": 9416,
-      "nonempty": 8894
+      "files": 3,
+      "physical": 4105,
+      "nonempty": 4101
     },
     "HTML": {
-      "files": 4,
-      "physical": 580,
-      "nonempty": 572
+      "files": 2,
+      "physical": 32,
+      "nonempty": 32
     },
     "Java": {
       "files": 22,
-      "physical": 4781,
-      "nonempty": 4529
+      "physical": 5704,
+      "nonempty": 5397
     },
     "JavaScript": {
-      "files": 66,
-      "physical": 17352,
-      "nonempty": 16619
+      "files": 39,
+      "physical": 12368,
+      "nonempty": 11773
     },
     "Python": {
-      "files": 15,
-      "physical": 1446,
-      "nonempty": 1296
+      "files": 12,
+      "physical": 1298,
+      "nonempty": 1154
     }
   },
   "files": [
@@ -72,8 +72,8 @@
     {
       "path": "src/BlueprintServer.java",
       "language": "Java",
-      "physical": 195,
-      "nonempty": 191,
+      "physical": 217,
+      "nonempty": 213,
       "category": "product"
     },
     {
@@ -156,50 +156,50 @@
     {
       "path": "src/MutationLab.java",
       "language": "Java",
-      "physical": 247,
-      "nonempty": 237,
+      "physical": 241,
+      "nonempty": 231,
       "category": "product"
     },
     {
       "path": "src/ProjectAnalysis.java",
       "language": "Java",
-      "physical": 298,
-      "nonempty": 290,
+      "physical": 309,
+      "nonempty": 301,
       "category": "product"
     },
     {
       "path": "src/RefactorPlans.java",
       "language": "Java",
-      "physical": 386,
-      "nonempty": 371,
+      "physical": 733,
+      "nonempty": 692,
       "category": "product"
     },
     {
       "path": "src/RuleCatalog.java",
       "language": "Java",
-      "physical": 453,
-      "nonempty": 423,
+      "physical": 617,
+      "nonempty": 577,
       "category": "product"
     },
     {
       "path": "src/Runner.java",
       "language": "Java",
-      "physical": 360,
-      "nonempty": 344,
+      "physical": 430,
+      "nonempty": 409,
       "category": "product"
     },
     {
       "path": "src/StudioApi.java",
       "language": "Java",
-      "physical": 201,
-      "nonempty": 194,
+      "physical": 256,
+      "nonempty": 246,
       "category": "product"
     },
     {
       "path": "src/Transformations.java",
       "language": "Java",
-      "physical": 218,
-      "nonempty": 210,
+      "physical": 478,
+      "nonempty": 459,
       "category": "product"
     },
     {
@@ -210,122 +210,31 @@
       "category": "product"
     },
     {
-      "path": "web/builder/compiler.mjs",
-      "language": "JavaScript",
-      "physical": 206,
-      "nonempty": 203,
-      "category": "product"
-    },
-    {
-      "path": "web/builder/model.mjs",
-      "language": "JavaScript",
-      "physical": 633,
-      "nonempty": 619,
-      "category": "product"
-    },
-    {
-      "path": "web/builder/runtime.mjs",
-      "language": "JavaScript",
-      "physical": 229,
-      "nonempty": 222,
-      "category": "product"
-    },
-    {
-      "path": "web/builder/templates.mjs",
-      "language": "JavaScript",
-      "physical": 164,
-      "nonempty": 161,
-      "category": "product"
-    },
-    {
-      "path": "web/builder/view.mjs",
-      "language": "JavaScript",
-      "physical": 437,
-      "nonempty": 424,
-      "category": "product"
-    },
-    {
-      "path": "web/builder.css",
-      "language": "CSS",
-      "physical": 1745,
-      "nonempty": 1745,
-      "category": "product"
-    },
-    {
-      "path": "web/builder.mjs",
-      "language": "JavaScript",
-      "physical": 725,
-      "nonempty": 697,
-      "category": "product"
-    },
-    {
-      "path": "web/components/editor.mjs",
-      "language": "JavaScript",
-      "physical": 127,
-      "nonempty": 123,
-      "category": "product"
-    },
-    {
       "path": "web/components/graph.mjs",
       "language": "JavaScript",
-      "physical": 340,
-      "nonempty": 325,
-      "category": "product"
-    },
-    {
-      "path": "web/components/inspector.mjs",
-      "language": "JavaScript",
-      "physical": 107,
-      "nonempty": 101,
-      "category": "product"
-    },
-    {
-      "path": "web/components/primitives.mjs",
-      "language": "JavaScript",
-      "physical": 111,
-      "nonempty": 94,
-      "category": "product"
-    },
-    {
-      "path": "web/components/shell.mjs",
-      "language": "JavaScript",
-      "physical": 93,
-      "nonempty": 88,
-      "category": "product"
-    },
-    {
-      "path": "web/expert.html",
-      "language": "HTML",
-      "physical": 236,
-      "nonempty": 228,
-      "category": "product"
-    },
-    {
-      "path": "web/guide.html",
-      "language": "HTML",
-      "physical": 303,
-      "nonempty": 303,
+      "physical": 350,
+      "nonempty": 334,
       "category": "product"
     },
     {
       "path": "web/ide/app.mjs",
       "language": "JavaScript",
-      "physical": 1831,
-      "nonempty": 1775,
+      "physical": 1897,
+      "nonempty": 1840,
       "category": "product"
     },
     {
       "path": "web/ide/bridge.mjs",
       "language": "JavaScript",
-      "physical": 720,
-      "nonempty": 696,
+      "physical": 761,
+      "nonempty": 737,
       "category": "product"
     },
     {
       "path": "web/ide/commands.mjs",
       "language": "JavaScript",
-      "physical": 344,
-      "nonempty": 342,
+      "physical": 407,
+      "nonempty": 405,
       "category": "product"
     },
     {
@@ -338,8 +247,8 @@
     {
       "path": "web/ide/documents.mjs",
       "language": "JavaScript",
-      "physical": 333,
-      "nonempty": 311,
+      "physical": 343,
+      "nonempty": 320,
       "category": "product"
     },
     {
@@ -380,8 +289,8 @@
     {
       "path": "web/ide/language.mjs",
       "language": "JavaScript",
-      "physical": 295,
-      "nonempty": 291,
+      "physical": 298,
+      "nonempty": 294,
       "category": "product"
     },
     {
@@ -392,24 +301,45 @@
       "category": "product"
     },
     {
+      "path": "web/ide/quality-views.mjs",
+      "language": "JavaScript",
+      "physical": 352,
+      "nonempty": 321,
+      "category": "product"
+    },
+    {
+      "path": "web/ide/quality.css",
+      "language": "CSS",
+      "physical": 891,
+      "nonempty": 887,
+      "category": "product"
+    },
+    {
+      "path": "web/ide/quality.mjs",
+      "language": "JavaScript",
+      "physical": 923,
+      "nonempty": 863,
+      "category": "product"
+    },
+    {
       "path": "web/ide/views.mjs",
       "language": "JavaScript",
-      "physical": 329,
-      "nonempty": 304,
+      "physical": 362,
+      "nonempty": 336,
       "category": "product"
     },
     {
       "path": "web/ide.html",
       "language": "HTML",
-      "physical": 19,
-      "nonempty": 19,
+      "physical": 20,
+      "nonempty": 20,
       "category": "product"
     },
     {
       "path": "web/index.html",
       "language": "HTML",
-      "physical": 22,
-      "nonempty": 22,
+      "physical": 12,
+      "nonempty": 12,
       "category": "product"
     },
     {
@@ -448,13 +378,6 @@
       "category": "product"
     },
     {
-      "path": "web/lib/inputs.mjs",
-      "language": "JavaScript",
-      "physical": 110,
-      "nonempty": 102,
-      "category": "product"
-    },
-    {
       "path": "web/lib/layout.mjs",
       "language": "JavaScript",
       "physical": 332,
@@ -469,104 +392,6 @@
       "category": "product"
     },
     {
-      "path": "web/lib/metrics.mjs",
-      "language": "JavaScript",
-      "physical": 187,
-      "nonempty": 175,
-      "category": "product"
-    },
-    {
-      "path": "web/lib/search.mjs",
-      "language": "JavaScript",
-      "physical": 123,
-      "nonempty": 118,
-      "category": "product"
-    },
-    {
-      "path": "web/lib/storage.mjs",
-      "language": "JavaScript",
-      "physical": 109,
-      "nonempty": 100,
-      "category": "product"
-    },
-    {
-      "path": "web/lib/workspace.mjs",
-      "language": "JavaScript",
-      "physical": 336,
-      "nonempty": 309,
-      "category": "product"
-    },
-    {
-      "path": "web/studio.css",
-      "language": "CSS",
-      "physical": 4457,
-      "nonempty": 3935,
-      "category": "product"
-    },
-    {
-      "path": "web/studio.mjs",
-      "language": "JavaScript",
-      "physical": 1409,
-      "nonempty": 1363,
-      "category": "product"
-    },
-    {
-      "path": "web/views/architecture.mjs",
-      "language": "JavaScript",
-      "physical": 123,
-      "nonempty": 120,
-      "category": "product"
-    },
-    {
-      "path": "web/views/canvas.mjs",
-      "language": "JavaScript",
-      "physical": 25,
-      "nonempty": 24,
-      "category": "product"
-    },
-    {
-      "path": "web/views/changes.mjs",
-      "language": "JavaScript",
-      "physical": 92,
-      "nonempty": 89,
-      "category": "product"
-    },
-    {
-      "path": "web/views/history.mjs",
-      "language": "JavaScript",
-      "physical": 52,
-      "nonempty": 51,
-      "category": "product"
-    },
-    {
-      "path": "web/views/insights.mjs",
-      "language": "JavaScript",
-      "physical": 66,
-      "nonempty": 65,
-      "category": "product"
-    },
-    {
-      "path": "web/views/overview.mjs",
-      "language": "JavaScript",
-      "physical": 86,
-      "nonempty": 85,
-      "category": "product"
-    },
-    {
-      "path": "web/views/presentation.mjs",
-      "language": "JavaScript",
-      "physical": 124,
-      "nonempty": 122,
-      "category": "product"
-    },
-    {
-      "path": "web/views/tests.mjs",
-      "language": "JavaScript",
-      "physical": 191,
-      "nonempty": 183,
-      "category": "product"
-    },
-    {
       "path": "desktop/Launcher.cs",
       "language": "C#",
       "physical": 217,
@@ -576,15 +401,15 @@
     {
       "path": "desktop/main.cjs",
       "language": "JavaScript",
-      "physical": 574,
-      "nonempty": 563,
+      "physical": 601,
+      "nonempty": 589,
       "category": "product"
     },
     {
       "path": "desktop/preload.cjs",
       "language": "JavaScript",
-      "physical": 54,
-      "nonempty": 52,
+      "physical": 55,
+      "nonempty": 53,
       "category": "product"
     },
     {
@@ -611,8 +436,8 @@
     {
       "path": "desktop/services/persistence.cjs",
       "language": "JavaScript",
-      "physical": 267,
-      "nonempty": 249,
+      "physical": 321,
+      "nonempty": 300,
       "category": "product"
     },
     {
@@ -644,17 +469,10 @@
       "category": "product"
     },
     {
-      "path": "tests/build-static.mjs",
-      "language": "JavaScript",
-      "physical": 17,
-      "nonempty": 16,
-      "category": "tests"
-    },
-    {
       "path": "tests/build_desktop.py",
       "language": "Python",
-      "physical": 102,
-      "nonempty": 96,
+      "physical": 103,
+      "nonempty": 97,
       "category": "tests"
     },
     {
@@ -662,13 +480,6 @@
       "language": "Python",
       "physical": 54,
       "nonempty": 47,
-      "category": "tests"
-    },
-    {
-      "path": "tests/build_solution_pdf.py",
-      "language": "Python",
-      "physical": 207,
-      "nonempty": 185,
       "category": "tests"
     },
     {
@@ -686,13 +497,6 @@
       "category": "tests"
     },
     {
-      "path": "tests/emit_builder_cases.mjs",
-      "language": "JavaScript",
-      "physical": 45,
-      "nonempty": 44,
-      "category": "tests"
-    },
-    {
       "path": "tests/generate_monolith.py",
       "language": "Python",
       "physical": 31,
@@ -702,15 +506,8 @@
     {
       "path": "tests/package_solution.py",
       "language": "Python",
-      "physical": 35,
-      "nonempty": 34,
-      "category": "tests"
-    },
-    {
-      "path": "tests/prepare_builder_examples.mjs",
-      "language": "JavaScript",
-      "physical": 40,
-      "nonempty": 39,
+      "physical": 28,
+      "nonempty": 27,
       "category": "tests"
     },
     {
@@ -718,20 +515,6 @@
       "language": "Python",
       "physical": 34,
       "nonempty": 31,
-      "category": "tests"
-    },
-    {
-      "path": "tests/prepare_studio_demo.py",
-      "language": "Python",
-      "physical": 90,
-      "nonempty": 84,
-      "category": "tests"
-    },
-    {
-      "path": "tests/report_results.py",
-      "language": "Python",
-      "physical": 26,
-      "nonempty": 25,
       "category": "tests"
     },
     {
@@ -749,13 +532,6 @@
       "category": "tests"
     },
     {
-      "path": "tests/test_builder_api.py",
-      "language": "Python",
-      "physical": 76,
-      "nonempty": 64,
-      "category": "tests"
-    },
-    {
       "path": "tests/test_desktop_smoke.py",
       "language": "Python",
       "physical": 51,
@@ -763,17 +539,17 @@
       "category": "tests"
     },
     {
+      "path": "tests/test_ide_api.py",
+      "language": "Python",
+      "physical": 257,
+      "nonempty": 222,
+      "category": "tests"
+    },
+    {
       "path": "tests/test_studio_api.py",
       "language": "Python",
       "physical": 341,
       "nonempty": 294,
-      "category": "tests"
-    },
-    {
-      "path": "tests/unit/builder.test.mjs",
-      "language": "JavaScript",
-      "physical": 326,
-      "nonempty": 325,
       "category": "tests"
     },
     {
@@ -800,8 +576,8 @@
     {
       "path": "tests/unit/io.test.mjs",
       "language": "JavaScript",
-      "physical": 223,
-      "nonempty": 222,
+      "physical": 88,
+      "nonempty": 88,
       "category": "tests"
     },
     {
@@ -819,17 +595,10 @@
       "category": "tests"
     },
     {
-      "path": "tests/unit/search-metrics.test.mjs",
+      "path": "tests/unit/quality.test.mjs",
       "language": "JavaScript",
-      "physical": 112,
-      "nonempty": 111,
-      "category": "tests"
-    },
-    {
-      "path": "tests/unit/workspace.test.mjs",
-      "language": "JavaScript",
-      "physical": 188,
-      "nonempty": 170,
+      "physical": 161,
+      "nonempty": 147,
       "category": "tests"
     },
     {

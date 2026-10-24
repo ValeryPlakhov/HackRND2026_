@@ -59,7 +59,7 @@ class StudioContracts(unittest.TestCase):
 
     def test_02_catalog_has_unique_explained_rules(self):
         rules = get('rules')['rules']
-        self.assertEqual(len(rules), 20)
+        self.assertEqual(len(rules), 26)
         self.assertEqual(len({r['id'] for r in rules}), len(rules))
         for rule in rules:
             with self.subTest(rule=rule['id']):

@@ -1,37 +1,51 @@
-# HTTP API v2
+# HTTP API движка
 
-Base http://localhost:8080/api. POST JSON, Content-Type application/json, до 2MB. files — карта {filename: source}, пути проверяются. Host/Origin ограничены localhost. Ошибки JSON/error с неуспешным HTTP-статусом. Не публичный authenticated service.
+Движок слушает `127.0.0.1` (в EXE — случайный порт, в веб-версии — 8080). Запросы `POST` с `Content-Type: application/json`, тело до 16 МБ. Заголовки Host и Origin должны указывать на localhost. Ошибки возвращаются как `{"error": "..."}` со статусом 4xx/5xx.
 
-| Метод / маршрут | Поля | Результат |
+`files` — карта `{"путь/внутри/проекта.java": "исходник"}`, до 300 файлов. Путь состоит из сегментов `[A-Za-z0-9_$.-]`, без `..`, дисков и пустых сегментов; имя файла — Java-идентификатор с `.java`.
+
+## Разбор и правки
+
+| Маршрут | Поля | Результат |
 |---|---|---|
-| GET /health | — | Java version, runner |
-| GET /capabilities | — | Features, environment |
-| GET /rules | — | 20 BP101–BP120; 5 базовых выдаёт analyze |
-| POST /analyze | source | Модель, методы, графы, диагностика |
-| POST /project | files | Methods/calls/findings/hotspots/cycles/modules/stats/hash |
-| POST /method | source, methodId | Graph, graphAnalysis, complexity, dataFlow |
-| POST /edit | source, methodId, nodeId, action?, code? | action=replace (default), delete, insertBefore, insertAfter; точные примеры в test_api.py |
-| POST /optimize | source, methodId | Histogram rewrite |
-| POST /extract | files, fileName, methodId | Helper + delegate после compile |
-| POST /compile | files | javac result |
-| POST /plans | source | Hash-bound proposals |
-| POST /plans/apply | source, sourceHash, planIds | Recompute + stale/overlap validation |
-| POST /inputs/generate | schema, seed, count, ... | Детерминированные stdin |
-| POST /mutants | source, methodId | Предложения AST-мутаций |
-| POST /sarif | files | SARIF 2.1.0 |
+| `GET /api/health` | — | Версия Java, режим запуска |
+| `GET /api/capabilities` | — | Возможности и окружение |
+| `POST /api/analyze` | `source` | Модель файла: классы, методы с графами и метриками, синтаксические ошибки, базовые находки |
+| `POST /api/method` | `source`, `methodId` | Граф, анализ графа (достижимость, доминаторы, пути), сложность с обоснованием, def-use |
+| `POST /api/edit` | `source`, `methodId`, `nodeId`, `action` (`replace`, `before`, `after`, `delete`), `code` | Новый исходник и модель; правка проверяется парсером |
+| `POST /api/compile` | `files`, `mainClass?` | Результат `javac` |
 
-methodId берётся из модели. Синтаксическая модель не доказывает успешный type-check проекта. Полные проверяемые payload-примеры: test_api.py, test_studio_api.py.
+## Анализ и улучшения
 
-POST /jobs/submit возвращает id; GET /jobs/{id} до completed/failed/cancelled. GET /jobs — ограниченная история. POST /jobs/cancel {id} отменяет. completed.result содержит результат; failed.error — ошибку. История в памяти.
-
-| kind | Дополнительные поля | Пределы |
+| Маршрут | Поля | Результат |
 |---|---|---|
-| run | files, input | Одна компиляция + один запуск, compile/runtime status и hashes; используется конструктором |
-| compare | original, candidate, inputs | До 30 stdin |
-| benchmark | original, candidate, fileName, methodName, sizes, repetitions | Static int method(int[]), n≤10000, 3–9 samples |
-| mutation | files, fileName, methodId, inputs, maximum | До 8 мутантов / 8 входов |
-| minimize | original, candidate, input, budget | n+n int, n≤256, 2–40 попыток |
+| `POST /api/project` | `files` | Методы, вызовы, находки (с `canOptimize`), hotspots, циклы зависимостей, ответственности, статистика |
+| `GET /api/rules` | — | Каталог правил BP101–BP127 |
+| `POST /api/plans` | `source` | Планы оптимизации, привязанные к `sourceHash` |
+| `POST /api/plans/apply` | `source`, `sourceHash`, `planIds` | Новый исходник; устаревшие и пересекающиеся планы отклоняются |
+| `POST /api/decompose` | `files`, `fileName`, `methodIds`, `className` | Все файлы проекта после переноса, путь нового класса, перенесённые и пропущенные методы с причинами |
+| `POST /api/extract` | `files`, `fileName`, `methodId` | Перенос одного метода в `BlueprintFunctions` (совместимость) |
+| `POST /api/sarif` | `files` | Находки в формате SARIF 2.1.0 |
 
-POST /compare остаётся синхронным для совместимости. Результат: passed/tests с outputs, hashes, exitCode и limit flags. v2 compare job добавляет source/input hashes и environment.
+## Проверка поведения
 
-POST /evidence {original,candidate,jobId?} выдаёт manifest; verified только для завершённого compare с соответствующими source hashes. SHA-256 не подпись и не универсальное доказательство.
+`POST /api/jobs/submit` с полем `kind` возвращает задание; его состояние читается через `GET /api/jobs/{id}`, пока оно не станет `completed`, `failed` или `cancelled`. Отмена — `POST /api/jobs/cancel {id}`. Во всех заданиях можно передать `mainClass`: полное или простое имя класса с `main`.
+
+| `kind` | Поля | Результат |
+|---|---|---|
+| `compare` | `original`, `candidate`, `inputs` (1–30 stdin) | `passed`, сборки обеих версий, по каждому входу stdout/stderr/exitCode/время/хеши, хеши версий |
+| `run` | `files`, `input` | Одна сборка и один запуск |
+| `mutation` | `files`, `fileName`, `methodId`, `inputs`, `maximum` | Мутанты метода: убит, выжил или невалиден; score |
+| `benchmark` | `original`, `candidate`, `fileName`, `methodName`, `sizes`, `repetitions` | Медианы для `static int f(int[])` до и после, совпадение результатов |
+| `minimize` | `original`, `candidate`, `input`, `budget` | Уменьшенный вход, на котором версии различаются, и след шагов |
+
+`POST /api/compare` — синхронный вариант `compare` для совместимости. `POST /api/evidence {original, candidate, jobId?}` выдаёт манифест доказательств; он помечается verified только для завершённого `compare` с совпадающими хешами исходников.
+
+## Прочее
+
+| Маршрут | Назначение |
+|---|---|
+| `POST /api/inputs/generate` | Детерминированные входы: `schema` (`int-array`, `single-int`, `text-line`), `seed`, `count`, границы |
+| `GET /api/examples/{name}` | Файлы встроенного примера для веб-версии |
+
+Полные рабочие примеры запросов — в `tests/test_api.py`, `tests/test_studio_api.py`, `tests/test_ide_api.py`.

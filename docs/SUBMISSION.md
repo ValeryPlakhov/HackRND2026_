@@ -1,19 +1,27 @@
-# Комплект для передачи
+# Комплект для сдачи
 
-Актуальная версия: **Blueprints IDE 3**, только локально. Windows EXE с комплектной Java, выбором папки и чтением существующего Java-проекта в блупринтах. Конструктор без кода и инженерная Studio сохранены.
-
-| Артефакт | Содержимое |
+| Пункт брифа | Что передаётся |
 |---|---|
-| output/desktop/Blueprints-IDE-3.exe | Один файл запуска Windows 10/11 x64 |
-| output/desktop/Blueprints-IDE-3-Windows-x64.zip | Переносимая папка IDE, runtime, примеры, лицензии |
-| output/desktop/SHA256SUMS.txt | Контрольные суммы релиза |
-| output/Java-Blueprints-complete.zip | Авторские исходники desktop/src/web, тесты, документация, примеры, CI recipe и PDF |
-| output/pdf/Java-Blueprints-solution.pdf | 16 страниц для защиты: IDE, конструктор и Java Studio |
-| docs/verification-summary.json | 272 автоматических теста |
-| docs/desktop-runtime-summary.json | Реальные компиляция и запуск с комплектной Java |
-| docs/desktop-smoke-*.json | Запуск настоящего Electron/EXE |
-| docs/ide-source-delta.json | Более 10 000 новых непустых строк продукта без зависимостей и тестов |
+| 01 Исходный код | Этот репозиторий. Инструкция запуска — в [README](../README.md) |
+| 02 Веб-демо / воспроизводимая сборка | `Blueprints-IDE-4-Windows-x64.zip` (распаковать, запустить `BlueprintsIDE.exe`) или один файл `Blueprints-IDE-4.exe`; веб-версия из исходников: `.\start.ps1 -TrustedLocal` → `http://localhost:8080` |
+| 03 Проверка поведения | `python tests/verify.py`; последний результат — [verification-summary.json](verification-summary.json) |
+| 04 Описание решения | [ARCHITECTURE.md](ARCHITECTURE.md) — архитектура; [SCOPE.md](SCOPE.md) — поддержанный scope и соответствие кейсу; ограничения — в README и ARCHITECTURE |
 
-EXE не подписан коммерческим сертификатом. Полный отладчик JVM и автоматическая загрузка Maven/Gradle dependencies не реализованы. Другие языки — Coming soon. Пользовательские проекты не отправляются в облако.
+## Сборка Windows-версии
 
-Сборка: python tests/build_desktop.py. Исходный архив: python tests/package_solution.py. Старый удалённый Site не обновлялся. Отправка организаторам не выполнялась; упомянутый в кейсе дополнительный техдок не предоставлен.
+```powershell
+python tests/build_desktop.py
+python tests/test_desktop_smoke.py portable
+python tests/test_desktop_smoke.py single-exe
+```
+
+Скрипт скачивает официальный Electron 45 один раз и сверяет SHA-256 с опубликованным `SHASUMS256.txt`. Затем он собирает урезанный Java 21 runtime через `jlink` из локального JDK, компилирует движок и упаковывает всё в `output/desktop/`:
+
+- `BlueprintsIDE/` — переносимая папка;
+- `Blueprints-IDE-4-Windows-x64.zip` — та же папка архивом;
+- `Blueprints-IDE-4.exe` — самораспаковывающийся запуск одним файлом;
+- `SHA256SUMS.txt` — контрольные суммы.
+
+Каталог `output/desktop/` не хранится в git: артефакты пересобираются этой командой.
+
+EXE не подписан коммерческим сертификатом, поэтому Windows SmartScreen может предупредить о неизвестном издателе («Подробнее → Выполнить в любом случае»).

@@ -13,7 +13,7 @@ def main():
     binaries = {
         'development': [ROOT / '.runtime/electron/unpacked/electron.exe', ROOT / 'desktop'],
         'portable': [ROOT / 'output/desktop/BlueprintsIDE/BlueprintsIDE.exe'],
-        'single-exe': [ROOT / 'output/desktop/Blueprints-IDE-3.exe'],
+        'single-exe': [ROOT / 'output/desktop/Blueprints-IDE-4.exe'],
     }
     arguments = [str(item) for item in binaries[mode]]
     report = ROOT / 'docs' / f'desktop-smoke-{mode}.json'

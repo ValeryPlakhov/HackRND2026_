@@ -46,21 +46,22 @@ def main():
     copy_tree(ROOT / 'desktop', destination)
     (destination / 'Launcher.cs').unlink(missing_ok=True)
     copy_tree(ROOT / 'web', destination / 'engine/web')
-    run([sys.executable, ROOT / 'tests/package_solution.py', '--embedded'])
-    shutil.copy2(ROOT / 'tmp/Blueprints-app-source.zip', destination / 'engine/web/java-blueprints-source.zip')
     copy_tree(ROOT / 'build', destination / 'engine/build')
     copy_tree(runtime, destination / 'engine/runtime')
     copy_tree(ROOT / 'examples', APP / 'examples')
     shutil.copy2(ROOT / 'docs/electron-runtime.json', APP / 'electron-runtime.json')
-    instructions = ('Blueprints IDE 3 — Windows 10/11 x64\n\n'
-                    '1. Откройте BlueprintsIDE.exe. Java уже включена.\n'
-                    '2. Нажмите «Открыть папку» и выберите Java-проект.\n'
-                    '3. Откройте .java файл, выберите метод и читайте блупринт.\n'
-                    '4. Для запуска сохраните изменения и нажмите F5.\n\n'
-                    'Обычные Java-проекты до 300 файлов компилируются встроенным javac.\n'
+    instructions = ('Blueprints IDE 4 — Windows 10/11 x64\n\n'
+                    '1. Откройте BlueprintsIDE.exe. Java 21 уже включена, интернет не нужен.\n'
+                    '2. «Открыть пример монолита» или «Открыть папку» с вашим Java-проектом.\n'
+                    '3. Методы показываются блупринтами; блоки можно менять, код меняется вместе с ними.\n'
+                    '4. «Анализ» (Ctrl+Shift+A): дефекты, Big O, граф вызовов, кандидаты на декомпозицию.\n'
+                    '5. «Улучшения» (Ctrl+Shift+I): оптимизации и выделение классов с предпросмотром diff.\n'
+                    '6. «Проверить» (F6): эталон и текущая версия собираются javac и запускаются\n'
+                    '   на тестовых входах; stdout, stderr и код завершения сравниваются.\n'
+                    '7. F5 — сохранить и запустить программу, Ctrl+S — сохранить файл.\n\n'
+                    'Проекты до 300 Java-файлов компилируются встроенным javac.\n'
                     'Maven/Gradle можно просматривать; зависимости автоматически не загружаются.\n'
                     'Выполняйте только программы, которым доверяете: локальный запуск не является песочницей.\n'
-                    'Другие языки: Coming soon. Интернет для работы IDE не нужен.\n'
                     'EXE не подписан коммерческим сертификатом. Сверяйте SHA256SUMS.txt.\n')
     (APP / 'ПРОЧТИ-МЕНЯ.txt').write_text(instructions, encoding='utf-8-sig')
     license_dir = APP / 'licenses'
@@ -69,7 +70,7 @@ def main():
         if (electron / name).exists():
             shutil.copy2(electron / name, license_dir / name)
     copy_tree(runtime / 'legal', license_dir / 'java')
-    archive = RELEASE / 'Blueprints-IDE-3-Windows-x64.zip'
+    archive = RELEASE / 'Blueprints-IDE-4-Windows-x64.zip'
     with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=6) as zipped:
         for file in sorted(APP.rglob('*')):
             if file.is_file():
@@ -80,7 +81,7 @@ def main():
         assert 'BlueprintsIDE.exe' in zipped.namelist()
         assert 'resources/app/engine/runtime/bin/javac.exe' in zipped.namelist()
     compiler = Path(os.environ.get('WINDIR', r'C:\Windows')) / 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'
-    executable = RELEASE / 'Blueprints-IDE-3.exe'
+    executable = RELEASE / 'Blueprints-IDE-4.exe'
     run([compiler, '/nologo', '/target:winexe', '/platform:x64', '/optimize+',
          '/reference:System.Windows.Forms.dll', '/reference:System.Drawing.dll',
          '/reference:System.IO.Compression.dll', '/reference:System.IO.Compression.FileSystem.dll',
@@ -91,7 +92,7 @@ def main():
             digest = hashlib.file_digest(stream, 'sha256').hexdigest()
         records.append({'file': file.name, 'bytes': file.stat().st_size, 'sha256': digest})
     (RELEASE / 'SHA256SUMS.txt').write_text(''.join(f"{item['sha256']}  {item['file']}\n" for item in records), encoding='ascii')
-    summary = {'version': '3.0.0', 'platform': 'Windows 10/11 x64', 'java': '21.0.12.1+1',
+    summary = {'version': '4.0.0', 'platform': 'Windows 10/11 x64', 'java': '21.0.12.1+1',
                'electron': json.loads((ROOT / 'docs/electron-runtime.json').read_text())['version'],
                'codeSigned': False, 'artifacts': records,
                'runtimeBundled': True, 'automaticDependencyDownload': False}

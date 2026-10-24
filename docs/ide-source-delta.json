@@ -2,9 +2,9 @@
   "baselineCommit": "d0624b3",
   "method": "UTF-8 splitlines; nonempty excludes whitespace-only lines, includes comments.",
   "newAuthoredProduct": {
-    "files": 25,
-    "physical": 11005,
-    "nonempty": 10702
+    "files": 28,
+    "physical": 13470,
+    "nonempty": 13065
   },
   "excluded": [
     "Electron and Java runtimes",
@@ -17,22 +17,22 @@
     {
       "path": "web/ide/app.mjs",
       "language": "JavaScript",
-      "physical": 1831,
-      "nonempty": 1775,
+      "physical": 1897,
+      "nonempty": 1840,
       "category": "product"
     },
     {
       "path": "web/ide/bridge.mjs",
       "language": "JavaScript",
-      "physical": 720,
-      "nonempty": 696,
+      "physical": 761,
+      "nonempty": 737,
       "category": "product"
     },
     {
       "path": "web/ide/commands.mjs",
       "language": "JavaScript",
-      "physical": 344,
-      "nonempty": 342,
+      "physical": 407,
+      "nonempty": 405,
       "category": "product"
     },
     {
@@ -45,8 +45,8 @@
     {
       "path": "web/ide/documents.mjs",
       "language": "JavaScript",
-      "physical": 333,
-      "nonempty": 311,
+      "physical": 343,
+      "nonempty": 320,
       "category": "product"
     },
     {
@@ -87,8 +87,8 @@
     {
       "path": "web/ide/language.mjs",
       "language": "JavaScript",
-      "physical": 295,
-      "nonempty": 291,
+      "physical": 298,
+      "nonempty": 294,
       "category": "product"
     },
     {
@@ -99,17 +99,38 @@
       "category": "product"
     },
     {
+      "path": "web/ide/quality-views.mjs",
+      "language": "JavaScript",
+      "physical": 352,
+      "nonempty": 321,
+      "category": "product"
+    },
+    {
+      "path": "web/ide/quality.css",
+      "language": "CSS",
+      "physical": 891,
+      "nonempty": 887,
+      "category": "product"
+    },
+    {
+      "path": "web/ide/quality.mjs",
+      "language": "JavaScript",
+      "physical": 923,
+      "nonempty": 863,
+      "category": "product"
+    },
+    {
       "path": "web/ide/views.mjs",
       "language": "JavaScript",
-      "physical": 329,
-      "nonempty": 304,
+      "physical": 362,
+      "nonempty": 336,
       "category": "product"
     },
     {
       "path": "web/ide.html",
       "language": "HTML",
-      "physical": 19,
-      "nonempty": 19,
+      "physical": 20,
+      "nonempty": 20,
       "category": "product"
     },
     {
@@ -122,15 +143,15 @@
     {
       "path": "desktop/main.cjs",
       "language": "JavaScript",
-      "physical": 574,
-      "nonempty": 563,
+      "physical": 601,
+      "nonempty": 589,
       "category": "product"
     },
     {
       "path": "desktop/preload.cjs",
       "language": "JavaScript",
-      "physical": 54,
-      "nonempty": 52,
+      "physical": 55,
+      "nonempty": 53,
       "category": "product"
     },
     {
@@ -157,8 +178,8 @@
     {
       "path": "desktop/services/persistence.cjs",
       "language": "JavaScript",
-      "physical": 267,
-      "nonempty": 249,
+      "physical": 321,
+      "nonempty": 300,
       "category": "product"
     },
     {
