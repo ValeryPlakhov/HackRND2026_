@@ -66,7 +66,7 @@ def main():
                 raise RuntimeError('Verification server did not become ready')
             run([sys.executable, 'tests/test_api.py'], env=environment, log='integration.log')
             run([sys.executable, 'tests/test_studio_api.py'], env=environment, log='studio-integration.log')
-            run([sys.executable, 'tests/test_builder_api.py'], env=environment, log='builder-integration.log')
+            run([sys.executable, 'tests/test_ide_api.py'], env=environment, log='ide-integration.log')
         finally:
             server.terminate()
             try:
@@ -81,10 +81,10 @@ def main():
         desktop = json.loads((ROOT / 'docs/desktop-runtime-summary.json').read_text(encoding='utf-8'))
     legacy = json.loads((ROOT / 'docs/test-summary.json').read_text())
     studio = json.loads((ROOT / 'docs/studio-test-summary.json').read_text())
-    builder = json.loads((ROOT / 'docs/builder-test-summary.json').read_text())
-    summary = {'passed': unit['passed'] and legacy['passed'] and studio['passed'] and builder['passed'],
-               'tests': unit['tests'] + legacy['tests'] + studio['tests'] + builder['tests'] + (desktop['tests'] if desktop else 0),
-               'unit': unit, 'api': legacy, 'studioApi': studio, 'builderApi': builder,
+    ide = json.loads((ROOT / 'docs/ide-test-summary.json').read_text())
+    summary = {'passed': unit['passed'] and legacy['passed'] and studio['passed'] and ide['passed'],
+               'tests': unit['tests'] + legacy['tests'] + studio['tests'] + ide['tests'] + (desktop['tests'] if desktop else 0),
+               'unit': unit, 'api': legacy, 'studioApi': studio, 'ideApi': ide,
                'desktopRuntime': desktop,
                'durationSeconds': round(time.monotonic() - started, 2),
                'environment': {'python': sys.version.split()[0], 'platform': sys.platform,
