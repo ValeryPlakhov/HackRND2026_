@@ -1,0 +1,157 @@
+/* Compact shell: one command menu, one help icon, one row above the canvas. */
+.ide-titlebar { height: 42px; min-height: 42px; padding: 0 10px; gap: 12px; flex-wrap: nowrap; }
+.ide-brand { flex: none; }
+.ide-brand img { width: 25px; height: 25px; }
+.ide-tools-trigger { height: 30px; padding: 0 9px; gap: 6px; font-size: 12px; }
+.ide-workspaces { padding: 1px; gap: 2px; }
+.ws-tab { height: 30px; padding: 0 11px; gap: 6px; font-size: 12px; }
+.ws-tab svg { width: 15px; height: 15px; }
+.ide-title-actions { margin-left: auto; gap: 3px; }
+.ide-icon-button { min-width: 28px; min-height: 28px; width: 28px; height: 28px; }
+.ide-toolbar { height: 36px; min-height: 36px; padding: 0 8px; gap: 7px; flex-wrap: nowrap; }
+.ide-toolbar[hidden] { display: none; }
+.ux-method-controls { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; }
+#ide-method-select { min-width: 120px; width: min(340px, 35vw); max-width: 100%; height: 28px; padding: 0 22px 0 7px; border: 1px solid var(--line); border-radius: 5px; color: var(--text); background: var(--surface); font: 12px inherit; text-overflow: ellipsis; }
+.ws-edit-toggle { margin: 0; padding: 1px; flex: none; }
+.ws-edit-toggle button { height: 26px; min-height: 26px; font-size: 12px; padding: 0 9px; }
+.ide-mode-switch { flex: none; }
+.ide-mode-switch button { display: flex; align-items: center; justify-content: center; width: 28px; min-width: 28px; height: 27px; min-height: 27px; padding: 0; }
+.ide-toolbar > [data-action=toggle-sidebar] svg { transition: transform .12s; }
+.ide-toolbar > [data-action=toggle-sidebar][aria-expanded=true] svg { transform: rotate(180deg); }
+.sidebar-tab { width: 30px; height: 30px; min-width: 30px; padding: 0; display: flex; align-items: center; justify-content: center; }
+.ide-sidebar-head { min-height: 36px; height: 36px; padding: 0 5px; }
+#ide-sidebar-actions { display: none; }
+.ide-tools-menu { top: 46px; left: 42px; width: min(380px, calc(100vw - 24px)); max-height: calc(100dvh - 60px); padding: 6px; }
+.ux-help-open .ide-tools-menu { left: auto; right: 12px; width: min(310px, calc(100vw - 24px)); }
+.tools-groups { display: block; padding: 0; }
+.tool-group { margin: 0; padding: 0; border: 0; }
+.tool-group > summary { cursor: pointer; padding: 10px 12px; font-size: 12px; font-weight: 650; color: var(--text); border-radius: 5px; }
+.tool-group > summary:hover { background: var(--surface-hover); }
+.tool-group[open] > summary { color: var(--accent); }
+.tool-item { min-height: 35px; padding: 7px 12px; gap: 9px; }
+.tool-text b { font-size: 12px; font-weight: 500; }
+.tool-text small { font-size: 11px; }
+.tool-icon { width: 23px; height: 23px; }
+.tool-group[hidden], .tool-item[hidden] { display: none !important; }
+button:focus-visible, summary:focus-visible, [tabindex]:focus-visible { outline: 1px solid var(--line-strong); outline-offset: -1px; }
+input:focus, textarea:focus, select:focus, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: none; box-shadow: none; border-color: var(--line-strong); }
+#ide-graph-pane .graph-workbench { position: relative; }
+#ide-graph-pane .graph-bottomline { position: absolute; right: 10px; bottom: 10px; width: auto; height: 28px; min-height: 28px; padding: 0 5px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; z-index: 3; }
+#ide-graph-pane .graph-minimap { display: none; }
+.ide-statusbar { min-height: 18px; height: 18px; font-size: 10px; }
+.ws-page { max-width: 1440px; padding: 28px 32px 40px; }
+.ws-lead { max-width: 740px; }
+.ws-lanes { margin-top: 12px; }
+.ux-project-details { border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; margin: 16px 0; background: var(--surface); }
+.ux-project-details > summary { cursor: pointer; font-size: 15px; font-weight: 650; color: var(--secondary); }
+.ux-project-details[open] > summary { margin-bottom: 20px; color: var(--text); }
+.ws-method-link { min-height: 30px; }
+.ws-hero h1 { font-size: 30px; }
+.ux-focus .ide-sidebar, .ux-focus .ide-sidebar-resizer, .ux-focus .ide-panel, .ux-focus .ide-panel-resizer, .ux-focus .ide-tabs { display: none !important; }
+.ux-focus .ide-toolbar { position: relative; }
+.ux-welcome { padding: 8px 4px; }
+.ux-kicker { color: var(--accent); font-size: 11px; font-weight: 750; letter-spacing: .1em; }
+.ux-welcome h2 { font-size: 30px; margin: 12px 0; line-height: 1.2; }
+.ux-welcome > p { color: var(--secondary); line-height: 1.6; }
+.ux-start-options { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 26px 0 20px; }
+.ux-start-options button { text-align: left; padding: 22px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--text); font: inherit; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; cursor: pointer; }
+.ux-start-options button:first-child { border: 2px solid var(--accent); background: var(--accent-soft); }
+.ux-start-options b { font-size: 18px; }
+.ux-start-options span { color: var(--secondary); line-height: 1.6; }
+.ux-start-options strong { color: var(--accent); font-size: 13px; margin-top: auto; }
+.ux-tour { position: fixed; right: 24px; bottom: 36px; z-index: 250; width: min(380px, calc(100vw - 32px)); padding: 20px; box-sizing: border-box; border: 1px solid var(--accent); border-radius: 16px; box-shadow: 0 12px 52px #14254c35; background: var(--surface); color: var(--text); }
+.ux-tour-top { display: flex; align-items: center; justify-content: space-between; color: var(--accent); font-size: 11px; letter-spacing: .06em; font-weight: 700; }
+.ux-tour-top button { background: none; border: 0; color: var(--secondary); font-size: 24px; cursor: pointer; padding: 0 4px; }
+.ux-tour progress { width: 100%; height: 5px; accent-color: var(--accent); margin: 10px 0; }
+.ux-tour h2 { font-size: 20px; margin: 6px 0 10px; }
+.ux-tour p { font-size: 14px; line-height: 1.65; color: var(--secondary); }
+.ux-tour-actions { display: flex; justify-content: space-between; margin-top: 18px; }
+.ux-tour-target { outline: 3px solid var(--accent); outline-offset: -3px; border-radius: 8px; }
+.ux-guide details { border: 1px solid var(--line); padding: 16px 20px; border-radius: 10px; margin: 12px 0; }
+.ux-guide summary { cursor: pointer; font-size: 16px; font-weight: 650; }
+.ux-guide p { line-height: 1.7; color: var(--secondary); }
+.ux-check-contract, .ux-plan-checks { padding: 16px 18px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-alt); margin-bottom: 18px; }
+.ux-check-contract p, .ux-plan-checks p { margin: 7px 0; line-height: 1.5; color: var(--secondary); }
+.ux-check-contract label { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-weight: 600; }
+.ux-check-contract input { flex: 1; min-width: 180px; padding: 9px 12px; color: var(--text); border: 1px solid var(--line); background: var(--surface); border-radius: 7px; font: 13px monospace; }
+.ux-advanced { border: 1px solid var(--line); padding: 9px 12px; border-radius: 8px; margin: 8px 0; }
+.ux-advanced summary { cursor: pointer; color: var(--secondary); font-size: 13px; }
+.ux-plan-checks li { margin: 6px 0; }
+.ux-plan-checks .ux-warning { color: var(--danger, #b23a45); }
+.ux-plan-checks label { display: flex; gap: 10px; line-height: 1.5; align-items: flex-start; margin-top: 12px; }
+.q-tabs { flex-wrap: wrap; gap: 6px; }
+.q-tabs > button { min-height: 40px; padding: 8px 14px; font-size: 14px; }
+.q-cases-toolbar { gap: 16px; }
+.q-case-input { min-height: 100px; font-size: 14px; line-height: 1.6; }
+.q-case { border-radius: 10px; }
+.q-case-head { min-height: 44px; }
+.bp-header { height: 38px; font-size: 14px; }
+.bp-header .bp-badge { width: 23px; height: 23px; font-size: 14px; }
+.bp-row, .bp-pin-row { height: 32px; }
+.bp-pin-label { font-size: 12px; max-width: 118px; overflow: hidden; text-overflow: ellipsis; }
+.bp-pin-label small { display: block; font: 10px monospace; color: var(--muted); margin-top: 1px; }
+.bp-pin { width: 16px; height: 16px; }
+.bp-pin::after { content: ""; position: absolute; inset: -7px; }
+.bp-pin.data { border-radius: 50%; }
+.bp-pin.exec { width: 17px; height: 17px; transform: none; border: 0; border-radius: 0; clip-path: polygon(0 0, 52% 0, 100% 50%, 52% 100%, 0 100%, 30% 50%); background: var(--c); }
+.bp-pin.exec.on { background: var(--c); }
+.bp-pin.exec:hover, .bp-pin.exec.candidate { transform: scale(1.25); }
+.bp-pin-row.in .bp-pin { margin-left: -10px; }
+.bp-pin-row.out .bp-pin { margin-right: -10px; }
+.bp-compact-label { font-size: 14px; padding: 0 8px; min-width: 25px; }
+.bp-compact .bp-pin-label { max-width: 74px; font-size: 10px; }
+.bp-details { width: 300px; flex-basis: 300px; }
+.bp-form input, .bp-form select { min-height: 36px; font-size: 13px; }
+.bp-legend { position: absolute; top: 16px; left: 18px; z-index: 2; display: flex; flex-direction: column; gap: 4px; padding: 9px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; pointer-events: none; font-size: 11px; color: var(--secondary); }
+.bp-legend b { color: var(--text); font-size: 12px; }
+.bp-hud { gap: 5px; flex-wrap: wrap; max-width: calc(100% - 24px); }
+.bp-hud button { display: inline-flex; justify-content: center; align-items: center; min-height: 28px; min-width: 28px; height: 28px; width: 28px; padding: 0; font-size: 16px; }
+.bp-port-settings { margin: 16px 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.bp-port-settings summary { cursor: pointer; font-weight: 650; color: var(--text); }
+.bp-port-settings p { font-size: 12px; line-height: 1.5; color: var(--secondary); }
+.bp-port-settings h4 { margin: 16px 0 10px; color: var(--accent); }
+.bp-port-setting { display: block; margin-bottom: 10px; font-size: 11px; color: var(--secondary); }
+.bp-port-setting > div { display: flex; gap: 7px; margin-top: 4px; }
+.bp-port-setting input { min-width: 0; width: 100%; border: 1px solid var(--line); background: var(--surface); color: var(--text); border-radius: 6px; padding: 7px; }
+.bp-port-setting input[type=color] { flex: 0 0 36px; height: 36px; padding: 3px; }
+.bp-port-settings button { border: 1px solid var(--line); background: var(--surface); color: var(--secondary); border-radius: 6px; padding: 8px; cursor: pointer; }
+.ws-verify #ws-verify-head { padding: 18px 24px 8px; }
+.ws-verify .ws-hero.compact .ws-lead { max-width: 980px; }
+.ws-verify .ws-hero h1 { font-size: 25px; }
+.ws-verify .ws-hero.compact { margin-bottom: 12px; }
+.ux-check-help { margin-top: 7px; color: var(--secondary); font-size: 12px; }
+.ux-check-help summary { cursor: pointer; }
+.ux-check-help p { max-width: 900px; line-height: 1.6; }
+.ws-verify .ws-step { padding: 9px 12px; min-height: 62px; }
+.ws-verify .ws-step small { font-size: 12px; }
+.ws-verify .q-verify-actions [data-action=rollback-change] { display: none; }
+.ws-verify .ws-step-actions { flex-basis: 100%; }
+.ws-verify #ws-verify-panel { margin: 0 24px 16px; }
+@media (max-width: 720px) {
+  .ide-titlebar { gap: 5px; padding: 0 5px; }
+  .ide-workspaces .ws-tab { padding: 0 7px; }
+  .ide-workspaces .ws-tab span { display: inline; }
+  .ide-workspaces .ws-tab svg, .ide-workspaces .ws-count { display: none; }
+  .ide-tools-trigger > span { display: none; }
+  .ide-title-actions { gap: 1px; }
+  .ide-toolbar { gap: 4px; }
+  .ux-method-controls { gap: 4px; }
+  #ide-method-select { width: min(220px, 32vw); min-width: 80px; }
+  .ws-edit-toggle button { padding: 0 5px; font-size: 11px; }
+  .ide-tools-menu { left: 8px; }
+  .ux-start-options { grid-template-columns: 1fr; }
+  .bp-details { position: absolute; right: 0; top: 0; bottom: 0; z-index: 5; width: min(300px, 92%); }
+  .ws-page { padding: 20px 16px; }
+  .ux-tour { bottom: 28px; right: 12px; padding: 16px; }
+  .ux-tour p { font-size: 13px; }
+  .ux-welcome h2 { font-size: 24px; }
+  .ws-verify #ws-verify-head { padding: 16px 12px 8px; }
+  .ws-verify #ws-verify-panel { margin: 0 12px 12px; }
+}
+
+@media (max-width: 480px) {
+  .ide-workspaces .ws-tab span { display: none; }
+  .ide-workspaces .ws-tab svg { display: block; }
+  .ide-workspaces .ws-tab { padding: 0 6px; }
+  #ide-method-select { min-width: 60px; }
+}

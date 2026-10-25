@@ -95,7 +95,7 @@ test("verification panel shows inputs, results and a stdout diff for a mismatch"
   };
   const results = verifyPanel({ project, baseline: null, cases, report, stale: true, job: null, tab: "results", lab: {}, method: null, document: null });
   assert.match(results, /Поведение изменилось/);
-  assert.match(results, /Код изменён после проверки/);
+  assert.match(results, /Код, главный класс или тесты изменены после проверки/);
   assert.match(results, /stdout исходной версии/);
   assert.match(results, /reduce-failure/);
 });
