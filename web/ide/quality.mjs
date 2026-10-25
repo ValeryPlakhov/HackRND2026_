@@ -184,7 +184,6 @@ export class QualityLab {
   // ---------- rendering ----------
 
   render() {
-    if (["analysis", "improve"].includes(this.app.sidebar)) this.app.renderSidebar();
     if (this.app.panel === "verify" && !this.app.panelHidden) this.renderPanel();
     this.app.renderWorkspace?.();
     this.renderStatus();
@@ -285,8 +284,8 @@ export class QualityLab {
     if (this.analysing) return;
     this.analysing = true;
     this.analysisError = null;
-    if (reveal && this.app.sidebar !== "analysis") await this.showSidebar("analysis");
-    else this.app.renderSidebar();
+    if (reveal && (this.app.workspace !== "tasks" || this.app.home)) this.app.setWorkspace("tasks");
+    else this.app.renderWorkspace?.();
     const id = this.project.id;
     try {
       const files = await this.collect();
@@ -921,10 +920,8 @@ export class QualityLab {
         await this.openLocation(data.file, { methodId: data.method });
         return true;
       case "improve":
-        await this.showSidebar("improve");
-        return true;
       case "analysis-view":
-        await this.showSidebar("analysis");
+        this.app.setWorkspace("tasks");
         return true;
       case "plans-refresh":
         await this.loadPlans();

@@ -1,0 +1,130 @@
+// «Инструменты»: one place that lists everything the IDE can do, grouped by the job it serves.
+import { escapeHtml as e } from "./core.mjs";
+import { glyph } from "./views.mjs";
+
+const ws = (workspace, label, hint, icon, shortcut) => ({ action: "workspace", data: { workspace }, label, hint, icon, shortcut, needs: "project" });
+
+export const TOOL_GROUPS = [
+  {
+    id: "understand",
+    title: "Понять код",
+    items: [
+      ws("overview", "Карта проекта", "Точка входа, путь данных, дерево вызовов, с чего начать", "nodes", "Alt 1"),
+      ws("method", "Логика метода", "Схема шагов рядом с кодом, кто вызывает метод и что он вызывает", "method", "Alt 2"),
+      { action: "sidebar", data: { view: "outline" }, label: "Структура файла", hint: "Классы и методы открытого файла", icon: "layers", needs: "java" },
+      { action: "sidebar", data: { view: "search" }, label: "Поиск по проекту", hint: "Текст и замена с предпросмотром", icon: "search", shortcut: "Ctrl Shift F", needs: "project" },
+    ],
+  },
+  {
+    id: "fix",
+    title: "Исправить",
+    items: [
+      ws("tasks", "Риски и исправления", "Что исправить в первую очередь, исправление одной кнопкой", "target", "Alt 3"),
+      { action: "ws-build", label: "Собрать метод из блоков", hint: "Новый метод: блоки и провода сразу становятся Java", icon: "plus", needs: "project" },
+      { action: "extract-method", label: "Вынести метод в класс", hint: "Выбранный static-метод переедет в новый класс, останется делегат", icon: "layers", needs: "method" },
+    ],
+  },
+  {
+    id: "check",
+    title: "Проверить",
+    items: [
+      ws("verify", "Проверка поведения", "Эталон, ваши изменения, тестовые входы и результат", "shield", "Alt 4"),
+      { action: "verify", label: "Сравнить с эталоном", hint: "Запустить обе версии на всех входах: stdout, stderr, код завершения", icon: "play", shortcut: "F6", needs: "project" },
+      { action: "lab-mutation", label: "Сила тестов", hint: "Мутации метода: заметят ли тесты поломку", icon: "flask", needs: "method" },
+      { action: "baseline-diff", label: "Отличия от эталона", hint: "Что изменилось с момента, когда зафиксирован эталон", icon: "diff", needs: "project" },
+      { action: "baseline-set-current", label: "Принять текущую версию эталоном", hint: "Дальше сравнивать с тем, что сейчас в редакторе", icon: "bookmark", needs: "project" },
+      { action: "export-evidence", label: "Отчёт о проверке", hint: "ZIP: эталон, новая версия, входы, результаты", icon: "download", needs: "project" },
+    ],
+  },
+  {
+    id: "run",
+    title: "Запуск",
+    items: [
+      { action: "run", label: "Запустить", hint: "Сохранить, собрать и выполнить main", icon: "play", shortcut: "F5", needs: "project" },
+      { action: "compile", label: "Проверить сборку", hint: "javac без запуска", icon: "check", shortcut: "Ctrl F9", needs: "project" },
+      { action: "run-config", label: "Параметры запуска", hint: "Главный класс и стандартный ввод", icon: "settings", needs: "project" },
+      { action: "show-problems", label: "Проблемы", hint: "Ошибки компиляции и синтаксиса со строками", icon: "warning", needs: "project" },
+    ],
+  },
+  {
+    id: "project",
+    title: "Проект",
+    items: [
+      { action: "open-folder", label: "Открыть папку", hint: "Папка на диске: изменения сохраняются в неё", icon: "folder", shortcut: "Ctrl O" },
+      { action: "open-example", label: "Пример монолита", hint: "Магазин на 878 строк с готовыми тестами", icon: "rocket", data: { example: "shop-monolith" } },
+      { action: "new-project", label: "Новый проект", hint: "Пустой Java-проект в памяти страницы", icon: "plus" },
+      { action: "save-all", label: "Сохранить всё", hint: "Записать изменённые файлы", icon: "download", shortcut: "Ctrl Shift S", needs: "project" },
+      { action: "export-project", label: "Скачать ZIP", hint: "Весь проект с несохранёнными правками", icon: "download", needs: "project" },
+      { action: "history", label: "История файла", hint: "Прежние версии открытого файла", icon: "history", needs: "document" },
+      { action: "close-project", label: "Закрыть проект", hint: "Вернуться на главный экран без проекта", icon: "close", needs: "project" },
+    ],
+  },
+  {
+    id: "help",
+    title: "Справка",
+    items: [
+      { action: "shortcuts", label: "Горячие клавиши", hint: "Все сочетания", icon: "keyboard" },
+      { action: "settings", label: "Настройки", hint: "Тема, шрифт, автосохранение", icon: "settings" },
+      { action: "about", label: "О продукте", hint: "Версия, что входит и что нет", icon: "info" },
+    ],
+  },
+];
+
+const REASONS = {
+  project: "Сначала откройте проект",
+  java: "Откройте Java-файл",
+  document: "Откройте файл",
+  method: "Выберите метод в режиме «Метод»",
+};
+
+export function toolAvailable(item, state) {
+  if (!item.needs) return true;
+  if (item.needs === "project") return Boolean(state.project);
+  if (item.needs === "document") return Boolean(state.project && state.document);
+  if (item.needs === "java") return Boolean(state.project && state.document?.language === "java");
+  if (item.needs === "method") return Boolean(state.project && state.method);
+  return true;
+}
+
+function attributes(data = {}) {
+  return Object.entries(data)
+    .map(([key, value]) => `data-${key}="${e(value)}"`)
+    .join(" ");
+}
+
+export function toolsMenuHtml(state) {
+  const { project, summary } = state;
+  const header = project
+    ? `<div class="tools-project">${glyph("folder", 16)}<div><b>${e(project.name)}</b><small>${e(summary || project.root)}</small></div><button class="ide-button small" data-action="home">${glyph("grid", 13)}<span>Главный экран</span></button></div>`
+    : `<div class="tools-project empty">${glyph("folder", 16)}<div><b>Проект не открыт</b><small>Откройте папку или пример — остальные инструменты станут доступны</small></div></div>`;
+  const groups = TOOL_GROUPS.map((group) => {
+    const items = group.items
+      .map((item) => {
+        const enabled = toolAvailable(item, state);
+        const active = item.action === "workspace" && state.workspace === item.data.workspace && !state.home;
+        return `<button class="tool-item ${active ? "current" : ""}" data-action="${e(item.action)}" ${attributes(item.data)} ${enabled ? "" : "disabled"} data-search="${e((item.label + " " + item.hint + " " + group.title).toLocaleLowerCase())}" title="${enabled ? e(item.hint) : e(REASONS[item.needs] ?? "")}"><span class="tool-icon">${glyph(item.icon, 16)}</span><span class="tool-text"><b>${e(item.label)}</b><small>${enabled ? e(item.hint) : e(REASONS[item.needs] ?? item.hint)}</small></span>${item.shortcut ? `<kbd>${e(item.shortcut)}</kbd>` : ""}</button>`;
+      })
+      .join("");
+    return `<section class="tool-group" data-group="${group.id}"><h3>${e(group.title)}</h3>${items}</section>`;
+  }).join("");
+  return `${header}<div class="tools-search">${glyph("search", 14)}<input type="search" id="tools-filter" placeholder="Найти инструмент…" autocomplete="off" aria-label="Найти инструмент"/></div><div class="tools-groups">${groups}<p class="tools-empty" hidden>Ничего не найдено. Попробуйте «проверка», «запуск» или «поиск».</p></div>`;
+}
+
+/** Hides tools that do not match the query and the groups left without tools. */
+export function filterTools(menu, query) {
+  const text = query.trim().toLocaleLowerCase();
+  let shown = 0;
+  for (const group of menu.querySelectorAll(".tool-group")) {
+    let visible = 0;
+    for (const item of group.querySelectorAll(".tool-item")) {
+      const match = !text || item.dataset.search.includes(text);
+      item.hidden = !match;
+      if (match) visible++;
+    }
+    group.hidden = visible === 0;
+    shown += visible;
+  }
+  const empty = menu.querySelector(".tools-empty");
+  if (empty) empty.hidden = shown > 0;
+  return shown;
+}

@@ -7,7 +7,7 @@ EXTENSIONS = {'.java': 'Java', '.mjs': 'JavaScript', '.cjs': 'JavaScript', '.js'
 
 def audit():
     records = []
-    for folder in ('src', 'web', 'desktop', 'tests'):
+    for folder in ('src', 'web', 'tests'):
         for path in sorted((ROOT / folder).rglob('*')):
             if not path.is_file() or path.suffix not in EXTENSIONS:
                 continue
@@ -29,10 +29,10 @@ def audit():
               'languages': {language: total([item for item in records if item['language'] == language])
                             for language in sorted(set(EXTENSIONS.values()))}, 'files': records}
     ide_records = [item for item in records if item['category'] == 'product' and
-                   (item['path'].startswith('desktop/') or item['path'].startswith('web/ide/') or item['path'] == 'web/ide.html')]
+                   (item['path'].startswith('web/ide/') or item['path'] == 'web/ide.html')]
     ide = {'baselineCommit': 'd0624b3', 'method': result['method'],
            'newAuthoredProduct': total(ide_records),
-           'excluded': ['Electron and Java runtimes', 'dependencies', 'demo-data.mjs', 'tests and documentation', 'build outputs'],
+           'excluded': ['Java runtime', 'dependencies', 'demo-data.mjs', 'tests and documentation', 'build outputs'],
            'files': ide_records}
     (ROOT / 'docs/ide-source-delta.json').write_text(json.dumps(ide, ensure_ascii=False, indent=2), encoding='utf-8')
     (ROOT / 'docs/source-audit.json').write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding='utf-8')

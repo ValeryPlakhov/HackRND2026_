@@ -6,13 +6,13 @@ root = Path(__file__).resolve().parents[1]
 output = root / 'output'
 output.mkdir(exist_ok=True)
 files = []
-for folder in ['src', 'web', 'desktop', 'examples', 'tests', 'docs', '.github']:
+for folder in ['src', 'web', 'examples', 'tests', 'docs', '.github']:
     for p in (root / folder).rglob('*'):
         if not p.is_file() or '__pycache__' in p.parts or p.suffix in ['.zip', '.log']:
             continue
         files.append(p)
 for name in ['README.md', '.gitignore', '.gitattributes', 'start.ps1', 'start.sh', 'start-local.cmd',
-             'start-ide.cmd', 'Dockerfile', 'compose.yaml']:
+             'Dockerfile', 'compose.yaml']:
     files.append(root / name)
 target = output / 'Java-Blueprints-source.zip'
 with zipfile.ZipFile(target, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:

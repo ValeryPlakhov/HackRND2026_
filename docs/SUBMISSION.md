@@ -3,25 +3,24 @@
 | Пункт брифа | Что передаётся |
 |---|---|
 | 01 Исходный код | Этот репозиторий. Инструкция запуска — в [README](../README.md) |
-| 02 Веб-демо / воспроизводимая сборка | `Blueprints-IDE-4-Windows-x64.zip` (распаковать, запустить `BlueprintsIDE.exe`) или один файл `Blueprints-IDE-4.exe`; веб-версия из исходников: `.\start.ps1 -TrustedLocal` → `http://localhost:8080` |
+| 02 Веб-демо / воспроизводимая сборка | Веб-приложение: `.\start.ps1 -TrustedLocal` (или `./start.sh`) → `http://localhost:8080`; `docker compose up --build` для запуска как сервиса |
 | 03 Проверка поведения | `python tests/verify.py`; последний результат — [verification-summary.json](verification-summary.json) |
-| 04 Описание решения | [ARCHITECTURE.md](ARCHITECTURE.md) — архитектура; [SCOPE.md](SCOPE.md) — поддержанный scope и соответствие кейсу; ограничения — в README и ARCHITECTURE |
+| 04 Описание решения | [PRODUCT.md](PRODUCT.md) — для кого и как пользоваться; [ARCHITECTURE.md](ARCHITECTURE.md) — архитектура; [SCOPE.md](SCOPE.md) — поддержанный scope; [AUDIT-RESPONSE.md](AUDIT-RESPONSE.md) — ответ на независимый аудит |
 
-## Сборка Windows-версии
+## Запуск
+
+Нужен JDK 21+. Скрипт компилирует движок и запускает сервер на порту 8080:
 
 ```powershell
-python tests/build_desktop.py
-python tests/test_desktop_smoke.py portable
-python tests/test_desktop_smoke.py single-exe
+.\start.ps1 -TrustedLocal
 ```
 
-Скрипт скачивает официальный Electron 45 один раз и сверяет SHA-256 с опубликованным `SHASUMS256.txt`. Затем он собирает урезанный Java 21 runtime через `jlink` из локального JDK, компилирует движок и упаковывает всё в `output/desktop/`:
+Режим `-TrustedLocal` включает запуск кода пользователя на этой машине, `-Docker` запускает его в контейнерах, без флагов запуск отключён и работают только анализ и схемы.
 
-- `BlueprintsIDE/` — переносимая папка;
-- `Blueprints-IDE-4-Windows-x64.zip` — та же папка архивом;
-- `Blueprints-IDE-4.exe` — самораспаковывающийся запуск одним файлом;
-- `SHA256SUMS.txt` — контрольные суммы.
+## Как сервис
 
-Каталог `output/desktop/` не хранится в git: артефакты пересобираются этой командой.
+```bash
+docker compose up --build
+```
 
-EXE не подписан коммерческим сертификатом, поэтому Windows SmartScreen может предупредить о неизвестном издателе («Подробнее → Выполнить в любом случае»).
+Порт публикуется на `127.0.0.1:8080`. Чтобы открыть доступ другим, поставьте перед сервисом обратный прокси с аутентификацией: у приложения собственной нет. Запуск чужой Java — исполнение чужого кода, поэтому контейнер запущен с read-only файловой системой, без capabilities, с лимитами памяти, процессов и процессора. Это снижает риск, но не делает публичный доступ безопасным.

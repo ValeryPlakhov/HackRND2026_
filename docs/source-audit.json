@@ -8,30 +8,30 @@
     "documentation and SVG assets"
   ],
   "total": {
-    "files": 92,
-    "physical": 28847,
-    "nonempty": 27524
+    "files": 77,
+    "physical": 25643,
+    "nonempty": 24441
   },
   "product": {
-    "files": 67,
-    "physical": 25149,
-    "nonempty": 24160
+    "files": 57,
+    "physical": 22609,
+    "nonempty": 21706
   },
   "tests": {
-    "files": 25,
-    "physical": 3698,
-    "nonempty": 3364
+    "files": 20,
+    "physical": 3034,
+    "nonempty": 2735
   },
   "languages": {
     "C#": {
-      "files": 1,
-      "physical": 218,
-      "nonempty": 210
+      "files": 0,
+      "physical": 0,
+      "nonempty": 0
     },
     "CSS": {
       "files": 5,
-      "physical": 5406,
-      "nonempty": 5391
+      "physical": 5635,
+      "nonempty": 5615
     },
     "HTML": {
       "files": 2,
@@ -44,14 +44,14 @@
       "nonempty": 5921
     },
     "JavaScript": {
-      "files": 48,
-      "physical": 15292,
-      "nonempty": 14521
+      "files": 39,
+      "physical": 12375,
+      "nonempty": 11699
     },
     "Python": {
-      "files": 13,
-      "physical": 1639,
-      "nonempty": 1447
+      "files": 8,
+      "physical": 1341,
+      "nonempty": 1172
     }
   },
   "files": [
@@ -261,22 +261,22 @@
     {
       "path": "web/ide/app.mjs",
       "language": "JavaScript",
-      "physical": 2384,
-      "nonempty": 2310,
+      "physical": 2364,
+      "nonempty": 2284,
       "category": "product"
     },
     {
       "path": "web/ide/bridge.mjs",
       "language": "JavaScript",
-      "physical": 756,
-      "nonempty": 732,
+      "physical": 718,
+      "nonempty": 689,
       "category": "product"
     },
     {
       "path": "web/ide/commands.mjs",
       "language": "JavaScript",
-      "physical": 414,
-      "nonempty": 412,
+      "physical": 392,
+      "nonempty": 390,
       "category": "product"
     },
     {
@@ -324,8 +324,8 @@
     {
       "path": "web/ide/ide.css",
       "language": "CSS",
-      "physical": 2661,
-      "nonempty": 2661,
+      "physical": 2551,
+      "nonempty": 2551,
       "category": "product"
     },
     {
@@ -359,29 +359,36 @@
     {
       "path": "web/ide/quality.mjs",
       "language": "JavaScript",
-      "physical": 1086,
-      "nonempty": 1017,
+      "physical": 1083,
+      "nonempty": 1014,
+      "category": "product"
+    },
+    {
+      "path": "web/ide/tools.mjs",
+      "language": "JavaScript",
+      "physical": 130,
+      "nonempty": 123,
       "category": "product"
     },
     {
       "path": "web/ide/views.mjs",
       "language": "JavaScript",
-      "physical": 370,
-      "nonempty": 343,
+      "physical": 359,
+      "nonempty": 331,
       "category": "product"
     },
     {
       "path": "web/ide/workspace.css",
       "language": "CSS",
-      "physical": 725,
-      "nonempty": 714,
+      "physical": 1064,
+      "nonempty": 1048,
       "category": "product"
     },
     {
       "path": "web/ide/workspace.mjs",
       "language": "JavaScript",
-      "physical": 392,
-      "nonempty": 368,
+      "physical": 396,
+      "nonempty": 371,
       "category": "product"
     },
     {
@@ -448,115 +455,10 @@
       "category": "product"
     },
     {
-      "path": "desktop/Launcher.cs",
-      "language": "C#",
-      "physical": 218,
-      "nonempty": 210,
-      "category": "product"
-    },
-    {
-      "path": "desktop/main.cjs",
-      "language": "JavaScript",
-      "physical": 614,
-      "nonempty": 602,
-      "category": "product"
-    },
-    {
-      "path": "desktop/preload.cjs",
-      "language": "JavaScript",
-      "physical": 55,
-      "nonempty": 53,
-      "category": "product"
-    },
-    {
-      "path": "desktop/services/backend.cjs",
-      "language": "JavaScript",
-      "physical": 95,
-      "nonempty": 89,
-      "category": "product"
-    },
-    {
-      "path": "desktop/services/contracts.cjs",
-      "language": "JavaScript",
-      "physical": 244,
-      "nonempty": 229,
-      "category": "product"
-    },
-    {
-      "path": "desktop/services/git.cjs",
-      "language": "JavaScript",
-      "physical": 147,
-      "nonempty": 140,
-      "category": "product"
-    },
-    {
-      "path": "desktop/services/persistence.cjs",
-      "language": "JavaScript",
-      "physical": 328,
-      "nonempty": 307,
-      "category": "product"
-    },
-    {
-      "path": "desktop/services/project-info.cjs",
-      "language": "JavaScript",
-      "physical": 87,
-      "nonempty": 83,
-      "category": "product"
-    },
-    {
-      "path": "desktop/services/search.cjs",
-      "language": "JavaScript",
-      "physical": 144,
-      "nonempty": 138,
-      "category": "product"
-    },
-    {
-      "path": "desktop/services/tasks.cjs",
-      "language": "JavaScript",
-      "physical": 389,
-      "nonempty": 377,
-      "category": "product"
-    },
-    {
-      "path": "desktop/services/workspace.cjs",
-      "language": "JavaScript",
-      "physical": 488,
-      "nonempty": 470,
-      "category": "product"
-    },
-    {
       "path": "tests/blueprint_roundtrip.mjs",
       "language": "JavaScript",
       "physical": 98,
       "nonempty": 92,
-      "category": "tests"
-    },
-    {
-      "path": "tests/build_desktop.py",
-      "language": "Python",
-      "physical": 103,
-      "nonempty": 97,
-      "category": "tests"
-    },
-    {
-      "path": "tests/build_icon.py",
-      "language": "Python",
-      "physical": 54,
-      "nonempty": 47,
-      "category": "tests"
-    },
-    {
-      "path": "tests/desktop-runtime.mjs",
-      "language": "JavaScript",
-      "physical": 188,
-      "nonempty": 185,
-      "category": "tests"
-    },
-    {
-      "path": "tests/download_electron.py",
-      "language": "Python",
-      "physical": 46,
-      "nonempty": 42,
       "category": "tests"
     },
     {
@@ -571,13 +473,6 @@
       "language": "Python",
       "physical": 28,
       "nonempty": 27,
-      "category": "tests"
-    },
-    {
-      "path": "tests/prepare_desktop_runtime.py",
-      "language": "Python",
-      "physical": 34,
-      "nonempty": 31,
       "category": "tests"
     },
     {
@@ -602,13 +497,6 @@
       "category": "tests"
     },
     {
-      "path": "tests/test_desktop_smoke.py",
-      "language": "Python",
-      "physical": 56,
-      "nonempty": 53,
-      "category": "tests"
-    },
-    {
       "path": "tests/test_ide_api.py",
       "language": "Python",
       "physical": 307,
@@ -620,6 +508,13 @@
       "language": "Python",
       "physical": 341,
       "nonempty": 294,
+      "category": "tests"
+    },
+    {
+      "path": "tests/unit/actions.test.mjs",
+      "language": "JavaScript",
+      "physical": 64,
+      "nonempty": 57,
       "category": "tests"
     },
     {
@@ -637,17 +532,17 @@
       "category": "tests"
     },
     {
-      "path": "tests/unit/desktop.test.mjs",
-      "language": "JavaScript",
-      "physical": 374,
-      "nonempty": 351,
-      "category": "tests"
-    },
-    {
       "path": "tests/unit/diff.test.mjs",
       "language": "JavaScript",
       "physical": 107,
       "nonempty": 99,
+      "category": "tests"
+    },
+    {
+      "path": "tests/unit/folder.test.mjs",
+      "language": "JavaScript",
+      "physical": 132,
+      "nonempty": 125,
       "category": "tests"
     },
     {
@@ -695,8 +590,8 @@
     {
       "path": "tests/verify.py",
       "language": "Python",
-      "physical": 102,
-      "nonempty": 97,
+      "physical": 97,
+      "nonempty": 92,
       "category": "tests"
     }
   ]
