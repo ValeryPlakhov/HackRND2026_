@@ -30,6 +30,7 @@ import { QualityLab } from "./quality.mjs";
 import { nodeFindings } from "./quality-views.mjs";
 import * as ws from "./workspace.mjs";
 import { toolsMenuHtml, filterTools } from "./tools.mjs";
+import { TOUR_STEPS, welcomeHtml, tourHtml, guideHtml } from "./learning.mjs";
 
 const DEFAULT_SETTINGS = {
   theme: "light",
@@ -41,8 +42,8 @@ const DEFAULT_SETTINGS = {
   reduceMotion: false,
   showWhitespace: false,
   graphDirection: "TB",
-  editorView: "split",
-  explorerWidth: 300,
+  editorView: "blueprint",
+  explorerWidth: 248,
   panelHeight: 210,
 };
 
@@ -121,12 +122,12 @@ export class IdeApplication {
     this.bind();
     // On a narrow window (or a zoomed-in page) the file panel is an overlay that starts closed.
     const narrow = matchMedia("(max-width: 900px)");
-    this.sidebarHidden = narrow.matches;
+    this.sidebarHidden = true;
     narrow.addEventListener("change", (event) => {
-      this.sidebarHidden = event.matches;
+      if (event.matches) this.sidebarHidden = true;
       this.renderSidebar();
     });
-((event) => this.documentChanged(event));
+    this.documents.changed.subscribe((event) => this.documentChanged(event));
     this.bridge.filesChanged.subscribe((event) => {
       this.watchQueue = this.watchQueue
         .then(() => this.filesChanged(event))
@@ -152,6 +153,58 @@ export class IdeApplication {
     if (new URLSearchParams(location.search).get("demo") === "1")
       await this.adopt(await this.bridge.demo());
     this.root.dataset.ready = "true";
+    if (!this.settings.onboardingSeen) this.showModal(welcomeHtml());
+  }
+
+  async acknowledgeWelcome() {
+    this.settings.onboardingSeen = true;
+    await this.bridge.settings(this.settings);
+    this.closeModal();
+  }
+
+  async startLearning() {
+    await this.acknowledgeWelcome();
+    if (!this.project) await this.adopt(await this.bridge.openExample("shop-monolith"));
+    this.learningStep = 0;
+    await this.showLearningStep();
+  }
+
+  async showLearningStep() {
+    const step = TOUR_STEPS[this.learningStep];
+    if (!step) return this.endLearning();
+    this.closeTools();
+    if (step.workspace === "method") {
+      const file = this.documents.active;
+      if (file && !file.currentModel) await this.analyse(file);
+      if (file && !file.selectedMethod()) {
+        const first = file.currentModel?.methods?.[0];
+        if (first) file.methodId = first.id;
+      }
+      this.blueprintEditing = Boolean(step.blocks);
+    }
+    if (step.workspace === "verify") this.quality.tab = "inputs";
+    this.setWorkspace(step.workspace);
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    this.root.querySelectorAll(".ux-tour-target").forEach((node) => node.classList.remove("ux-tour-target"));
+    $(step.target, this.root)?.classList.add("ux-tour-target");
+    let host = $("#ux-learning", this.root);
+    if (!host) { host = document.createElement("div"); host.id = "ux-learning"; this.root.append(host); }
+    host.innerHTML = tourHtml(this.learningStep);
+    $(".ux-tour", host)?.focus({ preventScroll: true });
+  }
+
+  endLearning() {
+    $("#ux-learning", this.root)?.remove();
+    this.root.querySelectorAll(".ux-tour-target").forEach((node) => node.classList.remove("ux-tour-target"));
+    this.learningStep = null;
+    $("[data-action=guide]", this.root)?.focus();
+  }
+
+  toggleFocus() {
+    this.focusMode = !this.focusMode;
+    $(".ide-shell", this.root).classList.toggle("ux-focus", this.focusMode);
+    this.renderToolbar();
+    requestAnimationFrame(() => this.graph?.fit?.());
   }
 
   async safe(operation) {
@@ -299,21 +352,31 @@ export class IdeApplication {
     };
   }
 
-  openTools() {
+  openTools(group = null) {
     this.closeNotices();
+    this.root.classList.remove("ux-help-open");
     const menu = $("#ide-tools-menu", this.root);
-    menu.innerHTML = toolsMenuHtml(this.toolsState());
+    menu.innerHTML = toolsMenuHtml(this.toolsState(), group === "help" ? "help" : "actions");
+    menu.setAttribute("aria-label", group === "help" ? "Помощь" : "Действия");
+    menu.querySelectorAll(".tool-group").forEach((item) => { item.hidden = Boolean(group && item.dataset.group !== group && !(group === "check" && item.dataset.group === "run")); });
+    this.toolsGroup = group;
     menu.hidden = false;
     this.toolsOpen = true;
-    $("#ide-tools-trigger", this.root).setAttribute("aria-expanded", "true");
-    requestAnimationFrame(() => $("#tools-filter", menu)?.focus());
+    $$("[data-action=tool-group]", this.root).forEach((item) => item.setAttribute("aria-expanded", String(item.dataset.group === group)));
+    $("#ide-tools-trigger", this.root).setAttribute("aria-expanded", String(group !== "help"));
+    $("[data-action=help-menu]", this.root)?.setAttribute("aria-expanded", String(group === "help"));
+    requestAnimationFrame(() => $("button:not(:disabled)", menu)?.focus());
   }
 
   closeTools() {
     if (!this.toolsOpen) return;
     this.toolsOpen = false;
+    this.toolsGroup = null;
+    this.root.classList.remove("ux-help-open");
+    $$("[data-action=tool-group]", this.root).forEach((item) => item.setAttribute("aria-expanded", "false"));
     $("#ide-tools-menu", this.root).hidden = true;
     $("#ide-tools-trigger", this.root)?.setAttribute("aria-expanded", "false");
+    $("[data-action=help-menu]", this.root)?.setAttribute("aria-expanded", "false");
   }
 
   renderToolbar() {
@@ -324,7 +387,11 @@ export class IdeApplication {
       this.mode,
       this.project,
       this.busy,
+      this.documents.active?.currentModel ? this.methodContext(this.documents.active, this.documents.active.selectedMethod()) : "",
     );
+    $("#ide-toolbar", this.root).hidden = this.workspace !== "method" || this.home || !this.project;
+    const sidebarToggle = $("#ide-toolbar [data-action=toggle-sidebar]", this.root);
+    sidebarToggle?.setAttribute("aria-expanded", String(!this.sidebarHidden));
   }
 
   renderSidebar() {
@@ -574,6 +641,7 @@ export class IdeApplication {
   }
 
   renderGraph() {
+    this.renderToolbar();
     const target = $("#ide-graph-pane", this.root);
     if (!target) return;
     const file = this.documents.active;
@@ -592,7 +660,7 @@ export class IdeApplication {
     ) {
       if (!method) return (this.blueprintReady = Promise.resolve());
       const context = $(".ws-context", target);
-      if (context) context.outerHTML = this.methodContext(file, method);
+      if (context) context.remove();
       this.quality.decorateGraph(this.graph, file, method);
       return (this.blueprintReady = Promise.resolve());
     }
@@ -604,7 +672,6 @@ export class IdeApplication {
     }
     target.classList.toggle("bp-reading", !this.blueprintEditing);
     target.innerHTML =
-      (file.currentModel ? this.methodContext(file, method) : "") +
       `<div class="ide-graph-body">${method && file.currentModel?.valid ? '<div class="graph-empty"><span class="ide-spinner"></span><h3>Строим схему</h3></div>' : view.graphEmpty(file, this.analysing.has(file.path))}</div><div id="ide-node-inspector" hidden></div>`;
     if (!method || !file.currentModel?.valid) return (this.blueprintReady = Promise.resolve());
     if (!this.blueprintEditing) {
@@ -624,7 +691,7 @@ export class IdeApplication {
     const body = $(".ide-graph-body", target);
     if (!body || !method.graph?.nodes?.length) return;
     this.blueprint = null;
-    body.innerHTML = graphShell({ title: `${method.owner}.${method.name}`, toolbar: false });
+    body.innerHTML = graphShell({ toolbar: false, minimal: true });
     this.expandedSteps ??= new Map();
     const expanded = this.expandedSteps.get(method.id) ?? new Set();
     const chart = ws.condenseGraph(method.graph, expanded);
@@ -971,7 +1038,7 @@ export class IdeApplication {
     this.blueprint = null;
     this.blueprintViews = {};
     this.sidebar = "explorer";
-    this.sidebarHidden = matchMedia("(max-width: 900px)").matches;
+    this.sidebarHidden = true;
     this.panelHidden = true;
     this.mode = this.settings.editorView;
     this.workspace = "overview";
@@ -1484,11 +1551,41 @@ export class IdeApplication {
   }
 
   async action(name, element = null) {
-    if (this.toolsOpen && name !== "tools-menu") this.closeTools();
+    if (this.toolsOpen && !["tools-menu", "tool-group", "help-menu"].includes(name)) this.closeTools();
     if (this.noticesOpen && name !== "notifications" && name !== "notifications-clear") this.closeNotices();
     const file = this.documents.active;
     const path = element?.dataset.path;
     switch (name) {
+      case "help-menu":
+        if (this.toolsOpen && this.toolsGroup === "help") this.closeTools();
+        else { this.openTools("help"); this.root.classList.add("ux-help-open"); }
+        break;
+      case "tool-group":
+        if (this.toolsOpen && this.toolsGroup === element.dataset.group) this.closeTools();
+        else this.openTools(element.dataset.group);
+        break;
+      case "learn-beginner":
+      case "learn-start":
+        await this.startLearning();
+        break;
+      case "learn-experienced":
+        await this.acknowledgeWelcome();
+        break;
+      case "learn-next":
+      case "learn-back":
+        element.disabled = true;
+        this.learningStep += name === "learn-next" ? 1 : -1;
+        await this.showLearningStep();
+        break;
+      case "learn-end":
+        this.endLearning();
+        break;
+      case "guide":
+        this.showModal(guideHtml());
+        break;
+      case "focus-workspace":
+        this.toggleFocus();
+        break;
       case "open-folder":
         await this.switchProject(() => this.bridge.chooseFolder());
         break;
@@ -1581,8 +1678,6 @@ export class IdeApplication {
         break;
       case "blueprint-edit":
         this.blueprintEditing = element.dataset.edit === "1";
-        // Code stays visible next to the blocks: edits are seen where they land.
-        if (this.blueprintEditing && this.mode === "blueprint") return this.setMode("split");
         this.renderGraph();
         $("#ide-graph-pane", this.root)?.classList.toggle("bp-reading", !this.blueprintEditing);
         break;
@@ -1592,8 +1687,7 @@ export class IdeApplication {
       case "task-preview":
       case "task-fix": {
         const plan = await this.quality.planForTask(element.dataset.file, element.dataset.id);
-        if (name === "task-preview") await this.quality.action("plan-preview", { dataset: { id: plan.id } });
-        else await this.quality.applyPlans([plan.id]);
+        await this.quality.action("plan-preview", { dataset: { id: plan.id } });
         break;
       }
       case "activate-tab":
@@ -1654,6 +1748,7 @@ export class IdeApplication {
       case "toggle-sidebar":
         this.sidebarHidden = !this.sidebarHidden;
         this.renderSidebar();
+        this.renderToolbar();
         break;
       case "toggle-panel":
         this.panelHidden = !this.panelHidden;
@@ -2219,7 +2314,7 @@ export class IdeApplication {
     document.addEventListener(
       "click",
       (event) => {
-        if (this.toolsOpen && !event.target.closest("#ide-tools-menu, #ide-tools-trigger")) this.closeTools();
+        if (this.toolsOpen && !event.target.closest("#ide-tools-menu, #ide-tools-trigger, [data-action=help-menu]")) this.closeTools();
         if (this.noticesOpen && !event.target.closest("#ide-notify-panel, .ide-bell")) this.closeNotices();
         const target = event.target.closest("[data-action]");
         if (target && !target.disabled && !event.defaultPrevented) {
@@ -2243,7 +2338,11 @@ export class IdeApplication {
     this.root.addEventListener(
       "input",
       (event) => {
-        if (event.target.id === "tools-filter") filterTools($("#ide-tools-menu", this.root), event.target.value);
+        if (event.target.id === "tools-filter") {
+          const menu = $("#ide-tools-menu", this.root);
+          filterTools(menu, event.target.value);
+          if (!event.target.value && this.toolsGroup) menu.querySelectorAll(".tool-group").forEach((item) => { item.hidden = item.dataset.group !== this.toolsGroup && !(this.toolsGroup === "check" && item.dataset.group === "run"); });
+        }
       },
       { signal },
     );
@@ -2267,6 +2366,8 @@ export class IdeApplication {
       "keydown",
       (event) => {
         if (this.dialog.open) return;
+        if (event.key === "Escape" && this.learningStep != null) { event.preventDefault(); return this.endLearning(); }
+        if (event.key === "Escape" && this.focusMode) { event.preventDefault(); return this.toggleFocus(); }
         if (event.key === "Escape" && this.noticesOpen) {
           event.preventDefault();
           return this.closeNotices();

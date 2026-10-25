@@ -6,6 +6,17 @@ const ws = (workspace, label, hint, icon, shortcut) => ({ action: "workspace", d
 
 export const TOOL_GROUPS = [
   {
+    id: "view", title: "Рабочее пространство",
+    items: [
+      { action: "view-blueprint", label: "Только схема", hint: "Отдать рабочую область графу выбранного метода", icon: "graph", needs: "method" },
+      { action: "view-split", label: "Код и схема рядом", hint: "Следить за Java при изменении блоков", icon: "split", needs: "method" },
+      { action: "view-code", label: "Только код", hint: "Редактировать исходную Java", icon: "code", needs: "method" },
+      { action: "focus-workspace", label: "Режим фокуса", hint: "Скрыть файлы и вывод; Escape возвращает панели", icon: "graph", needs: "method" },
+      { action: "toggle-sidebar", label: "Файлы: показать / скрыть", hint: "Освободить место для кода и схемы", icon: "folder", needs: "method" },
+      { action: "toggle-panel", label: "Вывод: показать / скрыть", hint: "Результаты запуска и ошибки компиляции", icon: "terminal", needs: "project" },
+    ],
+  },
+  {
     id: "understand",
     title: "Понять код",
     items: [
@@ -53,6 +64,7 @@ export const TOOL_GROUPS = [
       { action: "open-folder", label: "Открыть папку", hint: "Папка на диске: изменения сохраняются в неё", icon: "folder", shortcut: "Ctrl O" },
       { action: "open-example", label: "Пример монолита", hint: "Магазин на 878 строк с готовыми тестами", icon: "rocket", data: { example: "shop-monolith" } },
       { action: "new-project", label: "Новый проект", hint: "Пустой Java-проект в памяти страницы", icon: "plus" },
+      { action: "new-file", label: "Новый файл", hint: "Создать файл в текущем проекте", icon: "file", needs: "project" },
       { action: "save-all", label: "Сохранить всё", hint: "Записать изменённые файлы", icon: "download", shortcut: "Ctrl Shift S", needs: "project" },
       { action: "export-project", label: "Скачать ZIP", hint: "Весь проект с несохранёнными правками", icon: "download", needs: "project" },
       { action: "history", label: "История файла", hint: "Прежние версии открытого файла", icon: "history", needs: "document" },
@@ -63,8 +75,10 @@ export const TOOL_GROUPS = [
     id: "help",
     title: "Справка",
     items: [
+      { action: "learn-start", label: "Обучение по интерфейсу", hint: "Шесть шагов: карта, команды, метод, порты, исправления и тесты", icon: "rocket" },
+      { action: "guide", label: "Руководство пользователя", hint: "Как работают блоки, проверка поведения и автоисправления", icon: "info" },
       { action: "shortcuts", label: "Горячие клавиши", hint: "Все сочетания", icon: "keyboard" },
-      { action: "settings", label: "Настройки", hint: "Тема, шрифт, автосохранение", icon: "settings" },
+      { action: "settings", label: "Настройки", hint: "Тема, шрифт и автоматический анализ", icon: "settings" },
       { action: "about", label: "О продукте", hint: "Версия, что входит и что нет", icon: "info" },
     ],
   },
@@ -92,22 +106,16 @@ function attributes(data = {}) {
     .join(" ");
 }
 
-export function toolsMenuHtml(state) {
-  const { project, summary } = state;
-  const header = project
-    ? `<div class="tools-project">${glyph("folder", 16)}<div><b>${e(project.name)}</b><small>${e(summary || project.root)}</small></div><button class="ide-button small" data-action="home">${glyph("grid", 13)}<span>Главный экран</span></button></div>`
-    : `<div class="tools-project empty">${glyph("folder", 16)}<div><b>Проект не открыт</b><small>Откройте папку или пример — остальные инструменты станут доступны</small></div></div>`;
-  const groups = TOOL_GROUPS.map((group) => {
-    const items = group.items
-      .map((item) => {
-        const enabled = toolAvailable(item, state);
-        const active = item.action === "workspace" && state.workspace === item.data.workspace && !state.home;
-        return `<button class="tool-item ${active ? "current" : ""}" data-action="${e(item.action)}" ${attributes(item.data)} ${enabled ? "" : "disabled"} data-search="${e((item.label + " " + item.hint + " " + group.title).toLocaleLowerCase())}" title="${enabled ? e(item.hint) : e(REASONS[item.needs] ?? "")}"><span class="tool-icon">${glyph(item.icon, 16)}</span><span class="tool-text"><b>${e(item.label)}</b><small>${enabled ? e(item.hint) : e(REASONS[item.needs] ?? item.hint)}</small></span>${item.shortcut ? `<kbd>${e(item.shortcut)}</kbd>` : ""}</button>`;
-      })
-      .join("");
-    return `<section class="tool-group" data-group="${group.id}"><h3>${e(group.title)}</h3>${items}</section>`;
-  }).join("");
-  return `${header}<div class="tools-search">${glyph("search", 14)}<input type="search" id="tools-filter" placeholder="Найти инструмент…" autocomplete="off" aria-label="Найти инструмент"/></div><div class="tools-groups">${groups}<p class="tools-empty" hidden>Ничего не найдено. Попробуйте «проверка», «запуск» или «поиск».</p></div>`;
+export function toolsMenuHtml(state, mode = "actions") {
+  const groups = TOOL_GROUPS.filter(group => mode === "help" ? group.id === "help" : ["project", "fix", "check", "run"].includes(group.id));
+  return `<div class="tools-groups ${mode === "help" ? "tools-help" : ""}">${groups.map(group => {
+    const items = group.items.filter(item => item.action !== "workspace" && !(mode === "help" && item.action === "settings"));
+    const buttons = items.map(item => {
+      const enabled = toolAvailable(item, state);
+      return `<button class="tool-item" data-action="${e(item.action)}" ${attributes(item.data)} ${enabled ? "" : "disabled"} title="${e(enabled ? item.hint : REASONS[item.needs] ?? "")}"><span class="tool-icon">${glyph(item.icon,17)}</span><span class="tool-text"><b>${e(item.label)}</b>${!enabled ? `<small>${e(REASONS[item.needs] ?? "")}</small>` : ""}</span>${item.shortcut ? `<kbd>${e(item.shortcut)}</kbd>` : ""}</button>`;
+    }).join("");
+    return mode === "help" ? `<section class="tool-group" data-group="help">${buttons}</section>` : `<details class="tool-group" name="ide-action-group" data-group="${group.id}" ${group.id === "project" ? "open" : ""}><summary>${e(group.title)}</summary>${buttons}</details>`;
+  }).join("")}</div>`;
 }
 
 /** Hides tools that do not match the query and the groups left without tools. */

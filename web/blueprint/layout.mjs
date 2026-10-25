@@ -1,14 +1,14 @@
 import { pinsOf, isCompact } from "./model.mjs";
 
-export const HEADER = 30;
-export const ROW = 24;
+export const HEADER = 38;
+export const ROW = 32;
 
 export function nodeWidth(node) {
   if (node.type === "reroute") return 18;
-  if (isCompact(node)) return Math.max(96, Math.min(220, 40 + String(compactLabel(node)).length * 7.2));
-  if (node.type === "code") return 300;
+  if (isCompact(node)) return Math.max(240, Math.min(360, 180 + String(compactLabel(node)).length * 7.2));
+  if (node.type === "code") return 340;
   if (node.type === "expr") return Math.max(150, Math.min(320, 40 + String(node.props.code).length * 7));
-  return 220;
+  return 300;
 }
 
 function compactLabel(node) {

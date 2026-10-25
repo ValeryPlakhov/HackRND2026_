@@ -226,7 +226,8 @@ export class QualityLab {
     });
   }
 
-  renderPanel(target = $("#ide-panel-body", this.app.root)) {
+  renderPanel(target = null) {
+    target ??= $(this.app.workspace === "verify" ? "#ws-verify-panel" : "#ide-panel-body", this.app.root);
     if (!target) return;
     const focused = document.activeElement;
     const focus =
@@ -245,6 +246,7 @@ export class QualityLab {
       tab: this.tab,
       lab: this.lab,
       pending: this.pending,
+      mainClass: this.app.runConfig.mainClass,
       method: active?.language === "java" ? active.selectedMethod() : null,
       document: active,
     });
@@ -260,8 +262,8 @@ export class QualityLab {
   openPanel(tab) {
     if (tab) this.tab = tab;
     // Outside the editor the overview, task and check pages show the result themselves.
-    if (this.app.project && this.app.workspace && this.app.workspace !== "method") {
-      if (this.app.workspace !== "verify" && tab !== "results") this.app.setWorkspace("verify");
+    if (this.app.project && this.app.workspace) {
+      if (this.app.workspace !== "verify") this.app.setWorkspace("verify");
       else this.render();
       return;
     }
@@ -543,6 +545,8 @@ export class QualityLab {
   }
 
   async applyPlans(ids) {
+    if (this.pending) throw new Error("Сначала примите или откатите предыдущее изменение.");
+    if (!this.enabledCases().length) throw new Error("Настройте хотя бы один тестовый вход перед применением.");
     const document = this.app.documents.active;
     const entry = document ? this.plansFor(document) : null;
     if (!entry?.data) throw new Error("Предложения устарели. Обновите список улучшений.");
@@ -616,6 +620,8 @@ export class QualityLab {
   }
 
   async decompose({ fileName, methodIds, className, errorTarget }) {
+    if (this.pending) throw new Error("Сначала примите или откатите предыдущее изменение.");
+    if (!this.enabledCases().length) throw new Error("Настройте хотя бы один тестовый вход перед выделением класса.");
     const projectId = this.project.id;
     const files = await this.collect();
     let result;
@@ -721,6 +727,7 @@ export class QualityLab {
           if (this.project?.id !== id) return;
           this.job = { ...job, kind };
           this.renderStatus();
+          if (this.app.workspace === "verify") this.app.renderWorkspace?.();
           if (this.app.panel === "verify" && !this.app.panelHidden) this.renderPanel();
         },
       );
@@ -766,8 +773,10 @@ export class QualityLab {
     this.render();
     const passed = this.report.tests.filter((test) => test.passed).length;
     this.app.notify(
-      this.report.passed
-        ? `Поведение сохранено: ${passed}/${this.report.tests.length} входов совпали с исходной версией.`
+      this.report.inconclusive
+        ? "Не удалось проверить поведение: ошибка среды запуска. Откройте результаты и проверьте Java-сервис."
+        : this.report.passed
+        ? `Совпало на выбранных входах: ${passed}/${this.report.tests.length}.`
         : `Обнаружено расхождение с исходной версией: ${this.report.tests.length - passed} из ${this.report.tests.length}.`,
       this.report.passed ? "info" : "warning",
       8000,
@@ -938,9 +947,14 @@ export class QualityLab {
       case "plan-preview": {
         const plan = this.findPlan(data.id);
         if (!plan) throw new Error("Предложение устарело. Обновите список.");
-        this.app.showModal(qv.planModal(plan));
+        this.app.showModal(qv.planModal(plan, { cases: this.cases, mainClass: this.app.runConfig.mainClass, pending: this.pending }));
         return true;
       }
+      case "configure-checks":
+        this.app.closeModal();
+        this.tab = "inputs";
+        this.app.setWorkspace("verify");
+        return true;
       case "plan-apply":
         await this.applyPlans([data.id]);
         return true;
@@ -1001,7 +1015,7 @@ export class QualityLab {
         );
         return true;
       case "baseline-set-current":
-        await this.captureBaseline("Зафиксировано вручную");
+        if (await this.app.ask("Заменить исходную версию?", "Текущий код станет новой точкой сравнения. Предыдущий снимок больше не будет использоваться для тестов.", [{ id: "cancel", label: "Отмена" }, { id: "replace", label: "Заменить снимок", primary: true }]) === "replace") await this.captureBaseline("Зафиксировано вручную");
         return true;
       case "baseline-diff":
         if (!this.baseline) throw new Error("Исходная версия ещё не зафиксирован");
@@ -1073,6 +1087,11 @@ export class QualityLab {
       "change",
       (event) => {
         const target = event.target;
+        if (target.matches?.(".ux-check-main")) {
+          this.app.runConfig.mainClass = target.value.trim();
+          this.invalidate();
+          this.render();
+        }
         if (target.matches?.(".q-case-enabled"))
           this.updateCase(target.dataset.id, { enabled: target.checked });
       },
@@ -1082,6 +1101,10 @@ export class QualityLab {
       "input",
       (event) => {
         const target = event.target;
+        if (target.matches?.(".ux-check-main")) {
+          this.app.runConfig.mainClass = target.value.trim();
+          this.invalidate();
+        }
         if (target.matches?.(".q-case-name")) this.updateCase(target.dataset.id, { name: target.value });
         if (target.matches?.(".q-case-input")) this.updateCase(target.dataset.id, { input: target.value });
       },

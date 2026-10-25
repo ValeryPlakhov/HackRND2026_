@@ -14,6 +14,8 @@ import {
   assignable,
 } from "./model.mjs";
 import { nodeWidth, nodeHeight, pinPosition, codeLines } from "./layout.mjs";
+import { portPresentation, NODE_HELP } from "./presentation.mjs";
+import { icon } from "../lib/icons.mjs";
 
 const e = (value) =>
   String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -44,7 +46,7 @@ export class BlueprintEditor {
     container.innerHTML = `<div class="bp-root">
       <div class="bp-canvas" tabindex="0" aria-label="Редактор блоков">
         <div class="bp-world"><svg class="bp-wires" width="1" height="1"></svg><div class="bp-nodes"></div></div>
-        <div class="bp-hud"><button data-bp="add-node" class="bp-add" title="Добавить блок (или правая кнопка мыши по полю)">+ Блок</button><button data-bp="fit" title="Показать всё (F)">⤢</button><button data-bp="zoom-out" title="Уменьшить">−</button><span class="bp-scale"></span><button data-bp="zoom-in" title="Увеличить">+</button><button data-bp="layout" title="Расставить блоки заново">▦</button><button data-bp="undo" title="Отменить (Ctrl+Z)">↶</button><button data-bp="redo" title="Повторить (Ctrl+Y)">↷</button></div>
+        <div class="bp-hud"><button data-bp="add-node" class="bp-add" aria-label="Добавить блок" title="Добавить блок">${icon("plus","",17)}</button><button data-bp="fit" aria-label="Вписать схему" title="Вписать схему (F)">${icon("fit","",17)}</button><button data-bp="zoom-out" aria-label="Уменьшить схему" title="Уменьшить">−</button><span class="bp-scale"></span><button data-bp="zoom-in" aria-label="Увеличить схему" title="Увеличить">+</button><button data-bp="layout" aria-label="Упорядочить блоки" title="Упорядочить">${icon("nodes","",17)}</button><button data-bp="undo" aria-label="Отменить изменение (Ctrl+Z)" title="Отменить">↶</button><button data-bp="redo" aria-label="Повторить изменение (Ctrl+Y)" title="Повторить">↷</button></div>
         <div class="bp-palette" hidden><input class="bp-search" placeholder="Найти блок…" autocomplete="off"/><div class="bp-palette-list"></div></div>
       </div>
       <aside class="bp-details" hidden></aside>
@@ -101,12 +103,13 @@ export class BlueprintEditor {
     const minY = Math.min(...nodes.map((n) => n.y)) - 40;
     const maxX = Math.max(...nodes.map((n) => n.x + nodeWidth(n))) + 40;
     const maxY = Math.max(...nodes.map((n) => n.y + nodeHeight(n, this.graph))) + 40;
-    const scale = Math.max(0.2, Math.min(1.1, rect.width / (maxX - minX), rect.height / (maxY - minY)));
+    const availableHeight = Math.max(100, rect.height - 30);
+    const scale = Math.max(0.2, Math.min(1.1, rect.width / (maxX - minX), availableHeight / (maxY - minY)));
     // Long methods would shrink to dots; start readable at the entry instead.
     const readable = 0.85;
     this.view.scale = Math.max(scale, readable);
     this.view.x = scale >= readable ? (rect.width - (maxX - minX) * this.view.scale) / 2 - minX * this.view.scale : 30 - minX * this.view.scale;
-    this.view.y = scale >= readable ? (rect.height - (maxY - minY) * this.view.scale) / 2 - minY * this.view.scale : 30 - minY * this.view.scale;
+    this.view.y = 30 + (scale >= readable ? (availableHeight - (maxY - minY) * this.view.scale) / 2 - minY * this.view.scale : -minY * this.view.scale);
     this.transform();
   }
 
@@ -176,8 +179,9 @@ export class BlueprintEditor {
     const width = nodeWidth(node);
     const pin = (item, direction) => {
       const on = connected.has(node.id + ":" + direction + ":" + item.id);
-      const color = item.kind === "exec" ? "#f2f4f8" : typeColor(item.type);
-      return `<div class="bp-pin-row ${direction}"><span class="bp-pin ${item.kind} ${on ? "on" : ""}" data-node="${e(node.id)}" data-pin="${e(item.id)}" data-dir="${direction}" style="--c:${color}" title="${e(item.type)}"></span>${item.label ? `<span class="bp-pin-label">${e(item.label)}</span>` : ""}</div>`;
+      const face = portPresentation(node, item, direction);
+      const description = `${direction === "in" ? "Вход" : "Выход"}: ${face.label} · ${face.type}${on ? " · подключён" : " · не подключён"}`;
+      return `<div class="bp-pin-row ${direction}"><span class="bp-pin ${item.kind} ${on ? "on" : ""}" data-node="${e(node.id)}" data-pin="${e(item.id)}" data-dir="${direction}" style="--c:${face.color}" role="img" aria-label="${e(description)}" title="${e(description)}"></span><span class="bp-pin-label" title="${e(description)}">${e(face.label)}${item.kind === "data" ? `<small>${e(face.type)}</small>` : ""}</span></div>`;
     };
     const category = nodeCategory(node);
     const style = `left:${node.x}px;top:${node.y}px;width:${width}px;min-height:${nodeHeight(node, this.graph)}px`;
@@ -298,8 +302,13 @@ export class BlueprintEditor {
       cast: () => typeField("type", "К типу", p.type),
     };
     const notes = this.notes.get(node.id) ?? "";
+    const pins = pinsOf(node, this.graph);
+    const ports = [["in", pins.inputs], ["out", pins.outputs]].map(([direction, list]) => list.length ? `<h4>${direction === "in" ? "← Входы" : "Выходы →"}</h4>${list.map((pin) => {
+      const face = portPresentation(node, pin, direction);
+      return `<label class="bp-port-setting"><span>${e(pin.id)} · ${e(face.type)}</span><div><input data-port="${e(direction + ":" + pin.id)}" data-appearance="label" aria-label="Подпись ${direction === "in" ? "входа" : "выхода"} ${e(pin.id)}" value="${e(face.label)}" maxlength="36"/><input type="color" data-port="${e(direction + ":" + pin.id)}" data-appearance="color" value="${e(face.color)}" aria-label="Цвет порта ${e(pin.id)}"/></div></label>`;
+    }).join("")}` : "").join("");
     this.details.hidden = false;
-    this.details.innerHTML = `<div class="bp-details-head"><b>${e(nodeTitle(node, this.graph))}</b><button data-bp="close-details" title="Закрыть">×</button></div><datalist id="bp-types">${TYPES.map((t) => `<option value="${e(t)}">`).join("")}</datalist><form class="bp-form">${(forms[node.type] ?? (() => '<p class="bp-side-hint">У этого блока нет настроек.</p>'))()}</form>${notes}<div class="bp-details-actions">${node.start >= 0 && this.options.onOpenLine ? '<button data-bp="open-line">К строке кода</button>' : ""}${node.type !== "entry" ? '<button data-bp="duplicate">Дублировать</button><button data-bp="delete" class="danger">Удалить</button>' : ""}</div>`;
+    this.details.innerHTML = `<div class="bp-details-head"><b>${e(nodeTitle(node, this.graph))}</b><button data-bp="close-details" title="Закрыть">×</button></div><p class="bp-side-hint">${e(NODE_HELP[node.type] || "Выберите свойства блока. Изменение логики обновит Java-код.")}</p><datalist id="bp-types">${TYPES.map((t) => `<option value="${e(t)}">`).join("")}</datalist><form class="bp-form">${(forms[node.type] ?? (() => '<p class="bp-side-hint">У этого блока нет настроек логики.</p>'))()}</form><details class="bp-port-settings"><summary>Подписи входов и выходов</summary><p>Только оформление. Java-типы и назначение связей сохраняются.</p>${ports}<button data-bp="reset-ports">Сбросить оформление</button></details>${notes}<div class="bp-details-actions">${node.start >= 0 && this.options.onOpenLine ? '<button data-bp="open-line">К строке кода</button>' : ""}${node.type !== "entry" ? '<button data-bp="duplicate">Дублировать</button><button data-bp="delete" class="danger">Удалить</button>' : ""}</div>`;
   }
 
   updateProp(input) {
@@ -663,6 +672,11 @@ export class BlueprintEditor {
         if (button) {
           event.preventDefault();
           event.stopPropagation();
+          if (button.dataset.bp === "reset-ports") {
+            const node = this.node([...this.selected][0]);
+            if (node) { delete node.appearance; this.render(); this.showDetails(); this.changed(false); }
+            return;
+          }
           this.command(button.dataset.bp, button);
           return;
         }
@@ -673,6 +687,17 @@ export class BlueprintEditor {
     this.details.addEventListener(
       "change",
       (event) => {
+        if (event.target.dataset.appearance) {
+          const node = this.node([...this.selected][0]);
+          if (!node) return;
+          node.appearance ??= { ports: {} };
+          node.appearance.ports ??= {};
+          const port = node.appearance.ports[event.target.dataset.port] ??= {};
+          port[event.target.dataset.appearance] = event.target.value.slice(0, 36);
+          this.render();
+          this.changed(false);
+          return;
+        }
         if (event.target.dataset.prop) this.updateProp(event.target);
       },
       { signal },

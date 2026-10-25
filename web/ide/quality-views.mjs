@@ -136,11 +136,13 @@ export function improveSidebar(state) {
   <p class="sidebar-note">Изменения попадают в редактор, затем запускается проверка поведения против исходной версии. Сохраните файл, когда результат совпадёт.</p>`;
 }
 
-export function planModal(plan) {
+export function planModal(plan, context = {}) {
+  const cases = (context.cases ?? []).filter((item) => item.enabled !== false);
+  const check = `<section class="ux-plan-checks"><h3>Как проверим изменение</h3><p>Главный класс: <code>${e(context.mainClass || "автоопределение main")}</code>. Исходная версия и изменённый редактор будут собраны и запущены отдельно.</p>${cases.length ? `<p>Включено ${cases.length} входов:</p><ul>${cases.map((item) => `<li>${e(item.name)} · ${String(item.input).length} символов stdin</li>`).join("")}</ul>` : '<p class="ux-warning">Нет включённых входов. Настройте хотя бы один случай перед применением.</p>'}<p>Сравниваем stdout, stderr (служебные строки Java stack trace исключаются) и код завершения. После прогона вы решаете: сохранить или откатить.</p>${button("configure-checks", "Настроить тестовые входы", "settings", "ide-button")}</section>`;
   return modalFrame(
     plan.title,
-    `<div class="q-plan-meta"><code>${e(plan.rule)}</code><span>строка ${plan.line}</span>${plan.timeBefore && plan.timeBefore !== "unchanged" ? `<span class="q-big-o bad">${e(plan.timeBefore)}</span>→<span class="q-big-o good">${e(plan.timeAfter)}</span>` : ""}<span>память: ${e(plan.memoryAfter ?? "—")}</span></div><p class="modal-lead">${e(plan.rationale)}</p>${diffView(plan.before, plan.after, { before: "Сейчас", after: "После преобразования" })}<p class="modal-note"><b>Условия применимости.</b> ${e(plan.description)} Патч привязан к хешу исходника: если код изменится, предложение будет пересчитано, а после применения запустится проверка поведения.</p>`,
-    `${button("close-modal", "Закрыть")}${button("plan-apply", "Применить и проверить", "check", "ide-button primary", `data-id="${e(plan.id)}"`)}`,
+    `<div class="q-plan-meta"><code>${e(plan.rule)}</code><span>строка ${plan.line}</span>${plan.timeBefore && plan.timeBefore !== "unchanged" ? `<span class="q-big-o bad">${e(plan.timeBefore)}</span>→<span class="q-big-o good">${e(plan.timeAfter)}</span>` : ""}<span>память: ${e(plan.memoryAfter ?? "—")}</span></div><h3>1. Почему предлагается изменение</h3><p class="modal-lead">${e(plan.rationale)}</p><h3>2. Что изменится в Java</h3>${diffView(plan.before, plan.after, { before: "Сейчас", after: "После преобразования" })}<p class="modal-note"><b>Условия применимости.</b> ${e(plan.description)} Патч привязан к текущему исходнику и будет отклонён, если код изменится.</p><h3>3. На каких входах сравним поведение</h3>${check}`,
+    `${button("close-modal", "Отмена")}${button("plan-apply", "Применить и проверить", "check", "ide-button primary", `data-id="${e(plan.id)}" ${cases.length && !context.pending ? "" : "disabled"}`)}${context.pending ? '<span class="modal-note">Сначала примите или откатите предыдущее изменение.</span>' : ""}`,
     "wide",
   );
 }
@@ -210,6 +212,7 @@ export function qualityStatus({ report, stale, job, project }) {
   if (!report) return `${glyph("shield", 12)}Поведение не проверено`;
   const passed = report.tests.filter((test) => test.passed).length;
   if (stale) return `${glyph("shield", 12)}Проверка устарела`;
+  if (report.inconclusive) return `${glyph("warning", 12)}Не удалось проверить: среда запуска`;
   return report.passed
     ? `<span class="q-ok">${glyph("circleCheck", 12)}Поведение совпало ${passed}/${report.tests.length}</span>`
     : `<span class="q-bad">${glyph("warning", 12)}Расхождение ${report.tests.length - passed}/${report.tests.length}</span>`;
@@ -261,7 +264,7 @@ export function nodeFindings(findings) {
 }
 
 const TABS = [
-  ["inputs", "Входы", "table"],
+  ["inputs", "Тестовые входы", "table"],
   ["results", "Результат", "shield"],
   ["mutation", "Качество тестов", "beaker"],
   ["benchmark", "Скорость", "chart"],
@@ -269,24 +272,25 @@ const TABS = [
 ];
 
 export function verifyPanel(state) {
-  const { project, baseline, cases, report, stale, job, tab, lab, method, document, pending } = state;
+  const { project, baseline, cases, report, stale, job, tab, lab, method, document, pending, mainClass } = state;
   if (!project)
     return `<div class="panel-empty">${glyph("shield", 23)}<span>Проверка поведения</span><small>Откройте проект: IDE сохранит исходную версию и будет сравнивать с ним каждое изменение.</small></div>`;
   const running = job && ["queued", "running"].includes(job.state);
   const enabled = cases.filter((item) => item.enabled !== false).length;
-  const head = `<div class="q-verify-head"><div class="q-baseline">${glyph("bookmark", 14)}<span><b>Исходная версия</b><small>${baseline ? `${e(baseline.label || "Снимок")} · ${Object.keys(baseline.files).length} файлов${baseline.takenAt ? " · " + e(timeLabel(baseline.takenAt)) : ""}` : "не зафиксирован"}</small></span>${button("baseline-diff", "Отличия", "diff", "ide-button small subtle")}${button("baseline-set-current", "Считать текущую исходной", "bookmark", "ide-button small subtle")}</div><div class="q-tabs" role="tablist">${TABS.map(([id, label, name]) => `<button role="tab" class="${tab === id ? "active" : ""}" aria-selected="${tab === id}" data-action="verify-tab" data-tab="${id}">${glyph(name, 13)}${label}${id === "inputs" ? ` <span>${enabled}/${cases.length}</span>` : id === "results" && report ? ` <span class="${report.passed && !stale ? "ok" : "bad"}">${report.tests.filter((test) => test.passed).length}/${report.tests.length}</span>` : ""}</button>`).join("")}</div><div class="q-verify-actions">${running ? `<span class="q-job"><i class="ide-spinner small"></i>${e(job.stage || jobTitle(job.kind))}</span>${button("job-cancel", "Отменить", "close", "ide-button small danger")}` : `${pending ? button("rollback-change", "Откатить: " + pending.label, "undo", "ide-button small danger", `title="Вернуть файлы к состоянию до автоматического изменения"`) : ""}${button("export-evidence", "Отчёт", "download", "ide-button small subtle", report && !stale ? "" : "disabled")}${button("verify", "Проверить поведение", "shield", "ide-button small primary")}`}</div></div>`;
+  const advanced = `<details class="ux-advanced" ${!['inputs', 'results'].includes(tab) ? 'open' : ''}><summary>Расширенные эксперименты</summary><div class="q-tabs">${TABS.slice(2).map(([id, label, name]) => `<button role="tab" aria-selected="${tab === id}" class="${tab === id ? 'active' : ''}" data-action="verify-tab" data-tab="${id}">${glyph(name, 16)}${label}</button>`).join('')}</div></details>`;
+  const head = `<div class="q-verify-head"><div class="q-baseline">${glyph("bookmark", 14)}<span><b>Исходная версия</b><small>${baseline ? `${e(baseline.label || "Снимок")} · ${Object.keys(baseline.files).length} файлов${baseline.takenAt ? " · " + e(timeLabel(baseline.takenAt)) : ""}` : "не зафиксирован"}</small></span>${button("baseline-diff", "Отличия", "diff", "ide-button small subtle")}${button("baseline-set-current", "Считать текущую исходной", "bookmark", "ide-button small subtle")}</div><div class="q-tabs" role="tablist">${TABS.slice(0, 2).map(([id, label, name]) => `<button role="tab" class="${tab === id ? "active" : ""}" aria-selected="${tab === id}" data-action="verify-tab" data-tab="${id}">${glyph(name, 13)}${label}${id === "inputs" ? ` <span>${enabled}/${cases.length}</span>` : id === "results" && report ? ` <span class="${report.passed && !stale ? "ok" : "bad"}">${report.tests.filter((test) => test.passed).length}/${report.tests.length}</span>` : ""}</button>`).join("")}</div><div class="q-verify-actions">${running ? `<span class="q-job"><i class="ide-spinner small"></i>${e(job.stage || jobTitle(job.kind))}</span>${button("job-cancel", "Отменить", "close", "ide-button small danger")}` : `${pending ? button("rollback-change", "Откатить: " + pending.label, "undo", "ide-button small danger", `title="Вернуть файлы к состоянию до автоматического изменения"`) : ""}${button("export-evidence", "Отчёт", "download", "ide-button small subtle", report && !stale ? "" : "disabled")}${button("verify", "Проверить поведение", "shield", "ide-button small primary")}`}</div></div>`;
   const body = {
-    inputs: () => inputsTab(cases),
+    inputs: () => inputsTab(cases, mainClass),
     results: () => resultsTab(report, stale, running),
     mutation: () => mutationTab(lab.mutation, method, document, running),
     benchmark: () => benchmarkTab(lab.benchmark, method, running),
     reducer: () => reducerTab(lab.reduction, lab.reducerInput, running),
   }[tab]();
-  return head + `<div class="q-verify-body">${body}</div>`;
+  return head + `<div class="q-verify-body">${advanced}${body}</div>`;
 }
 
-function inputsTab(cases) {
-  return `<div class="q-cases-toolbar"><span>Каждый вход — stdin программы. Исходная версия и текущая версия запускаются в отдельных JVM, сравниваются stdout, stderr и код завершения.</span><div>${button("case-add", "Добавить", "plus", "ide-button small")}${button("case-from-run", "Из параметров запуска", "terminal", "ide-button small subtle")}${button("cases-generate-open", "Сгенерировать", "sparkle", "ide-button small subtle")}${button("cases-export", "Экспорт", "download", "ide-button small subtle", cases.length ? "" : "disabled")}</div></div><div class="q-cases">${
+function inputsTab(cases, mainClass = "") {
+  return `<section class="ux-check-contract"><b>Что именно проверяется</b><p>Это запуски всей Java-программы, а не JUnit. Один случай = один stdin для обеих версий. stdout и код завершения должны совпасть; в stderr исключаются служебные строки Java stack trace.</p><label>Главный класс <input class="ux-check-main" value="${e(mainClass)}" placeholder="Автоопределение public static void main" aria-label="Главный класс для проверки"/></label><p>Задавайте реальные команды вашей программы. Добавьте обычный случай, пустой ввод, границы и некорректные данные. Ожидаемый результат здесь — вывод исходной версии; её собственные ошибки такой тест не выявляет.</p></section><div class="q-cases-toolbar"><span>${cases.filter((item) => item.enabled !== false).length} из ${cases.length} случаев включено. Каждый запуск получает отдельный процесс JVM.</span><div>${button("case-add", "Добавить случай", "plus", "ide-button small")}${button("case-from-run", "Взять ввод из запуска", "terminal", "ide-button small subtle")}${button("cases-generate-open", "Генератор входов…", "table", "ide-button small subtle")}${button("cases-export", "Экспорт JSON", "download", "ide-button small subtle", cases.length ? "" : "disabled")}</div></div><div class="q-cases">${
     cases
       .map(
         (item, index) =>
@@ -309,7 +313,7 @@ function resultsTab(report, stale, running) {
     ["Исходная версия", report.baselineBuild],
     ["Текущая версия", report.candidateBuild],
   ].filter(([, build]) => build && !build.success);
-  return `${stale ? `<div class="task-stale-notice">Код изменён после проверки. Результат относится к предыдущей версии — запустите проверку снова.</div>` : ""}<div class="q-result-banner ${report.passed ? "pass" : "fail"}">${glyph(report.passed ? "circleCheck" : "warning", 22)}<div><b>${report.passed ? "Поведение сохранено" : builds.length ? "Сборка не прошла" : "Поведение изменилось"}</b><small>${passed} из ${report.tests.length} входов совпали · stdout, stderr (без номеров строк стека), код завершения</small></div><span class="q-hashes">исходная ${hash(report.baselineHash)} · текущая ${hash(report.candidateHash)}</span></div>${builds.map(([title, build]) => `<div class="q-stream fail"><div><span>${e(title)}: ошибка компиляции</span></div><pre class="q-stderr">${e(build.diagnostics)}</pre></div>`).join("")}<div class="q-tests">${report.tests
+  return `${stale ? `<div class="task-stale-notice">Код, главный класс или тесты изменены после проверки. Результат относится к предыдущей версии — запустите проверку снова.</div>` : ""}<div class="q-result-banner ${report.passed ? "pass" : "fail"}">${glyph(report.passed ? "circleCheck" : "warning", 22)}<div><b>${report.inconclusive ? "Не удалось проверить: ошибка среды запуска" : report.passed ? "Совпало на выбранных входах" : builds.length ? "Сборка не прошла" : "Поведение изменилось"}</b><small>${passed} из ${report.tests.length} входов совпали · stdout, stderr (без служебных строк Java stack trace), код завершения</small></div><span class="q-hashes">исходная ${hash(report.baselineHash)} · текущая ${hash(report.candidateHash)}</span></div>${builds.map(([title, build]) => `<div class="q-stream fail"><div><span>${e(title)}: ошибка компиляции</span></div><pre class="q-stderr">${e(build.diagnostics)}</pre></div>`).join("")}<div class="q-tests">${report.tests
     .map(
       (test, index) =>
         `<details class="q-test ${test.passed ? "pass" : "fail"}" ${!test.passed ? "open" : ""}><summary>${glyph(test.passed ? "circleCheck" : "warning", 14)}<b>${e(report.caseNames?.[index] ?? test.name)}</b><code>${e(inputPreview(test.input))}</code><small>${test.baseline.timeMs} → ${test.candidate.timeMs} мс</small></summary><div class="q-test-body"><div class="q-streams">${stream("Исходная версия", test.baseline)}${stream("Текущая версия", test.candidate)}</div>${!test.passed && test.baseline.stdout !== test.candidate.stdout ? diffView(test.baseline.stdout, test.candidate.stdout, { before: "stdout исходной версии", after: "stdout текущей версии" }) : ""}${!test.passed && /^\s*\d+(\s+-?\d+)*\s*$/.test(test.input) ? button("reduce-failure", "Найти минимальный вход", "target", "ide-button small", `data-index="${index}"`) : ""}</div></details>`,
