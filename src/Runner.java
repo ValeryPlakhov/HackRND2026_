@@ -47,12 +47,40 @@ public final class Runner {
       java.util.regex.Pattern.compile(
           "(?m)^\\s*(?:(?:public|private|protected|static|final|synchronized)\\s+)*[\\w<>\\[\\],.? ]+\\s+[A-Za-z_$][\\w$]*\\s*\\([^;{]*\\)\\s*(?:throws [\\w., ]+)?\\{");
 
-  /** Strips comments and string literals so that words inside them are not taken for code. */
+  /**
+   * Strips comments, string, text-block and char literals so that words inside them are not taken
+   * for code. A single linear pass: regular expressions with alternation recurse per character and
+   * overflow the stack on long literals.
+   */
   static String codeOnly(String source) {
-    return source
-        .replaceAll("(?s)/\\*.*?\\*/", " ")
-        .replaceAll("//[^\\n]*", " ")
-        .replaceAll("\"(?:\\\\.|[^\"\\\\])*\"", "\"\"");
+    StringBuilder out = new StringBuilder(source.length());
+    int n = source.length();
+    for (int i = 0; i < n; ) {
+      char c = source.charAt(i);
+      char next = i + 1 < n ? source.charAt(i + 1) : 0;
+      if (c == '/' && next == '/') {
+        while (i < n && source.charAt(i) != '\n') i++;
+        out.append(' ');
+      } else if (c == '/' && next == '*') {
+        int close = source.indexOf("*/", i + 2);
+        i = close < 0 ? n : close + 2;
+        out.append(' ');
+      } else if (c == '"' && source.startsWith("\"\"\"", i)) {
+        int j = i + 3;
+        while (j < n && !source.startsWith("\"\"\"", j)) j += source.charAt(j) == '\\' ? 2 : 1;
+        i = Math.min(n, j + 3);
+        out.append("\"\"");
+      } else if (c == '"' || c == '\'') {
+        int j = i + 1;
+        while (j < n && source.charAt(j) != c && source.charAt(j) != '\n') j += source.charAt(j) == '\\' ? 2 : 1;
+        i = Math.min(n, j + 1);
+        out.append(c).append(c);
+      } else {
+        out.append(c);
+        i++;
+      }
+    }
+    return out.toString();
   }
 
   /**
@@ -82,7 +110,39 @@ public final class Runner {
     return String.join("\n", lines);
   }
 
-  record Candidate(String file, String type, String name, boolean isStatic, boolean args) {}
+  record Candidate(String file, String type, String name, boolean isStatic, boolean args, boolean topLevel) {
+    String label() {
+      return type.replace('$', '.') + "." + name + "()";
+    }
+
+    String key() {
+      return type + "#" + name;
+    }
+  }
+
+  /** Methods every object has: never offered as a program to run. */
+  static final Set<String> OBJECT_METHODS =
+      Set.of("hashCode", "toString", "getClass", "clone", "finalize", "notify", "notifyAll", "wait");
+
+  /** Marks which classes can be created with no arguments (named as JavaModel names owners). */
+  static void creatable(com.sun.source.tree.ClassTree type, String parent, Map<String, Boolean> out) {
+    String name = parent.isEmpty() ? type.getSimpleName().toString() : parent + "." + type.getSimpleName();
+    var flags = type.getModifiers().getFlags();
+    boolean anyConstructor = false, noArgConstructor = false;
+    for (var member : type.getMembers()) {
+      if (member instanceof com.sun.source.tree.MethodTree constructor && constructor.getName().contentEquals("<init>")) {
+        anyConstructor = true;
+        if (constructor.getParameters().isEmpty()) noArgConstructor = true;
+      }
+      if (member instanceof com.sun.source.tree.ClassTree inner) creatable(inner, name, out);
+    }
+    out.put(
+        name,
+        type.getKind() == com.sun.source.tree.Tree.Kind.CLASS
+            && !flags.contains(javax.lang.model.element.Modifier.ABSTRACT)
+            && (parent.isEmpty() || flags.contains(javax.lang.model.element.Modifier.STATIC))
+            && (!anyConstructor || noArgConstructor));
+  }
 
   static String launcher(Candidate target) {
     return "public class " + LAUNCHER + " {\n"
@@ -176,6 +236,9 @@ public final class Runner {
         try (JavaModel m = new JavaModel(e.getValue())) {
           if (!m.valid()) continue;
           String prefix = m.unit.getPackageName() == null ? "" : m.unit.getPackageName() + ".";
+          Map<String, Boolean> creatable = new HashMap<>();
+          for (var type : m.unit.getTypeDecls())
+            if (type instanceof com.sun.source.tree.ClassTree declared) creatable(declared, "", creatable);
           for (var method : m.methods) {
             var tree = method.tree();
             var flags = tree.getModifiers().getFlags();
@@ -184,8 +247,15 @@ public final class Runner {
                 tree.getParameters().size() == 1
                     && Set.of("String[]", "java.lang.String[]", "String...")
                         .contains(tree.getParameters().get(0).getType().toString());
+            boolean isStatic = flags.contains(javax.lang.model.element.Modifier.STATIC);
+            String owner = method.owner();
             if (tree.getReturnType() == null || flags.contains(javax.lang.model.element.Modifier.ABSTRACT)
-                || !(noArgs || (stringArgs && tree.getName().contentEquals("main"))))
+                || !(noArgs || (stringArgs && tree.getName().contentEquals("main")))
+                || tree.getName().toString().startsWith("<")
+                || OBJECT_METHODS.contains(tree.getName().toString())
+                || owner.isEmpty() || owner.endsWith(".") || owner.contains("..")
+                // An instance method needs an object: only classes that can be created without arguments.
+                || (!isStatic && !creatable.getOrDefault(owner, false)))
               continue;
             loose.add(
                 new Candidate(
@@ -193,7 +263,8 @@ public final class Runner {
                     prefix + method.owner().replace('.', '$'),
                     tree.getName().toString(),
                     flags.contains(javax.lang.model.element.Modifier.STATIC),
-                    stringArgs));
+                    stringArgs,
+                    !method.owner().contains(".")));
           }
           for (var method : m.methods)
             if (method.tree().getName().contentEquals("main")
@@ -221,7 +292,11 @@ public final class Runner {
       // is taken. The reason is kept so that running (not compiling) reports it.
       String requested = MAIN.get();
       String mainError = "";
-      if (!requested.isEmpty()) {
+      Candidate chosen = null;
+      if (requested.contains("#")) {
+        chosen = loose.stream().filter(c -> c.key().equals(requested) || c.label().equals(requested)).findFirst().orElse(null);
+        if (chosen == null) mainError = "Метод " + requested.replace('#', '.') + "() не найден или требует параметры.";
+      } else if (!requested.isEmpty()) {
         List<String> matches =
             mains.stream()
                 .filter(
@@ -261,31 +336,54 @@ public final class Runner {
                   .filter(c -> c.type().equals(requested) || c.type().equals(requested.replace('.', '$'))
                       || c.type().endsWith("." + requested) || c.type().endsWith("$" + requested))
                   .toList();
-      if (main.isEmpty() && (requested.isEmpty() ? mainError.isEmpty() : !pool.isEmpty() && mains.isEmpty())) {
+      String entryFile = ENTRY.get();
+      Comparator<Candidate> order =
+          Comparator.comparing((Candidate c) -> !c.file().equals(entryFile))
+              .thenComparing(c -> !c.topLevel())
+              .thenComparing(c -> !c.name().equals("main"))
+              .thenComparing(c -> !Set.of("run", "start", "execute", "solve", "demo").contains(c.name()))
+              .thenComparing(Candidate::label);
+      List<String> choices = loose.stream().sorted(order).limit(40).map(c -> c.key()).toList();
+      if (main.isEmpty() && chosen == null && (requested.isEmpty() ? mainError.isEmpty() : !pool.isEmpty() && mains.isEmpty() && !requested.contains("#"))) {
         mainError = "";
-        String entryFile = ENTRY.get();
-        Comparator<Candidate> order =
-            Comparator.comparing((Candidate c) -> !c.file().equals(entryFile))
-                .thenComparing(c -> !c.name().equals("main"))
-                .thenComparing(c -> !Set.of("run", "start", "execute", "solve", "demo").contains(c.name()))
-                .thenComparing(c -> !c.isStatic());
-        Candidate target = pool.stream().sorted(order).findFirst().orElse(null);
-        if (target != null) {
-          Path generated = sourceRoot.resolve(LAUNCHER + ".java");
-          Files.writeString(generated, launcher(target), StandardCharsets.UTF_8);
-          sourceList.add("\"" + generated.toString().replace('\\', '/') + "\"");
-          main = LAUNCHER;
-          entryPoint = target.type().replace('$', '.') + "." + target.name() + "()";
-        } else
+        // Only an obvious choice is taken by itself: another shape of main, or a run()/start()-like
+        // method, or the only method without parameters of the open file's class. A library's getter
+        // is never run behind the user's back — the console offers the list instead.
+        List<Candidate> obvious =
+            pool.stream()
+                .filter(c -> c.name().equals("main")
+                    || (c.topLevel() && Set.of("run", "start", "execute", "solve", "demo").contains(c.name())))
+                .sorted(order)
+                .toList();
+        List<Candidate> openClass =
+            pool.stream().filter(c -> c.topLevel() && c.file().equals(entryFile)).toList();
+        chosen = !obvious.isEmpty() ? obvious.get(0) : openClass.size() == 1 ? openClass.get(0) : pool.size() == 1 ? pool.get(0) : null;
+        if (chosen == null)
           mainError =
-              "Нечего запускать: нет ни main, ни метода без параметров. Добавьте метод без параметров"
-                  + " (например, void run()) или напишите инструкции прямо в файле.";
+              loose.isEmpty()
+                  ? "Нечего запускать: нет ни main, ни метода без параметров. Добавьте метод без параметров (например, void run()) или напишите инструкции прямо в файле."
+                  : "В проекте нет main — похоже, это библиотека. Выберите метод для запуска или создайте файл запуска.";
+      }
+      if (chosen != null) {
+        Path generated = sourceRoot.resolve(LAUNCHER + ".java");
+        Files.writeString(generated, launcher(chosen), StandardCharsets.UTF_8);
+        sourceList.add("\"" + generated.toString().replace('\\', '/') + "\"");
+        main = LAUNCHER;
+        mainError = "";
+        entryPoint = chosen.label();
       }
       // An argument file keeps large projects below the Windows command-line limit.
       Path list = root.resolve("sources.txt");
       Files.write(list, sourceList, StandardCharsets.UTF_8);
       args.add("@" + list);
-      Map<String, Object> p = process(args, root, "", 30_000);
+      Map<String, Object> p = new LinkedHashMap<>(process(args, root, "", 30_000));
+      String prefix = sourceRoot.toString();
+      p.put(
+          "stderr",
+          String.valueOf(p.get("stderr"))
+              .replace(prefix + java.io.File.separator, "")
+              .replace(prefix.replace('\\', '/') + "/", "")
+              .replace(prefix, ""));
       boolean ok =
           ((Number) p.get("exitCode")).intValue() == 0
               && !Boolean.TRUE.equals(p.get("timedOut"))
@@ -306,6 +404,8 @@ public final class Runner {
               main,
               "entryPoint",
               entryPoint,
+              "entryCandidates",
+              choices,
               "mainError",
               mainError));
     } catch (Exception e) {
@@ -397,6 +497,7 @@ public final class Runner {
             "-Dstderr.encoding=UTF-8",
             "-Duser.language=en",
             "-Duser.country=US",
+            "-Djava.awt.headless=true",
             "-cp",
             b.directory.resolve("classes").toString(),
             b.mainClass);

@@ -85,6 +85,19 @@ export class BlueprintEditor {
     this.options.onSelect?.(this.node(id) ?? null);
   }
 
+  /** Selects a block and brings it into view, without notifying (used when the code caret moves). */
+  highlightNode(id) {
+    const node = this.node(id);
+    if (!node) return;
+    this.selected = new Set([id]);
+    this.refreshSelection();
+    const rect = this.canvas.getBoundingClientRect();
+    const scale = this.view.scale;
+    const x = this.view.x + node.x * scale;
+    const y = this.view.y + node.y * scale;
+    if (x < 0 || y < 0 || x + nodeWidth(node) * scale > rect.width || y + nodeHeight(node, this.graph) * scale > rect.height) this.center(id);
+  }
+
   center(id) {
     const node = this.node(id);
     if (!node) return;

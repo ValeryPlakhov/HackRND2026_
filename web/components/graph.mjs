@@ -288,6 +288,21 @@ export class GraphWidget {
     this.transform();
   }
 
+  /** Marks a step as selected and brings it into view, without notifying (used when the code caret moves). */
+  focusNode(id) {
+    const node = this.layout.nodes.find((item) => item.id === id);
+    if (!node) return;
+    this.selected = id;
+    this.container
+      .querySelectorAll("[data-node]")
+      .forEach((element) => element.classList.toggle("selected", element.dataset.node === id));
+    const scale = this.view.scale;
+    const x = this.view.x + node.x * scale;
+    const y = this.view.y + node.y * scale;
+    if (x < 0 || y < 0 || x + node.width * scale > this.viewport.clientWidth || y + node.height * scale > this.viewport.clientHeight)
+      this.center(id);
+  }
+
   select(id) {
     this.selected = id;
     this.container

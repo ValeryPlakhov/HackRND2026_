@@ -108,6 +108,7 @@ export class IdeApplication {
       this.overviewState = null;
     }, 1000);
     this.controller = new AbortController();
+    this.followCaretSoon = debounce(() => this.safe(() => this.followCaret()), 150);
     this.quality = new QualityLab(this);
   }
 
@@ -337,6 +338,37 @@ export class IdeApplication {
     this.renderStatus();
   }
 
+  // ---------- code → diagram ----------
+
+  /** The block or step whose code contains the caret is selected on the diagram (the reverse of block → code). */
+  async followCaret() {
+    const file = this.documents.active;
+    if (this.workspace !== "method" || this.home || !file?.currentModel || !this.editor || this.mode === "code") return;
+    const offset = this.editor.input.selectionStart;
+    const method = file.currentModel.methods
+      .filter((item) => item.start <= offset && item.end >= offset)
+      .sort((a, b) => a.end - a.start - (b.end - b.start))[0];
+    if (!method) return;
+    if (method.id !== file.methodId) {
+      // The caret moved into another method: show that method's diagram.
+      file.methodId = method.id;
+      file.selectedNode = null;
+      await this.renderGraph();
+      await this.blueprintReady;
+    }
+    const smallest = (nodes, accept) =>
+      nodes
+        .filter((node) => accept(node) && node.start >= 0 && node.start <= offset && node.end >= offset)
+        .sort((a, b) => a.end - a.start - (b.end - b.start))[0];
+    if (this.graph instanceof BlueprintEditor) {
+      const node = smallest(this.graph.graph.nodes, (item) => item.type !== "entry");
+      if (node) this.graph.highlightNode(node.id);
+    } else if (this.graph?.layout) {
+      const node = smallest(this.graph.layout.nodes, (item) => !["entry", "exit"].includes(item.kind));
+      if (node) this.graph.focusNode(node.id);
+    }
+  }
+
   // ---------- tools menu ----------
 
   toolsState() {
@@ -448,7 +480,7 @@ export class IdeApplication {
   // ---------- workspaces ----------
 
   workspaceTasks() {
-    return ws.buildTasks(this.quality.analysis, this.quality.projectPlans ?? {});
+    return ws.buildTasks(this.quality.analysis, this.quality.projectPlans ?? {}, this.quality.hiddenRules);
   }
 
   renderWorkspaceNav() {
@@ -458,7 +490,7 @@ export class IdeApplication {
     if (!this.project) return (target.innerHTML = "");
     const tasks = this.quality.analysis ? this.workspaceTasks() : null;
     target.innerHTML = ws.workspaceNav(this.home ? null : this.workspace, {
-      tasks: tasks ? tasks.risks.length + tasks.faster.length + tasks.simpler.length + tasks.split.length : 0,
+      tasks: tasks ? tasks.risks.length + tasks.performance.length + tasks.faster.length : 0,
     });
   }
 
@@ -616,7 +648,10 @@ export class IdeApplication {
     target.innerHTML = `<div id="ide-conflict"></div>${!java && ["python", "javascript", "typescript", "kotlin", "csharp", "cpp", "go", "rust", "c"].includes(file.language) ? `<div class="language-coming-strip">${view.glyph("info", 14)}Блоки для ${e(file.language)} — <b>Coming soon</b>. Сейчас доступен текстовый редактор.</div>` : ""}<div class="ide-workarea mode-${mode}"><div id="ide-code-pane">${editorShell()}</div><div class="ide-splitter" role="separator" aria-label="Ширина редактора" tabindex="0"></div><section id="ide-graph-pane" aria-label="Схема метода"></section></div>`;
     this.editor = new SourceEditor($("#ide-code-pane", target), {
       onChange: (document) => this.editorChanged(document),
-      onPosition: (position, length) => this.renderPosition(position, length),
+      onPosition: (position, length) => {
+        this.renderPosition(position, length);
+        this.followCaretSoon?.();
+      },
     });
     this.editor.setSettings(this.settings);
     this.editor.setDocument(file);
@@ -878,6 +913,7 @@ export class IdeApplication {
         this.taskState ? { ...this.taskState, stale: this.taskOutdated } : null,
         this.runConfig.input,
         this.askInput,
+        this.runConfig.mainClass?.includes("#") ? this.runConfig.mainClass : "",
       );
       if (atEnd || this.busy) target.scrollTop = target.scrollHeight;
       const field = $("#console-stdin", target);
@@ -1654,6 +1690,46 @@ export class IdeApplication {
       case "home":
         this.goHome();
         break;
+      case "rule-hide":
+        this.quality.hiddenRules.add(element.dataset.rule);
+        this.quality.persistSoon();
+        this.notify(`Правило ${element.dataset.rule} скрыто в этом проекте. Вернуть — внизу страницы «Задачи».`);
+        this.renderWorkspace();
+        break;
+      case "rule-unhide-all":
+        this.quality.hiddenRules.clear();
+        this.quality.persistSoon();
+        this.renderWorkspace();
+        break;
+      case "run-entry":
+        this.runConfig.mainClass = element.dataset.entry;
+        this.askedInput = true;
+        await this.startTask("run");
+        break;
+      case "run-entry-reset":
+        this.runConfig.mainClass = "";
+        this.renderPanel();
+        break;
+      case "create-launcher": {
+        if (!this.project) break;
+        const scan = await this.bridge.scan(this.project.id);
+        const javaRoot = scan.files.find((item) => item.path.includes("src/main/java/"))?.path.replace(/src\/main\/java\/.*/, "src/main/java/") ?? "";
+        let path = javaRoot + "RunMe.java";
+        for (let index = 2; scan.files.some((item) => item.path === path); index++) path = javaRoot + `RunMe${index}.java`;
+        const name = basename(path).replace(/\.java$/, "");
+        await this.bridge.create(this.project.id, {
+          path,
+          kind: "file",
+          content: `/** Точка входа для запуска кода проекта из IDE. */\npublic class ${name} {\n    public static void main(String[] args) throws Exception {\n        // Вызовите здесь код проекта, например:\n        // System.out.println(new SomeClass().someMethod());\n        System.out.println("Hello from ${name}");\n    }\n}\n`,
+        });
+        this.runConfig.mainClass = name;
+        await this.refreshTree();
+        this.workspace = "method";
+        await this.openFile(path);
+        this.renderAll();
+        this.notify(`Создан ${path}: напишите в main вызов нужного кода и нажмите ▶.`);
+        break;
+      }
       case "notifications":
         if (this.noticesOpen) this.closeNotices();
         else this.openNotices();

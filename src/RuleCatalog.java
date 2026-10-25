@@ -36,9 +36,9 @@ public final class RuleCatalog {
       List.of(
           new Rule(
               "BP101",
-              "Слишком общий обработчик",
-              "reliability",
-              "warning",
+              "Перехват общего Exception/Throwable",
+              "maintainability",
+              "info",
               "catch перехватывает Exception или Throwable и может скрыть ошибки другого"
                   + " происхождения.",
               "Разделите ожидаемые типы ошибок; изменение обработчиков проверьте на тестах.",
@@ -61,9 +61,9 @@ public final class RuleCatalog {
               "heuristic"),
           new Rule(
               "BP104",
-              "Глубокая вложенность",
+              "Глубокая вложенность управляющих конструкций",
               "maintainability",
-              "warning",
+              "info",
               "Управляющая логика вложена минимум на четыре уровня.",
               "Guard clauses или выделение метода могут упростить чтение.",
               "heuristic"),
@@ -398,6 +398,26 @@ public final class RuleCatalog {
       RuleCatalog.emit(findings, model, method, tree, rule);
     }
 
+    /**
+     * A "while (true)" with break, return or throw inside is the usual event/parse loop; like
+     * SonarQube S2189, only a loop with no way out at all is reported.
+     */
+    boolean exits(Tree body) {
+      boolean[] found = {false};
+      new TreeScanner<Void, Void>() {
+        public Void visitBreak(BreakTree x, Void v) { found[0] = true; return null; }
+        public Void visitReturn(ReturnTree x, Void v) { found[0] = true; return null; }
+        public Void visitThrow(ThrowTree x, Void v) { found[0] = true; return null; }
+        public Void visitMethodInvocation(MethodInvocationTree x, Void v) {
+          if (x.getMethodSelect().toString().equals("System.exit")) found[0] = true;
+          return super.visitMethodInvocation(x, v);
+        }
+        public Void visitClass(ClassTree x, Void v) { return null; }
+        public Void visitLambdaExpression(LambdaExpressionTree x, Void v) { return null; }
+      }.scan(body, null);
+      return found[0];
+    }
+
     void nested(Tree tree, boolean loop) {
       nesting++;
       if (loop) {
@@ -439,8 +459,9 @@ public final class RuleCatalog {
     @Override
     public Void visitForLoop(ForLoopTree tree, Void ignored) {
       ExpressionTree condition = unwrap(tree.getCondition());
-      if (condition == null
-          || condition instanceof LiteralTree literal && Boolean.TRUE.equals(literal.getValue()))
+      if ((condition == null
+              || condition instanceof LiteralTree literal && Boolean.TRUE.equals(literal.getValue()))
+          && !exits(tree.getStatement()))
         emit(tree, "BP108");
       if (empty(tree.getStatement())) emit(tree, "BP119");
       scan(tree.getInitializer(), null);
@@ -461,7 +482,8 @@ public final class RuleCatalog {
     @Override
     public Void visitWhileLoop(WhileLoopTree tree, Void ignored) {
       if (unwrap(tree.getCondition()) instanceof LiteralTree literal
-          && Boolean.TRUE.equals(literal.getValue())) emit(tree, "BP108");
+          && Boolean.TRUE.equals(literal.getValue())
+          && !exits(tree.getStatement())) emit(tree, "BP108");
       if (empty(tree.getStatement())) emit(tree, "BP119");
       scan(tree.getCondition(), null);
       nested(tree.getStatement(), true);
@@ -479,8 +501,13 @@ public final class RuleCatalog {
     @Override
     public Void visitCatch(CatchTree tree, Void ignored) {
       String type = tree.getParameter().getType().toString();
-      if (Set.of("Exception", "Throwable", "java.lang.Exception", "java.lang.Throwable")
-          .contains(type)) {
+      // A handler that rethrows or wraps is the usual, correct pattern; main() is the last line of
+      // defence where catching everything is intended.
+      boolean rethrows = model.text(tree.getBlock()).contains("throw ");
+      boolean entry = method.tree().getName().contentEquals("main");
+      if (Set.of("Exception", "Throwable", "java.lang.Exception", "java.lang.Throwable").contains(type)
+          && !rethrows
+          && !entry) {
         emit(tree, "BP101");
       }
       nested(tree.getBlock(), false);

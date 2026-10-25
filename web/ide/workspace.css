@@ -1574,3 +1574,76 @@ small.ws-plain {
   color: var(--secondary);
   font-size: 12.5px;
 }
+
+.console-choices {
+  padding: 10px 14px;
+  border-top: 1px solid var(--line);
+  background: var(--accent-soft);
+}
+.console-choices p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0 0 8px;
+}
+.console-choices > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 150px;
+  overflow: auto;
+}
+.console-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+  font: 13px var(--mono);
+  cursor: pointer;
+}
+.console-choice:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ws-type {
+  padding: 2px 8px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.ws-type.bug {
+  background: var(--red-soft);
+  color: var(--red);
+}
+.ws-type.performance {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+.ws-type.smell {
+  background: var(--surface-hover);
+  color: var(--secondary);
+}
+.ws-ref {
+  width: 100%;
+  color: var(--muted);
+  font-size: 12px;
+}
+.ws-advice summary small {
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 400;
+}
+.ws-hidden-rules {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}

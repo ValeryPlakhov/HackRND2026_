@@ -214,10 +214,19 @@ export function problemsPanel(problems) {
 }
 
 /** Console: what the program printed, and the field for what it reads from the keyboard. */
-export function outputPanel(task, input = "", ask = "") {
+function entryChoices(task, chosen) {
+  if (!task?.choices?.length && !chosen) return "";
+  const label = (key) => key.replace(/\$/g, ".").replace("#", ".") + "()";
+  const list = (task?.choices ?? [])
+    .map((key) => `<button class="console-choice" data-action="run-entry" data-entry="${e(key)}" title="Запустить ${e(label(key))}">${glyph("play", 12)}${e(label(key))}</button>`)
+    .join("");
+  return `<div class="console-choices">${chosen ? `<p>Запускается <b>${e(label(chosen))}</b> ${button("run-entry-reset", "Сбросить выбор", "close", "ide-button small subtle")}</p>` : ""}${list ? `<p><b>Что запустить?</b> Методы без параметров, сначала из открытого файла. Или ${button("create-launcher", "создайте файл запуска", "plus", "ide-button small")} с main и своим кодом.</p><div>${list}</div>` : ""}</div>`;
+}
+
+export function outputPanel(task, input = "", ask = "", chosen = "") {
   const form = `<form id="console-form" class="console-input ${ask ? "asking" : ""}"><label for="console-stdin">${ask ? e(ask) : "Ввод для программы (то, что она читает с клавиатуры: Scanner, System.in). Каждое значение — с новой строки"}</label><div><textarea id="console-stdin" name="input" rows="2" spellcheck="false" placeholder="например: 5" maxlength="32768">${e(input)}</textarea><button type="submit" class="ide-button primary">${glyph("play", 15)}<span>Запустить</span></button></div></form>`;
   if (!task)
-    return `<div class="console">${form}<div class="panel-empty">${glyph("terminal", 23)}<span>Программа ещё не запускалась</span><small>Кнопка ▶ сверху справа или F5. Здесь появится то, что программа выведет.</small></div></div>`;
+    return `<div class="console">${entryChoices(null, chosen)}${form}<div class="panel-empty">${glyph("terminal", 23)}<span>Программа ещё не запускалась</span><small>Кнопка ▶ сверху справа или F5. Здесь появится то, что программа выведет.</small></div></div>`;
   const busy = ["queued", "running"].includes(task.status);
   const labels = {
     queued: "В очереди",
@@ -226,7 +235,7 @@ export function outputPanel(task, input = "", ask = "") {
     failed: "Завершилась с ошибкой",
     cancelled: "Остановлено",
   };
-  return `<div class="console">${task.stale ? '<div class="task-stale-notice">Код изменён после запуска. Этот результат относится к предыдущей версии; запустите программу снова.</div>' : ""}<div class="task-summary ${e(task.status)}"><span>${busy ? '<i class="ide-spinner small"></i>' : glyph(task.status === "done" ? "circleCheck" : "warning", 14)}${labels[task.status] ?? task.status}</span><b>${e(task.entryPoint ? "Запущено: " + task.entryPoint : task.stage ?? "")}</b><small>${task.exitCode !== null && task.exitCode !== undefined ? "код выхода " + task.exitCode : ""}${task.finishedAt ? " · " + timeLabel(task.finishedAt) : ""}</small></div><div class="task-streams"><pre class="task-stdout">${e(task.stdout || (!busy ? "Программа ничего не вывела." : ""))}</pre>${task.stderr ? `<pre class="task-stderr">${e(task.stderr)}</pre>` : ""}${task.timedOut ? '<p class="task-limit">Превышено время выполнения. Задача остановлена.</p>' : ""}${task.truncated ? '<p class="task-limit">Превышен лимит вывода 256 КиБ. Задача остановлена.</p>' : ""}${task.hint ? `<p class="task-hint">${e(task.hint)}</p>` : ""}</div>${form}</div>`;
+  return `<div class="console">${task.stale ? '<div class="task-stale-notice">Код изменён после запуска. Этот результат относится к предыдущей версии; запустите программу снова.</div>' : ""}<div class="task-summary ${e(task.status)}"><span>${busy ? '<i class="ide-spinner small"></i>' : glyph(task.status === "done" ? "circleCheck" : "warning", 14)}${labels[task.status] ?? task.status}</span><b>${e(task.message ?? (task.entryPoint ? "Запущено: " + task.entryPoint : task.stage ?? ""))}</b><small>${task.exitCode !== null && task.exitCode !== undefined ? "код выхода " + task.exitCode : ""}${task.finishedAt ? " · " + timeLabel(task.finishedAt) : ""}</small></div><div class="task-streams"><pre class="task-stdout">${e(task.stdout || (busy ? "" : task.phase === "compile" || task.phase === "entry" ? "" : "Программа ничего не вывела."))}</pre>${task.stderr ? `<pre class="task-stderr">${e(task.stderr)}</pre>` : ""}${task.timedOut ? '<p class="task-limit">Превышено время выполнения. Задача остановлена.</p>' : ""}${task.truncated ? '<p class="task-limit">Превышен лимит вывода 256 КиБ. Задача остановлена.</p>' : ""}${task.hint ? `<p class="task-hint">${e(task.hint)}</p>` : ""}</div>${entryChoices(task, chosen)}${form}</div>`;
 }
 
 export function runSettingsPanel(config, overview) {

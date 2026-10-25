@@ -55,15 +55,68 @@ export function addresses(finding, plan) {
   return performance && speeds(plan);
 }
 
-/** Risk-ordered tasks: what a maintainer should look at first and what the IDE can fix with a check. */
-export function buildTasks(analysis, plansByFile = {}) {
+/**
+ * Findings as the industry names them. `type` follows SonarQube: a possible bug, a performance
+ * hint, or a maintainability smell — a smell is advice, not a risk. `ref` names the equivalent rule.
+ */
+export const RULE_INFO = {
+  EMPTY_CATCH: { type: "bug", name: "Пустой catch: исключение игнорируется", ref: "Sonar S108, S2486 · CWE-391" },
+  STRING_IDENTITY: { type: "bug", name: "Строки сравниваются через ==", ref: "Sonar S4973" },
+  BP122: { type: "bug", name: "Строки сравниваются через ==", ref: "Sonar S4973" },
+  BP102: { type: "bug", name: "return в finally", ref: "Sonar S1143" },
+  BP107: { type: "bug", name: "Деление на ноль", ref: "Sonar S3518" },
+  BP120: { type: "bug", name: "throw null", ref: "Sonar S1695" },
+  BP105: { type: "bug", name: "Условие всегда истинно или ложно", ref: "Sonar S2583" },
+  BP108: { type: "bug", name: "Цикл без условия выхода", ref: "Sonar S2189" },
+  BP119: { type: "bug", name: "Пустое тело цикла", ref: "Sonar S1116" },
+  NESTED_LOOPS: { type: "performance", name: "Вложенный цикл", ref: "оценка сложности" },
+  BP121: { type: "performance", name: "contains/indexOf по списку внутри цикла", ref: "оценка сложности" },
+  LOOP_ACCUMULATION: { type: "performance", name: "Конкатенация String в цикле", ref: "Sonar S1643" },
+  BP109: { type: "performance", name: "Вывод в консоль в цикле", ref: "" },
+  BP110: { type: "performance", name: "String.format в цикле", ref: "" },
+  BP116: { type: "performance", name: "Создание объекта в цикле", ref: "" },
+  BP101: { type: "smell", name: "Перехват общего Exception/Throwable", ref: "Sonar S2221 · PMD AvoidCatchingGenericException" },
+  BP104: { type: "smell", name: "Глубокая вложенность if/for/while/try (больше 3 уровней)", ref: "Sonar S134" },
+  LONG_METHOD: { type: "smell", name: "Длинный метод (больше 75 строк)", ref: "Sonar S138" },
+  BP103: { type: "smell", name: "Больше 6 параметров", ref: "Sonar S107" },
+  BP106: { type: "smell", name: "Пустая ветка if", ref: "Sonar S108" },
+  BP111: { type: "smell", name: "Изменяемое public static поле", ref: "Sonar S1444" },
+  BP112: { type: "smell", name: "new String(\"…\")", ref: "Sonar S2129" },
+  BP113: { type: "smell", name: "Две одинаковые инструкции подряд", ref: "" },
+  BP114: { type: "smell", name: "switch без default", ref: "Sonar S131" },
+  BP115: { type: "smell", name: "System.exit в коде", ref: "Sonar S1147" },
+  BP117: { type: "smell", name: "Вложенный тернарный оператор", ref: "Sonar S3358" },
+  BP118: { type: "smell", name: "Ввод-вывод и вычисления в одном методе", ref: "" },
+};
+
+export const RULE_TYPES = {
+  bug: "Возможная ошибка",
+  performance: "Производительность",
+  smell: "Сопровождаемость",
+};
+
+export function ruleInfo(finding) {
+  const known = RULE_INFO[finding.rule];
+  if (known) return known;
+  const type = finding.category === "performance" ? "performance" : finding.category === "reliability" && finding.severity !== "info" ? "bug" : "smell";
+  return { type, name: prettyBigO(finding.title), ref: "" };
+}
+
+/** Tasks grouped the way a code-quality tool groups them; rules the team switched off are left out. */
+export function buildTasks(analysis, plansByFile = {}, hidden = new Set()) {
   const index = callIndex(analysis);
   const risks = [];
+  const performance = [];
   const advice = [];
+  let hiddenCount = 0;
   for (const [position, finding] of (analysis?.findings ?? []).entries()) {
+    if (hidden.has(finding.rule)) {
+      hiddenCount++;
+      continue;
+    }
     const method = index.methods.get(methodKey(finding.fileName, finding.methodId));
-    const task = { kind: "finding", index: position, finding, method };
-    (finding.severity === "info" ? advice : risks).push(task);
+    const task = { kind: "finding", index: position, finding, method, info: ruleInfo(finding) };
+    ({ bug: risks, performance, smell: advice })[task.info.type].push(task);
   }
   const plans = [];
   for (const [fileName, entry] of Object.entries(plansByFile)) {
@@ -74,7 +127,7 @@ export function buildTasks(analysis, plansByFile = {}) {
   }
   // A risk and an automatic fix in the same method become one task: finding → fix → behaviour check.
   const attached = new Set();
-  for (const task of risks) {
+  for (const task of [...risks, ...performance]) {
     task.fixes = plans.filter(
       (candidate) =>
         !attached.has(candidate) &&
@@ -94,8 +147,10 @@ export function buildTasks(analysis, plansByFile = {}) {
       return { kind: "module", module, members, movable };
     })
     .filter((task) => task.module.id !== "utility" && task.movable.length);
-  risks.sort((a, b) => (b.method?.risk ?? 0) - (a.method?.risk ?? 0));
-  return { risks, faster, simpler, split, advice };
+  const byRisk = (a, b) => (b.method?.risk ?? 0) - (a.method?.risk ?? 0);
+  risks.sort(byRisk);
+  performance.sort((a, b) => (b.fixes?.length ?? 0) - (a.fixes?.length ?? 0) || byRisk(a, b));
+  return { risks, performance, faster, simpler, split, advice, hiddenCount, hidden: [...hidden] };
 }
 
 /** O(n^2) → O(n²): how developers write it. */
@@ -206,7 +261,7 @@ export function overviewHtml(state) {
   return `<section class="ws-page ws-overview">
     <header class="ws-hero"><div><p class="ws-eyebrow">Карта проекта — чтобы понять чужой код за минуту</p><h1>${e(project.name)}</h1><p class="ws-lead">Где программа начинается, что из чего вызывается и какие места самые сложные. Кликните метод, чтобы открыть его код и схему. ${stats.files ?? 0} файлов · ${classes.size} классов · ${stats.methods ?? 0} методов · ${stats.lines ?? 0} строк. ${entries.length ? `Точка входа: <b>${entries.map((method) => `${e(method.owner)}.main`).join(", ")}</b>.` : "Метод main не найден."}</p></div>
       <div class="ws-hero-cards">
-        <button class="ws-kpi" data-action="workspace" data-workspace="tasks"><b>${tasks.risks.length}</b><span>рисков требуют внимания</span></button>
+        <button class="ws-kpi" data-action="workspace" data-workspace="tasks"><b>${tasks.risks.length}</b><span>возможных ошибок</span></button>
         <button class="ws-kpi" data-action="workspace" data-workspace="tasks"><b>${fixable}</b><span>исправлений IDE сделает сама</span></button>
         <button class="ws-kpi" data-action="workspace" data-workspace="verify"><b>${cases.length}</b><span>тестовых входов${baseline ? " · исходная версия есть" : ""}</span>${behaviour}</button>
       </div></header>
@@ -226,12 +281,13 @@ export function overviewHtml(state) {
 function taskCard(task) {
   if (task.kind === "finding") {
     const { finding, method, index, fixes } = task;
-    return `<article class="ws-task ${fixes?.length ? "fix" : ""}"><div class="ws-task-head">${severityBadge(finding.severity)}<b>${e(PLAIN_TITLES[finding.rule] ?? prettyBigO(finding.title))}</b></div>${method?.complexity && costText(method.complexity) && /n/.test(method.complexity) ? `<p class="ws-plain"><b>Что это значит:</b> ${e(costText(method.complexity))} (${e(prettyBigO(method.complexity))}).</p>` : ""}<p>${e(finding.detail ?? "")}</p><div class="ws-task-meta">${method ? `<span>${e(method.owner)}.${e(method.name)}()</span>${bigO(method.complexity)}` : ""}<span>${e(basename(finding.fileName))}:${finding.line}</span></div>${(fixes ?? [])
+    const info = task.info ?? ruleInfo(finding);
+    return `<article class="ws-task ${fixes?.length ? "fix" : ""} type-${info.type}"><div class="ws-task-head"><span class="ws-type ${info.type}">${e(RULE_TYPES[info.type])}</span><b>${e(info.name)}</b>${info.ref ? `<small class="ws-ref" title="Соответствующее правило в распространённых анализаторах">${e(info.ref)}</small>` : ""}</div>${method?.complexity && costText(method.complexity) && /n/.test(method.complexity) ? `<p class="ws-plain"><b>Что это значит:</b> ${e(costText(method.complexity))} (${e(prettyBigO(method.complexity))}).</p>` : ""}<p>${e(finding.detail ?? "")}</p><div class="ws-task-meta">${method ? `<span>${e(method.owner)}.${e(method.name)}()</span>${bigO(method.complexity)}` : ""}<span>${e(basename(finding.fileName))}:${finding.line}</span></div>${(fixes ?? [])
       .map(
         ({ plan, fileName }) =>
           `<div class="ws-fix">${glyph("sparkle", 13)}<span><b>${e(plan.title)}</b>${speeds(plan) ? ` ${bigO(plan.timeBefore)}→${bigO(plan.timeAfter)}<small class="ws-plain">станет: ${e(costText(plan.timeAfter))}</small>` : ""}</span>${button("task-fix", "Разобрать исправление", "check", "ide-button small primary", `data-file="${e(fileName)}" data-id="${e(plan.id)}"`)}</div>`,
       )
-      .join("")}<div class="ws-task-actions">${button("open-finding", "Показать в коде и блоках", "eye", "ide-button small", `data-index="${index}"`)}${fixes?.length ? "" : '<span class="ws-muted">Автоисправления нет — разберите вручную</span>'}</div></article>`;
+      .join("")}<div class="ws-task-actions">${button("open-finding", "Показать в коде и блоках", "eye", "ide-button small", `data-index="${index}"`)}${button("rule-hide", "Не показывать это правило", "close", "ide-button small subtle", `data-rule="${e(finding.rule)}" title="Скрыть все находки этого правила в проекте"`)}</div></article>`;
   }
   if (task.kind === "plan") {
     const { plan, fileName, method } = task;
@@ -264,14 +320,15 @@ export function tasksHtml(state) {
   const section = (title, hint, items, empty) =>
     `<h2 class="ws-section">${title} <span class="ws-count">${items.length}</span><small>${hint}</small></h2><div class="ws-task-grid">${items.map(taskCard).join("") || `<p class="ws-muted">${empty}</p>`}</div>`;
   return `<section class="ws-page ws-tasks">
-    <header class="ws-hero compact"><div><p class="ws-eyebrow">Задачи</p><h1>Что сделать с кодом</h1><p class="ws-lead">Места, где программа может тормозить или ломаться. У каждого — что не так простыми словами. Если IDE умеет это исправить, есть кнопка: она поправит код и сразу проверит, что программа выдаёт то же самое. Не понравилось — «Откатить».</p></div></header>
+    <header class="ws-hero compact"><div><p class="ws-eyebrow">Задачи</p><h1>Что сделать с кодом</h1><p class="ws-lead">Находки статического анализа: правила того же смысла, что в SonarQube и PMD (номер правила указан), и оценка сложности. Это подсказки, а не оценка автора: правило, которое не подходит проекту, можно скрыть. Где IDE умеет исправить, она поправит код и сразу сравнит поведение со старой версией.</p></div></header>
     ${changeBanner(state)}
-    ${section("Риски", "места, где вероятна ошибка или медленная работа", tasks.risks, "Правила не нашли рисков. Это не доказывает отсутствие ошибок — проверьте поведение тестами.")}
+    ${section("Возможные ошибки", "код, который часто означает дефект", tasks.risks, "Похожих на ошибки мест не найдено. Это не доказывает их отсутствие — проверьте поведение тестами.")}
     ${plansLoading ? '<div class="q-loading"><span class="ide-spinner small"></span>Ищем применимые преобразования во всех файлах…</div>' : ""}
-    ${section("Ускорить", "IDE перепишет участок и сразу проверит поведение", tasks.faster, "Распознанных шаблонов ускорения нет.")}
+    ${section("Производительность", "где время растёт быстрее данных; с кнопкой — IDE перепишет и проверит", [...(tasks.performance ?? []), ...tasks.faster], "Медленных мест по оценке сложности не найдено.")}
     ${section("Упростить", "та же логика короче и понятнее", tasks.simpler, "Упрощений не найдено.")}
     ${section("Разделить монолит", "группы методов по ответственности, которые можно вынести в отдельный класс", tasks.split, "Кандидатов на выделение нет: переносятся только static-методы.")}
-    <details class="ws-advice" ${showAdvice ? "open" : ""}><summary>Советы по стилю и сопровождению <span class="ws-count">${tasks.advice.length}</span></summary><div class="ws-task-grid">${tasks.advice.map(taskCard).join("")}</div></details>
+    <details class="ws-advice" ${showAdvice ? "open" : ""}><summary>Сопровождаемость (code smells) <span class="ws-count">${tasks.advice.length}</span><small>читаемость и структура, на поведение не влияют</small></summary><div class="ws-task-grid">${tasks.advice.map(taskCard).join("")}</div></details>
+    ${tasks.hiddenCount ? `<p class="ws-muted ws-hidden-rules">Скрыто находок: ${tasks.hiddenCount} (правила: ${e(tasks.hidden.join(", "))}). ${button("rule-unhide-all", "Показать все", "eye", "ide-button small subtle")}</p>` : ""}
   </section>`;
 }
 
@@ -309,6 +366,8 @@ export function verifyHeaderHtml({ baseline, changes, report, stale, job, pendin
         ? ["neutral", "Устарело", "Код или тесты изменились после проверки"]
         : report.inconclusive
           ? ["neutral", "Не определено", "Сбой среды запуска, а не программы"]
+          : !report.tests.length
+            ? ["bad", "Не собралось", report.baselineBuild?.success === false || report.candidateBuild?.success === false ? "Ошибки компиляции — подробности ниже" : "Нечего запускать — выберите метод в консоли (▶)"]
           : report.passed
             ? ["ok", `Совпало ${passed}/${report.tests.length}`, "stdout, stderr без Java stack frames и код завершения совпали"]
             : ["bad", `Расхождение ${report.tests.length - passed}/${report.tests.length}`, "Откройте вход с расхождением ниже"];

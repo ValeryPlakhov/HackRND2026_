@@ -107,14 +107,24 @@ export class StudioClient {
     return this.request("/inputs/generate", options);
   }
 
-  async startJob(kind, request, onUpdate) {
+  /** Polls a server job; gives up (and cancels it) after `limitMs`, so the interface never waits forever. */
+  async startJob(kind, request, onUpdate, { limitMs = kind === "run" ? 90_000 : 600_000 } = {}) {
     const submitted = await this.request("/jobs/submit", { kind, ...request });
     const controller = new AbortController();
     this.controllers.set(submitted.id, controller);
     onUpdate?.(submitted);
+    const started = Date.now();
     try {
       let job = submitted;
       while (["queued", "running"].includes(job.state)) {
+        if (Date.now() - started > limitMs) {
+          this.request("/jobs/cancel", { id: submitted.id }).catch(() => {});
+          throw new ApiError(
+            `Сервер не ответил за ${Math.round(limitMs / 1000)} с: задание остановлено. Если это повторяется, перезапустите сервер и сообщите о проблеме.`,
+            0,
+            "TIMEOUT",
+          );
+        }
         await delay(650, controller.signal);
         job = await this.request(
           `/jobs/${encodeURIComponent(submitted.id)}`,

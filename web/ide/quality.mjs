@@ -53,6 +53,7 @@ export class QualityLab {
     this.layouts = {};
     this.pending = null;
     this.changedDuringCheck = false;
+    this.hiddenRules = new Set();
     this.projectPlans = null;
     this.projectPlansLoading = false;
   }
@@ -91,6 +92,7 @@ export class QualityLab {
     if (saved?.baseline?.files && Object.keys(saved.baseline.files).length)
       this.baseline = saved.baseline;
     this.layouts = saved?.layouts ?? {};
+    this.hiddenRules = new Set(saved?.hiddenRules ?? []);
     const bundled = await this.readTestsFile();
     if (saved?.cases?.length) this.cases = saved.cases;
     else if (bundled?.cases?.length) this.cases = bundled.cases;
@@ -133,7 +135,7 @@ export class QualityLab {
   async persist() {
     if (!this.project) return;
     await this.bridge
-      .projectState(this.project.id, { baseline: this.baseline, cases: this.cases, layouts: this.layouts })
+      .projectState(this.project.id, { baseline: this.baseline, cases: this.cases, layouts: this.layouts, hiddenRules: [...this.hiddenRules] })
       .catch((error) => this.app.notify("Не удалось сохранить тесты: " + readableError(error), "warning"));
   }
 
@@ -722,7 +724,11 @@ export class QualityLab {
     try {
       const result = await this.client.startJob(
         kind,
-        { ...payload, mainClass: this.app.runConfig.mainClass || "" },
+        {
+          ...payload,
+          mainClass: this.app.runConfig.mainClass || "",
+          entryFile: this.app.documents.active?.language === "java" ? this.app.documents.active.path : "",
+        },
         (job) => {
           if (this.project?.id !== id) return;
           this.job = { ...job, kind };

@@ -146,6 +146,12 @@ export class SourceEditor {
       "--editor-font-size",
       this.settings.fontSize + "px",
     );
+    // Whole pixels: a fractional line height is rounded differently by the text field and the
+    // highlight layer, and the selection drifts further from the text on every line.
+    this.container.style.setProperty(
+      "--editor-line-height",
+      Math.round(this.settings.fontSize * 1.65) + "px",
+    );
     this.container.style.setProperty(
       "--editor-tab-size",
       this.settings.tabSize,

@@ -141,10 +141,15 @@ public final class JobService implements AutoCloseable {
         job.stage = "Отменено";
       }
       Thread.currentThread().interrupt();
-    } catch (Exception error) {
+    } catch (Throwable error) {
+      // Any failure, including errors such as StackOverflowError, must end the job; otherwise the
+      // client polls a job that stays "running" forever.
       synchronized (job) {
         if (!job.cancelled) {
-          job.error = error.getClass().getSimpleName() + ": " + error.getMessage();
+          job.error =
+              error instanceof StackOverflowError || error instanceof OutOfMemoryError
+                  ? "Внутренняя ошибка сервера при разборе кода (" + error.getClass().getSimpleName() + "). Сообщите о проблеме: задание остановлено."
+                  : error.getClass().getSimpleName() + ": " + error.getMessage();
           job.state = "failed";
           job.stage = "Ошибка";
         }

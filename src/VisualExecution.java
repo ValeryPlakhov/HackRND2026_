@@ -12,7 +12,11 @@ public final class VisualExecution {
         if (!Boolean.TRUE.equals(build.result().get("success")))
           return Digests.map("success", false, "phase", "compile", "compile", build.result(),
               "projectHash", Digests.project(files));
-        context.stage("Выполняем вашу схему", 1, 2);
+        if (build.mainClass().isEmpty())
+          // Nothing obvious to run: the console offers the methods instead of failing silently.
+          return Digests.map("success", false, "phase", "entry", "compile", build.result(),
+              "projectHash", Digests.project(files));
+        context.stage("Выполняем программу", 1, 2);
         Map<String, Object> execution = Runner.run(build, input);
         boolean success = ((Number) execution.get("exitCode")).intValue() == 0
             && !Boolean.TRUE.equals(execution.get("timedOut"))

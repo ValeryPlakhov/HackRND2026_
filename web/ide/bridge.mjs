@@ -47,6 +47,14 @@ export function explainFailure(stderr = "") {
     return "Введено не то, что ждёт программа: например, текст вместо числа. Проверьте поле «Ввод для программы».";
   if (/NumberFormatException/.test(stderr))
     return "Строку не удалось превратить в число. Проверьте, что во вводе только цифры.";
+  if (/HeadlessException/.test(stderr))
+    return "Программа открывает окно (Swing/AWT). В веб-IDE окна не показываются: запускаются консольные программы.";
+  const missingPackage = /error: package ([\w.]+) does not exist/.exec(stderr);
+  if (missingPackage)
+    return `Нет пакета ${missingPackage[1]}: это внешняя библиотека (Maven/Gradle-зависимость). Зависимости не подключаются — запускаются только файлы самого проекта.`;
+  const missingClass = /symbol:\s+class (\w+)/.exec(stderr);
+  if (missingClass)
+    return `Не найден класс ${missingClass[1]}. Возможно, загружены не все файлы проекта или класс из внешней библиотеки.`;
   return "";
 }
 
@@ -672,11 +680,12 @@ export class BrowserBridge {
           );
           const execution = result.result?.execution;
           job.stdout = execution?.stdout ?? "";
-          job.stderr =
-            execution?.stderr ??
-            result.result?.compile?.stderr ??
-            result.error ??
-            "";
+          const build = result.result?.compile ?? {};
+          job.phase = result.result?.phase ?? "";
+          job.stderr = execution?.stderr ?? (job.phase === "compile" ? build.diagnostics ?? "" : "") ?? result.error ?? "";
+          job.choices = job.phase === "entry" ? build.entryCandidates ?? [] : [];
+          if (job.phase === "entry") job.message = build.mainError || "Нечего запускать";
+          if (job.phase === "compile") job.message = "Не скомпилировалось — ошибки ниже";
           job.status = job.cancelled
             ? "cancelled"
             : result.result?.success
@@ -684,7 +693,7 @@ export class BrowserBridge {
               : "failed";
           job.exitCode = execution?.exitCode ?? null;
           job.timedOut = execution?.timedOut ?? false;
-          job.entryPoint = result.result?.compile?.entryPoint ?? "";
+          job.entryPoint = job.phase === "execute" ? build.entryPoint ?? "" : "";
           job.hint = explainFailure(job.stderr);
         }
       } catch (error) {

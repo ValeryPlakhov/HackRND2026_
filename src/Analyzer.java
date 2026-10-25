@@ -105,15 +105,16 @@ public final class Analyzer {
         add(
             out,
             "NESTED_LOOPS",
-            "warning",
-            "Вложенные циклы: " + metrics.get("complexity"),
+            "info",
+            "Вложенный цикл: оценка " + metrics.get("complexity"),
             "Проверьте повторный обход данных. Индекс по ключу может убрать вложенный поиск;"
                 + " семантику и порядок обработки нужно сохранить.",
             m,
             t,
             method.id(),
             Transformations.canOptimize(m, method));
-      if (m.text(t).lines().count() > 45)
+      // SonarQube S138 uses 75 lines as the default limit.
+      if (m.text(t).lines().count() > 75)
         add(
             out,
             "LONG_METHOD",
@@ -195,12 +196,20 @@ public final class Analyzer {
         }
 
         public Void visitCatch(CatchTree x, Integer d) {
-          if (x.getBlock().getStatements().isEmpty())
+          // An empty catch is deliberate when the variable says so (ignored, expected — the
+          // IntelliJ convention) or a comment explains it (SonarQube S108 accepts a comment).
+          String variable = x.getParameter().getName().toString();
+          String block = m.text(x.getBlock());
+          boolean explained =
+              Set.of("ignored", "ignore", "expected", "unused", "_").contains(variable)
+                  || block.contains("//")
+                  || block.contains("/*");
+          if (x.getBlock().getStatements().isEmpty() && !explained)
             add(
                 out,
                 "EMPTY_CATCH",
                 "warning",
-                "Исключение подавлено",
+                "Пустой catch: исключение игнорируется",
                 "Пустой catch скрывает ошибки. Изменение обработки исключений меняет поведение и"
                     + " требует отдельного решения.",
                 m,

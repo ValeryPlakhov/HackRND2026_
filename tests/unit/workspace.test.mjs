@@ -1,7 +1,7 @@
 // Workspaces: project map, task list and the reading flowchart are built from analysis data only.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { addresses, buildTasks, callIndex, condenseGraph, entryPoints, plural } from "../../web/ide/workspace.mjs";
+import { addresses, buildTasks, callIndex, condenseGraph, entryPoints, plural, ruleInfo } from "../../web/ide/workspace.mjs";
 
 const method = (name, extra = {}) => ({
   id: `A.java::A#${name}@1`,
@@ -51,7 +51,7 @@ test("call index links callers, callees and library calls", () => {
   assert.deepEqual(entryPoints(analysis).map((item) => item.name), ["main"]);
 });
 
-test("a risk carries only the fix that removes it, the rest stay separate", () => {
+test("a performance finding carries only the fix that removes it, the rest stay separate", () => {
   const plans = {
     "A.java": {
       plans: [
@@ -61,12 +61,27 @@ test("a risk carries only the fix that removes it, the rest stay separate", () =
     },
   };
   const tasks = buildTasks(analysis, plans);
-  assert.equal(tasks.risks.length, 1);
-  assert.deepEqual(tasks.risks[0].fixes.map((fix) => fix.plan.id), ["p1"]);
+  // Nested loops are a performance estimate, not a possible bug.
+  assert.equal(tasks.risks.length, 0);
+  assert.equal(tasks.performance.length, 1);
+  assert.deepEqual(tasks.performance[0].fixes.map((fix) => fix.plan.id), ["p1"]);
   assert.deepEqual(tasks.faster, []);
   assert.deepEqual(tasks.simpler.map((task) => task.plan.id), ["p2"]);
   assert.equal(tasks.advice.length, 1);
   assert.deepEqual(tasks.split.map((task) => task.module.id), ["output"]);
+});
+
+test("findings use standard names and types, hidden rules disappear", () => {
+  const smell = ruleInfo({ rule: "BP104", title: "x", severity: "info" });
+  assert.equal(smell.type, "smell");
+  assert.match(smell.ref, /S134/);
+  assert.equal(ruleInfo({ rule: "EMPTY_CATCH" }).type, "bug");
+  assert.equal(ruleInfo({ rule: "BP101" }).type, "smell");
+  assert.equal(ruleInfo({ rule: "UNKNOWN", category: "maintainability", severity: "warning", title: "t" }).type, "smell");
+  const tasks = buildTasks(analysis, {}, new Set(["NESTED_LOOPS", "STYLE"]));
+  assert.equal(tasks.performance.length, 0);
+  assert.equal(tasks.advice.length, 0);
+  assert.equal(tasks.hiddenCount, 2);
 });
 
 test("a nearby simplification never answers a performance finding", () => {

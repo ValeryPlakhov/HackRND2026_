@@ -3,8 +3,8 @@
   "method": "UTF-8 splitlines; nonempty excludes whitespace-only lines, includes comments.",
   "newAuthoredProduct": {
     "files": 22,
-    "physical": 13723,
-    "nonempty": 13301
+    "physical": 13962,
+    "nonempty": 13532
   },
   "excluded": [
     "Java runtime",
@@ -17,15 +17,15 @@
     {
       "path": "web/ide/app.mjs",
       "language": "JavaScript",
-      "physical": 2578,
-      "nonempty": 2487,
+      "physical": 2654,
+      "nonempty": 2561,
       "category": "product"
     },
     {
       "path": "web/ide/bridge.mjs",
       "language": "JavaScript",
-      "physical": 731,
-      "nonempty": 701,
+      "physical": 740,
+      "nonempty": 710,
       "category": "product"
     },
     {
@@ -59,8 +59,8 @@
     {
       "path": "web/ide/editor.mjs",
       "language": "JavaScript",
-      "physical": 630,
-      "nonempty": 600,
+      "physical": 636,
+      "nonempty": 606,
       "category": "product"
     },
     {
@@ -80,8 +80,8 @@
     {
       "path": "web/ide/ide.css",
       "language": "CSS",
-      "physical": 2510,
-      "nonempty": 2510,
+      "physical": 2511,
+      "nonempty": 2511,
       "category": "product"
     },
     {
@@ -122,8 +122,8 @@
     {
       "path": "web/ide/quality.mjs",
       "language": "JavaScript",
-      "physical": 1115,
-      "nonempty": 1046,
+      "physical": 1121,
+      "nonempty": 1052,
       "category": "product"
     },
     {
@@ -143,22 +143,22 @@
     {
       "path": "web/ide/views.mjs",
       "language": "JavaScript",
-      "physical": 357,
-      "nonempty": 327,
+      "physical": 366,
+      "nonempty": 335,
       "category": "product"
     },
     {
       "path": "web/ide/workspace.css",
       "language": "CSS",
-      "physical": 1576,
-      "nonempty": 1546,
+      "physical": 1649,
+      "nonempty": 1617,
       "category": "product"
     },
     {
       "path": "web/ide/workspace.mjs",
       "language": "JavaScript",
-      "physical": 426,
-      "nonempty": 396,
+      "physical": 485,
+      "nonempty": 452,
       "category": "product"
     },
     {
