@@ -3,8 +3,8 @@
   "method": "UTF-8 splitlines; nonempty excludes whitespace-only lines, includes comments.",
   "newAuthoredProduct": {
     "files": 20,
-    "physical": 12812,
-    "nonempty": 12426
+    "physical": 13292,
+    "nonempty": 12887
   },
   "excluded": [
     "Java runtime",
@@ -17,8 +17,8 @@
     {
       "path": "web/ide/app.mjs",
       "language": "JavaScript",
-      "physical": 2359,
-      "nonempty": 2279,
+      "physical": 2450,
+      "nonempty": 2364,
       "category": "product"
     },
     {
@@ -59,8 +59,8 @@
     {
       "path": "web/ide/editor.mjs",
       "language": "JavaScript",
-      "physical": 610,
-      "nonempty": 581,
+      "physical": 630,
+      "nonempty": 600,
       "category": "product"
     },
     {
@@ -80,8 +80,8 @@
     {
       "path": "web/ide/ide.css",
       "language": "CSS",
-      "physical": 2551,
-      "nonempty": 2551,
+      "physical": 2510,
+      "nonempty": 2510,
       "category": "product"
     },
     {
@@ -115,8 +115,8 @@
     {
       "path": "web/ide/quality.mjs",
       "language": "JavaScript",
-      "physical": 1091,
-      "nonempty": 1022,
+      "physical": 1092,
+      "nonempty": 1023,
       "category": "product"
     },
     {
@@ -129,15 +129,15 @@
     {
       "path": "web/ide/views.mjs",
       "language": "JavaScript",
-      "physical": 358,
-      "nonempty": 330,
+      "physical": 374,
+      "nonempty": 344,
       "category": "product"
     },
     {
       "path": "web/ide/workspace.css",
       "language": "CSS",
-      "physical": 1109,
-      "nonempty": 1091,
+      "physical": 1502,
+      "nonempty": 1474,
       "category": "product"
     },
     {

@@ -8,19 +8,19 @@
     "documentation and SVG assets"
   ],
   "total": {
-    "files": 78,
-    "physical": 25740,
-    "nonempty": 24526
+    "files": 79,
+    "physical": 26257,
+    "nonempty": 25021
   },
   "product": {
     "files": 57,
-    "physical": 22671,
-    "nonempty": 21760
+    "physical": 23149,
+    "nonempty": 22219
   },
   "tests": {
-    "files": 21,
-    "physical": 3069,
-    "nonempty": 2766
+    "files": 22,
+    "physical": 3108,
+    "nonempty": 2802
   },
   "languages": {
     "C#": {
@@ -30,8 +30,8 @@
     },
     "CSS": {
       "files": 5,
-      "physical": 5639,
-      "nonempty": 5617
+      "physical": 5991,
+      "nonempty": 5959
     },
     "HTML": {
       "files": 2,
@@ -44,9 +44,9 @@
       "nonempty": 5921
     },
     "JavaScript": {
-      "files": 40,
-      "physical": 12468,
-      "nonempty": 11782
+      "files": 41,
+      "physical": 12633,
+      "nonempty": 11935
     },
     "Python": {
       "files": 8,
@@ -233,8 +233,8 @@
     {
       "path": "web/blueprint/editor.mjs",
       "language": "JavaScript",
-      "physical": 773,
-      "nonempty": 723,
+      "physical": 770,
+      "nonempty": 720,
       "category": "product"
     },
     {
@@ -261,8 +261,8 @@
     {
       "path": "web/ide/app.mjs",
       "language": "JavaScript",
-      "physical": 2359,
-      "nonempty": 2279,
+      "physical": 2450,
+      "nonempty": 2364,
       "category": "product"
     },
     {
@@ -303,8 +303,8 @@
     {
       "path": "web/ide/editor.mjs",
       "language": "JavaScript",
-      "physical": 610,
-      "nonempty": 581,
+      "physical": 630,
+      "nonempty": 600,
       "category": "product"
     },
     {
@@ -324,8 +324,8 @@
     {
       "path": "web/ide/ide.css",
       "language": "CSS",
-      "physical": 2551,
-      "nonempty": 2551,
+      "physical": 2510,
+      "nonempty": 2510,
       "category": "product"
     },
     {
@@ -359,8 +359,8 @@
     {
       "path": "web/ide/quality.mjs",
       "language": "JavaScript",
-      "physical": 1091,
-      "nonempty": 1022,
+      "physical": 1092,
+      "nonempty": 1023,
       "category": "product"
     },
     {
@@ -373,15 +373,15 @@
     {
       "path": "web/ide/views.mjs",
       "language": "JavaScript",
-      "physical": 358,
-      "nonempty": 330,
+      "physical": 374,
+      "nonempty": 344,
       "category": "product"
     },
     {
       "path": "web/ide/workspace.css",
       "language": "CSS",
-      "physical": 1109,
-      "nonempty": 1091,
+      "physical": 1502,
+      "nonempty": 1474,
       "category": "product"
     },
     {
@@ -436,8 +436,8 @@
     {
       "path": "web/lib/icons.mjs",
       "language": "JavaScript",
-      "physical": 99,
-      "nonempty": 96,
+      "physical": 100,
+      "nonempty": 97,
       "category": "product"
     },
     {
@@ -581,6 +581,13 @@
       "category": "tests"
     },
     {
+      "path": "tests/unit/notifications.test.mjs",
+      "language": "JavaScript",
+      "physical": 25,
+      "nonempty": 23,
+      "category": "tests"
+    },
+    {
       "path": "tests/unit/quality.test.mjs",
       "language": "JavaScript",
       "physical": 161,
@@ -590,8 +597,8 @@
     {
       "path": "tests/unit/workspace.test.mjs",
       "language": "JavaScript",
-      "physical": 123,
-      "nonempty": 116,
+      "physical": 137,
+      "nonempty": 129,
       "category": "tests"
     },
     {
