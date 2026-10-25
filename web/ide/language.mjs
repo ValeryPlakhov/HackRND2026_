@@ -6,7 +6,7 @@ export const LANGUAGES = [
     color: "#d39147",
     available: true,
     description:
-      "Открывайте проекты, читайте и редактируйте блупринты, запускайте Java 21.",
+      "Открывайте проекты, читайте схемы и правьте блоки, запускайте Java 21.",
   },
   {
     id: "python",
@@ -30,7 +30,7 @@ export const LANGUAGES = [
     extension: ".ts",
     color: "#477bb8",
     available: false,
-    description: "Блупринты с типами и интерфейсами.",
+    description: "Схемы с типами и интерфейсами.",
   },
   {
     id: "kotlin",
@@ -46,7 +46,7 @@ export const LANGUAGES = [
     extension: ".cs",
     color: "#7c61a8",
     available: false,
-    description: "Блупринты для приложений .NET.",
+    description: "Блоки для приложений .NET.",
   },
   {
     id: "cpp",
@@ -287,7 +287,7 @@ export const SHORTCUTS = [
   ["Ctrl + Tab", "Следующая вкладка"],
   ["Ctrl + Shift + T", "Вернуть закрытую вкладку"],
   ["F5", "Сохранить и запустить Java-проект"],
-  ["F6", "Проверить поведение против эталона"],
+  ["F6", "Проверить поведение против исходной версии"],
   ["Ctrl + Shift + A", "Анализ проекта"],
   ["Ctrl + Shift + I", "Улучшения и декомпозиция"],
   ["Shift + F5", "Остановить задачу"],

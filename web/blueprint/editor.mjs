@@ -23,16 +23,17 @@ const BINARY_OPS = ["+", "-", "*", "/", "%", "==", "!=", "<", "<=", ">", ">=", "
 const TYPES = ["int", "long", "double", "boolean", "char", "String", "int[]", "String[]", "List<Integer>", "List<String>", "var"];
 
 /**
- * Unreal-style node editor: drag nodes, drag wires between pins, re-route or break wires,
- * add nodes from a searchable palette, edit node properties, see every use of a variable.
+ * Block editor: drag blocks, drag wires between pins, select a wire to delete it or add a bend,
+ * add blocks from a searchable palette, edit block properties, see every use of a variable.
  */
 export class BlueprintEditor {
   constructor(container, graph, options = {}) {
     this.container = container;
     this.options = options;
     this.graph = graph;
-    this.view = options.view ?? { x: 40, y: 40, scale: 0.9 };
+    this.view = options.view ?? { x: 40, y: 40, scale: 1 };
     this.selected = new Set();
+    this.selectedLink = null;
     this.marks = new Map();
     this.notes = new Map();
     this.highlight = null;
@@ -41,12 +42,11 @@ export class BlueprintEditor {
     this.future = [];
     this.controller = new AbortController();
     container.innerHTML = `<div class="bp-root">
-      <aside class="bp-vars"><div class="bp-side-title">Переменные</div><div class="bp-var-list"></div><div class="bp-side-title">Узлы</div><p class="bp-side-hint">ПКМ по полю — добавить узел. Тяните провод от пина; отпустите на пустом месте, чтобы создать подходящий узел. Alt+клик по пину — разорвать связи. Двойной клик по проводу — точка перегиба. Del — удалить, Ctrl+D — дублировать, Ctrl+Z — отменить.</p></aside>
-      <div class="bp-canvas" tabindex="0" aria-label="Редактор блупринта">
+      <div class="bp-canvas" tabindex="0" aria-label="Редактор блоков">
         <div class="bp-world"><svg class="bp-wires" width="1" height="1"></svg><div class="bp-nodes"></div></div>
-        <div class="bp-hud"><button data-bp="fit" title="Показать всё (F)">⤢</button><button data-bp="zoom-out" title="Уменьшить">−</button><span class="bp-scale"></span><button data-bp="zoom-in" title="Увеличить">+</button><button data-bp="layout" title="Авто-раскладка">▦</button><button data-bp="undo" title="Отменить (Ctrl+Z)">↶</button><button data-bp="redo" title="Повторить (Ctrl+Y)">↷</button></div>
+        <div class="bp-hud"><button data-bp="add-node" class="bp-add" title="Добавить блок (или правая кнопка мыши по полю)">+ Блок</button><button data-bp="fit" title="Показать всё (F)">⤢</button><button data-bp="zoom-out" title="Уменьшить">−</button><span class="bp-scale"></span><button data-bp="zoom-in" title="Увеличить">+</button><button data-bp="layout" title="Расставить блоки заново">▦</button><button data-bp="undo" title="Отменить (Ctrl+Z)">↶</button><button data-bp="redo" title="Повторить (Ctrl+Y)">↷</button></div>
         <div class="bp-status"></div>
-        <div class="bp-palette" hidden><input class="bp-search" placeholder="Поиск узла…" autocomplete="off"/><div class="bp-palette-list"></div></div>
+        <div class="bp-palette" hidden><input class="bp-search" placeholder="Найти блок…" autocomplete="off"/><div class="bp-palette-list"></div></div>
       </div>
       <aside class="bp-details" hidden></aside>
     </div>`;
@@ -72,6 +72,13 @@ export class BlueprintEditor {
 
   select(id) {
     this.selected = new Set(id ? [id] : []);
+    const picked = this.node(id);
+    this.highlight = picked && ["get", "set", "foreach"].includes(picked.type) ? picked.props.name : null;
+    if (this.selectedLink) {
+      this.selectedLink = null;
+      this.renderWires();
+    }
+    this.applyHighlight();
     this.refreshSelection();
     this.showDetails();
     this.options.onSelect?.(this.node(id) ?? null);
@@ -95,11 +102,12 @@ export class BlueprintEditor {
     const minY = Math.min(...nodes.map((n) => n.y)) - 40;
     const maxX = Math.max(...nodes.map((n) => n.x + nodeWidth(n))) + 40;
     const maxY = Math.max(...nodes.map((n) => n.y + nodeHeight(n, this.graph))) + 40;
-    const scale = Math.max(0.2, Math.min(1, rect.width / (maxX - minX), rect.height / (maxY - minY)));
+    const scale = Math.max(0.2, Math.min(1.1, rect.width / (maxX - minX), rect.height / (maxY - minY)));
     // Long methods would shrink to dots; start readable at the entry instead.
-    this.view.scale = Math.max(scale, 0.55);
-    this.view.x = scale >= 0.55 ? (rect.width - (maxX - minX) * this.view.scale) / 2 - minX * this.view.scale : 30 - minX * this.view.scale;
-    this.view.y = scale >= 0.55 ? (rect.height - (maxY - minY) * this.view.scale) / 2 - minY * this.view.scale : 30 - minY * this.view.scale;
+    const readable = 0.85;
+    this.view.scale = Math.max(scale, readable);
+    this.view.x = scale >= readable ? (rect.width - (maxX - minX) * this.view.scale) / 2 - minX * this.view.scale : 30 - minX * this.view.scale;
+    this.view.y = scale >= readable ? (rect.height - (maxY - minY) * this.view.scale) / 2 - minY * this.view.scale : 30 - minY * this.view.scale;
     this.transform();
   }
 
@@ -107,7 +115,7 @@ export class BlueprintEditor {
     const rect = this.canvas.getBoundingClientRect();
     cx ??= rect.width / 2;
     cy ??= rect.height / 2;
-    const scale = Math.max(0.2, Math.min(2, this.view.scale * factor));
+    const scale = Math.max(0.3, Math.min(2.5, this.view.scale * factor));
     this.view.x = cx - ((cx - this.view.x) * scale) / this.view.scale;
     this.view.y = cy - ((cy - this.view.y) * scale) / this.view.scale;
     this.view.scale = scale;
@@ -159,7 +167,6 @@ export class BlueprintEditor {
     }
     this.layer.innerHTML = this.graph.nodes.map((node) => this.nodeHtml(node, connected)).join("");
     this.renderWires();
-    this.renderVariables();
     this.transform();
     this.refreshSelection();
     this.mark(this.marks);
@@ -185,7 +192,7 @@ export class BlueprintEditor {
     const rows = Math.max(pins.inputs.length, pins.outputs.length);
     const body = Array.from({ length: rows }, (_, i) => `<div class="bp-row">${pins.inputs[i] ? pin(pins.inputs[i], "in") : "<span></span>"}${pins.outputs[i] ? pin(pins.outputs[i], "out") : "<span></span>"}</div>`).join("");
     const code = node.type === "code" ? `<pre class="bp-code">${e(String(node.props.code).split("\n").slice(0, codeLines(node)).join("\n"))}</pre>` : "";
-    const subtitle = node.type === "call" && node.props.target && !node.props.targetPin ? node.props.target : node.type === "call" ? "функция" : "";
+    const subtitle = node.type === "call" && node.props.target && !node.props.targetPin ? node.props.target : "";
     return `<div class="bp-node cat-${category} type-${node.type}" data-id="${e(node.id)}" style="${style}"><div class="bp-header"><span class="bp-badge">${e(BADGES[category] ?? "·")}</span><b>${e(nodeTitle(node, this.graph))}</b>${subtitle ? `<small>${e(subtitle)}</small>` : ""}${node.line ? `<i>L${node.line}</i>` : ""}</div><div class="bp-body">${body}${code}</div></div>`;
   }
 
@@ -210,22 +217,46 @@ export class BlueprintEditor {
         const b = pinPosition(to, this.graph, link.toPin, "in");
         const execWire = out?.kind === "exec";
         const color = execWire ? "currentColor" : typeColor(out?.type);
-        return `<path class="bp-wire ${execWire ? "exec" : "data"}" data-link="${index}" data-from="${e(link.from)}" data-to="${e(link.to)}" d="${curve(a, b)}" stroke="${color}" ${execWire ? 'marker-end="url(#bp-flow-arrow)"' : ""}/>`;
+        const d = curve(a, b);
+        return `<path class="bp-wire-hit" data-link="${index}" d="${d}"/><path class="bp-wire ${execWire ? "exec" : "data"} ${link === this.selectedLink ? "selected" : ""}" data-link="${index}" data-from="${e(link.from)}" data-to="${e(link.to)}" d="${d}" stroke="${color}" ${execWire ? 'marker-end="url(#bp-flow-arrow)"' : ""}/>`;
       })
       .join("") + `<path class="bp-wire ghost" d=""/>`;
     this.svg.insertAdjacentHTML("afterbegin", '<defs><marker id="bp-flow-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path class="bp-arrow" d="M0 0 L8 4 L0 8 z"/></marker></defs>');
+    this.renderLinkHandle();
   }
 
-  renderVariables() {
-    const list = this.container.querySelector(".bp-var-list");
-    const variables = variablesOf(this.graph);
-    list.innerHTML =
-      variables
-        .map(
-          (v) =>
-            `<div class="bp-var ${this.highlight === v.name ? "active" : ""}" data-var="${e(v.name)}" title="Показать все места использования"><i style="background:${typeColor(v.type)}"></i><span><b>${e(v.name)}</b><small>${e(v.type)} · ${e(v.scope)} · чтений ${v.reads}, записей ${v.writes}</small></span><button data-bp="add-get" data-var="${e(v.name)}" title="Узел чтения (Get)">Get</button><button data-bp="add-set" data-var="${e(v.name)}" title="Узел записи (Set)">Set</button></div>`,
-        )
-        .join("") || `<p class="bp-side-hint">Переменных пока нет. Добавьте узел «Объявить переменную».</p>`;
+  /** The × in the middle of the selected wire: one obvious way to remove a connection. */
+  renderLinkHandle() {
+    this.layer.querySelector(".bp-wire-cut")?.remove();
+    const index = this.graph.links.indexOf(this.selectedLink);
+    if (index < 0) return;
+    const path = this.svg.querySelector(`.bp-wire[data-link="${index}"]`);
+    if (!path?.getTotalLength) return;
+    const point = path.getPointAtLength(path.getTotalLength() / 2);
+    this.layer.insertAdjacentHTML("beforeend", `<button class="bp-wire-cut" data-bp="cut-wire" title="Удалить связь (Delete)" style="left:${Math.round(point.x)}px;top:${Math.round(point.y)}px">×</button>`);
+  }
+
+  selectLink(link) {
+    this.selected.clear();
+    this.highlight = null;
+    this.selectedLink = link;
+    this.refreshSelection();
+    this.showDetails();
+    this.applyHighlight();
+    this.renderWires();
+    this.setStatus("Связь выбрана: нажмите × на ней или Delete, чтобы удалить.");
+  }
+
+  cutSelectedLink() {
+    const index = this.graph.links.indexOf(this.selectedLink);
+    if (index < 0) return false;
+    this.checkpoint();
+    this.graph.links.splice(index, 1);
+    this.selectedLink = null;
+    this.setStatus("");
+    this.render();
+    this.changed();
+    return true;
   }
 
   refreshSelection() {
@@ -271,7 +302,7 @@ export class BlueprintEditor {
     };
     const notes = this.notes.get(node.id) ?? "";
     this.details.hidden = false;
-    this.details.innerHTML = `<div class="bp-details-head"><b>${e(nodeTitle(node, this.graph))}</b><button data-bp="close-details" title="Закрыть">×</button></div><datalist id="bp-types">${TYPES.map((t) => `<option value="${e(t)}">`).join("")}</datalist><form class="bp-form">${(forms[node.type] ?? (() => '<p class="bp-side-hint">У этого узла нет настроек.</p>'))()}</form>${notes}<div class="bp-details-actions">${node.start >= 0 && this.options.onOpenLine ? '<button data-bp="open-line">К строке кода</button>' : ""}${node.type !== "entry" ? '<button data-bp="duplicate">Дублировать</button><button data-bp="delete" class="danger">Удалить</button>' : ""}</div>`;
+    this.details.innerHTML = `<div class="bp-details-head"><b>${e(nodeTitle(node, this.graph))}</b><button data-bp="close-details" title="Закрыть">×</button></div><datalist id="bp-types">${TYPES.map((t) => `<option value="${e(t)}">`).join("")}</datalist><form class="bp-form">${(forms[node.type] ?? (() => '<p class="bp-side-hint">У этого блока нет настроек.</p>'))()}</form>${notes}<div class="bp-details-actions">${node.start >= 0 && this.options.onOpenLine ? '<button data-bp="open-line">К строке кода</button>' : ""}${node.type !== "entry" ? '<button data-bp="duplicate">Дублировать</button><button data-bp="delete" class="danger">Удалить</button>' : ""}</div>`;
   }
 
   updateProp(input) {
@@ -462,7 +493,13 @@ export class BlueprintEditor {
       "pointerdown",
       (event) => {
         if (!this.palette.hidden && !event.target.closest(".bp-palette")) this.closePalette();
-        if (event.target.closest(".bp-palette, .bp-hud")) return;
+        if (event.target.closest(".bp-palette, .bp-hud, .bp-wire-cut")) return;
+        const hit = event.target.closest(".bp-wire-hit");
+        if (hit && event.button === 0) {
+          event.preventDefault();
+          canvas.focus({ preventScroll: true });
+          return this.selectLink(this.graph.links[Number(hit.dataset.link)]);
+        }
         const pinEl = event.target.closest(".bp-pin");
         const nodeEl = event.target.closest(".bp-node");
         canvas.focus({ preventScroll: true });
@@ -570,7 +607,7 @@ export class BlueprintEditor {
             const source = this.node(drag.direction === "out" ? drag.node : t.node);
             const fanOut = this.graph.links.filter((l) => l.from === source?.id && l.fromPin === "value").length;
             if (ok && source?.type === "call" && fanOut > 1)
-              this.setStatus(`Вызов ${source.props.name}() подключён к ${fanOut} входам и выполнится ${fanOut} раза. Чтобы вызвать один раз, сохраните результат узлом «Объявить переменную».`, "error");
+              this.setStatus(`Вызов ${source.props.name}() подключён к ${fanOut} входам и выполнится ${fanOut} раза. Чтобы вызвать один раз, сохраните результат в переменную (блок «Объявление»).`, "error");
             if (ok || drag.detached) this.changed();
           } else if (drag.moved && !target) {
             if (drag.detached) {
@@ -595,7 +632,7 @@ export class BlueprintEditor {
     canvas.addEventListener(
       "dblclick",
       (event) => {
-        const wire = event.target.closest(".bp-wire:not(.ghost)");
+        const wire = event.target.closest(".bp-wire-hit");
         if (wire) this.insertReroute(Number(wire.dataset.link), event.clientX, event.clientY);
       },
       { signal },
@@ -609,7 +646,7 @@ export class BlueprintEditor {
           return;
         }
         const control = event.ctrlKey || event.metaKey;
-        if (event.key === "Delete" || event.key === "Backspace") this.deleteSelected();
+        if (event.key === "Delete" || event.key === "Backspace") this.selectedLink ? this.cutSelectedLink() : this.deleteSelected();
         else if (control && event.key.toLowerCase() === "d") this.duplicateSelected();
         else if (control && event.key.toLowerCase() === "z") this.undo(event.shiftKey);
         else if (control && event.key.toLowerCase() === "y") this.undo(true);
@@ -632,12 +669,7 @@ export class BlueprintEditor {
           this.command(button.dataset.bp, button);
           return;
         }
-        const variable = event.target.closest(".bp-var");
-        if (variable) {
-          this.highlight = this.highlight === variable.dataset.var ? null : variable.dataset.var;
-          this.renderVariables();
-          this.applyHighlight();
-        }
+
       },
       { signal },
     );
@@ -683,6 +715,10 @@ export class BlueprintEditor {
         this.render();
         this.fit();
         return this.changed(false);
+      case "cut-wire":
+        return this.cutSelectedLink();
+      case "add-node":
+        return this.openPalette(rect.left + 24, rect.top + rect.height - 360);
       case "palette-pick":
         return this.pickPalette(Number(element.dataset.index));
       case "close-details":
@@ -695,19 +731,6 @@ export class BlueprintEditor {
         const node = this.node([...this.selected][0]);
         if (node) this.options.onOpenLine?.(node);
         return;
-      }
-      case "add-get":
-      case "add-set": {
-        const v = variablesOf(this.graph).find((item) => item.name === element.dataset.var);
-        if (!v) return;
-        const node = this.addNode(
-          name === "add-get" ? { type: "get", props: { name: v.name, type: v.type } } : { type: "set", props: { name: v.name, type: v.type, declare: false, assignOp: "=" } },
-          center.x,
-          center.y,
-        );
-        this.render();
-        this.select(node.id);
-        return this.changed();
       }
     }
   }

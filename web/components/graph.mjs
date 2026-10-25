@@ -65,7 +65,7 @@ export class GraphWidget {
     layer.innerHTML = this.layout.nodes
       .map(
         (node, index) =>
-          `<button class="flow-node kind-${e(node.kind)} ${node.id === this.selected ? "selected" : ""}" data-node="${e(node.id)}" style="left:${node.x}px;top:${node.y}px;width:${node.width}px;height:${node.height}px" aria-label="${e(labels[node.kind] ?? node.kind)}: ${e(node.label)}" title="${e(node.label)}"><span class="flow-node-header"><span>${icon(nodeIcon(node.kind), "", 12)}${e(labels[node.kind] ?? node.kind)}</span><span>${node.line ? "L" + node.line : String(index + 1).padStart(2, "0")}</span></span><code class="flow-node-code">${e(String(node.label).replace(/\s+/g, " "))}</code><i class="node-port port-in"></i><i class="node-port port-out"></i></button>`,
+          `<button class="flow-node kind-${e(node.kind)} ${node.id === this.selected ? "selected" : ""}" data-node="${e(node.id)}" style="left:${node.x}px;top:${node.y}px;width:${node.width}px;height:${node.height}px" aria-label="${e(labels[node.kind] ?? node.kind)}: ${e(node.label)}" title="${e(node.label)}"><span class="flow-node-header"><span>${icon(nodeIcon(node.kind), "", 13)}${e(node.tag ?? labels[node.kind] ?? node.kind)}</span><span>${node.line ? "L" + node.line : String(index + 1).padStart(2, "0")}</span></span><code class="flow-node-code">${e(String(node.label).replace(/\s+/g, " "))}</code><i class="node-port port-in"></i><i class="node-port port-out"></i></button>`,
       )
       .join("");
     this.renderEdges();

@@ -86,7 +86,7 @@ export function generate(graph, { indent = "        " } = {}) {
       case "reroute":
         return sub("a");
       default:
-        throw new CodegenError(`Узел «${node.type}» не даёт значения`, node.id);
+        throw new CodegenError(`Блок «${node.type}» не даёт значения`, node.id);
     }
   }
 
@@ -105,7 +105,7 @@ export function generate(graph, { indent = "        " } = {}) {
     const pad = indent + "    ".repeat(depth);
     const path = [];
     while (id) {
-      if (visiting.has(id)) throw new CodegenError("Exec-провода образуют цикл: используйте узел цикла", id);
+      if (visiting.has(id)) throw new CodegenError("Exec-провода образуют цикл: используйте блок цикла", id);
       visiting.add(id);
       path.push(id);
       const node = nodes.get(id);
@@ -162,7 +162,7 @@ export function generate(graph, { indent = "        " } = {}) {
         case "reroute":
           break;
         default:
-          throw new CodegenError(`Узел «${node.type}» нельзя подключать к exec-проводу`, node.id);
+          throw new CodegenError(`Блок «${node.type}» нельзя подключать к exec-проводу`, node.id);
       }
       if (p.after) for (const line of reindent(String(p.after), pad)) lines.push(line);
       if (["return", "throw", "break", "continue"].includes(node.type)) break;
@@ -173,7 +173,7 @@ export function generate(graph, { indent = "        " } = {}) {
   }
 
   const entry = graph.nodes.find((node) => node.type === "entry");
-  if (!entry) throw new CodegenError("В графе нет узла начала метода");
+  if (!entry) throw new CodegenError("В схеме нет блока начала метода");
   const lines = chain(next(entry.id, "then"), 0);
   return { code: lines.join("\n"), problems };
 }

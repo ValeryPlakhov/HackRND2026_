@@ -40,39 +40,39 @@ const data = (id, label, type = "any") => ({ id, label, kind: "data", type });
 
 /** Catalogue for the palette: what a user can place on the canvas. */
 export const CATALOG = [
-  { group: "Поток", type: "branch", title: "Если (Branch)", props: {} },
-  { group: "Поток", type: "while", title: "Пока (While)", props: {} },
-  { group: "Поток", type: "for", title: "Цикл for", props: { init: "int i = 0", update: "i++" } },
-  { group: "Поток", type: "foreach", title: "Для каждого (ForEach)", props: { name: "item", type: "int" } },
-  { group: "Поток", type: "return", title: "Вернуть (Return)", props: {} },
-  { group: "Поток", type: "break", title: "Прервать цикл (break)", props: {} },
-  { group: "Поток", type: "continue", title: "Следующая итерация (continue)", props: {} },
-  { group: "Поток", type: "throw", title: "Бросить исключение", props: {} },
-  { group: "Переменные", type: "set", title: "Объявить переменную", props: { name: "value", type: "int", declare: true } },
-  { group: "Переменные", type: "set", title: "Записать в переменную", props: { name: "value", type: "int", declare: false } },
-  { group: "Переменные", type: "get", title: "Прочитать переменную", props: { name: "value", type: "int" } },
-  { group: "Значения", type: "literal", title: "Число", props: { value: "0", type: "int" } },
-  { group: "Значения", type: "literal", title: "Текст", props: { value: '"Привет"', type: "String" } },
-  { group: "Значения", type: "literal", title: "Логическое true/false", props: { value: "true", type: "boolean" } },
+  { group: "Поток", type: "branch", title: "if (условие)", props: {} },
+  { group: "Поток", type: "while", title: "while (условие)", props: {} },
+  { group: "Поток", type: "for", title: "for (init; условие; шаг)", props: { init: "int i = 0", update: "i++" } },
+  { group: "Поток", type: "foreach", title: "for (Тип x : коллекция)", props: { name: "item", type: "int" } },
+  { group: "Поток", type: "return", title: "return", props: {} },
+  { group: "Поток", type: "break", title: "break", props: {} },
+  { group: "Поток", type: "continue", title: "continue", props: {} },
+  { group: "Поток", type: "throw", title: "throw", props: {} },
+  { group: "Переменные", type: "set", title: "Объявление: Тип x = …", props: { name: "value", type: "int", declare: true } },
+  { group: "Переменные", type: "set", title: "Присваивание: x = …", props: { name: "value", type: "int", declare: false } },
+  { group: "Переменные", type: "get", title: "Чтение переменной", props: { name: "value", type: "int" } },
+  { group: "Значения", type: "literal", title: "Число: 0", props: { value: "0", type: "int" } },
+  { group: "Значения", type: "literal", title: "Строка: \"…\"", props: { value: '"текст"', type: "String" } },
+  { group: "Значения", type: "literal", title: "boolean: true / false", props: { value: "true", type: "boolean" } },
   { group: "Значения", type: "expr", title: "Выражение Java", props: { code: "0", type: "any" } },
   ...["+", "-", "*", "/", "%"].map((op) => ({ group: "Математика", type: "op", title: `a ${op} b`, props: { op } })),
   ...["==", "!=", "<", "<=", ">", ">="].map((op) => ({ group: "Сравнение", type: "op", title: `a ${op} b`, props: { op } })),
-  { group: "Логика", type: "op", title: "a && b (И)", props: { op: "&&" } },
-  { group: "Логика", type: "op", title: "a || b (ИЛИ)", props: { op: "||" } },
-  { group: "Логика", type: "op", title: "!a (НЕ)", props: { op: "!", unary: true } },
-  { group: "Логика", type: "select", title: "Выбор c ? a : b", props: {} },
-  { group: "Ввод-вывод", type: "call", title: "Печать строки (println)", props: { target: "System.out", name: "println", argc: 1, pure: false } },
-  { group: "Ввод-вывод", type: "call", title: "Печать без перевода строки (print)", props: { target: "System.out", name: "print", argc: 1, pure: false } },
-  { group: "Ввод-вывод", type: "call", title: "Прочитать целое (Scanner.nextInt)", props: { target: "input", name: "nextInt", argc: 0, pure: true, returnType: "int" } },
-  { group: "Ввод-вывод", type: "call", title: "Прочитать строку (Scanner.nextLine)", props: { target: "input", name: "nextLine", argc: 0, pure: true, returnType: "String" } },
-  { group: "Ввод-вывод", type: "code", title: "Создать Scanner(System.in)", props: { code: "java.util.Scanner input = new java.util.Scanner(System.in);" } },
-  { group: "Методы", type: "call", title: "Вызов метода (как инструкция)", props: { target: "", name: "method", argc: 0, pure: false } },
-  { group: "Методы", type: "call", title: "Вызов метода (значение)", props: { target: "", name: "method", argc: 0, pure: true } },
+  { group: "Логика", type: "op", title: "a && b", props: { op: "&&" } },
+  { group: "Логика", type: "op", title: "a || b", props: { op: "||" } },
+  { group: "Логика", type: "op", title: "!a", props: { op: "!", unary: true } },
+  { group: "Логика", type: "select", title: "c ? a : b", props: {} },
+  { group: "Ввод-вывод", type: "call", title: "System.out.println(…)", props: { target: "System.out", name: "println", argc: 1, pure: false } },
+  { group: "Ввод-вывод", type: "call", title: "System.out.print(…)", props: { target: "System.out", name: "print", argc: 1, pure: false } },
+  { group: "Ввод-вывод", type: "call", title: "Scanner.nextInt()", props: { target: "input", name: "nextInt", argc: 0, pure: true, returnType: "int" } },
+  { group: "Ввод-вывод", type: "call", title: "Scanner.nextLine()", props: { target: "input", name: "nextLine", argc: 0, pure: true, returnType: "String" } },
+  { group: "Ввод-вывод", type: "code", title: "new Scanner(System.in)", props: { code: "java.util.Scanner input = new java.util.Scanner(System.in);" } },
+  { group: "Методы", type: "call", title: "Вызов метода: инструкция", props: { target: "", name: "method", argc: 0, pure: false } },
+  { group: "Методы", type: "call", title: "Вызов метода: значение", props: { target: "", name: "method", argc: 0, pure: true } },
   { group: "Методы", type: "call", title: "Math.max(a, b)", props: { target: "Math", name: "max", argc: 2, pure: true, returnType: "int" } },
-  { group: "Объекты", type: "member", title: "Поле объекта (x.length)", props: { name: "length", type: "int" } },
-  { group: "Объекты", type: "index", title: "Элемент массива a[i]", props: {} },
-  { group: "Объекты", type: "cast", title: "Приведение типа (int)", props: { type: "int" } },
-  { group: "Java", type: "code", title: "Инструкция Java", props: { code: "// код" } },
+  { group: "Объекты", type: "member", title: "x.поле", props: { name: "length", type: "int" } },
+  { group: "Объекты", type: "index", title: "a[i]", props: {} },
+  { group: "Объекты", type: "cast", title: "(Тип) x", props: { type: "int" } },
+  { group: "Java", type: "code", title: "Произвольный код Java", props: { code: "// код" } },
 ];
 
 /** Pins of a node, computed from its type and properties. */
@@ -110,13 +110,13 @@ export function pinsOf(node, graph) {
     case "select":
       return { inputs: [data("condition", "Условие", "boolean"), data("a", "Если да"), data("b", "Если нет")], outputs: [data("value", "")] };
     case "branch":
-      return { inputs: [exec("in"), data("condition", "Условие", "boolean")], outputs: [exec("true", "Да"), exec("false", "Нет"), exec("then", "Затем")] };
+      return { inputs: [exec("in"), data("condition", "условие", "boolean")], outputs: [exec("true", "true"), exec("false", "false"), exec("then", "дальше")] };
     case "while":
-      return { inputs: [exec("in"), data("condition", "Пока", "boolean")], outputs: [exec("body", "Тело"), exec("then", "Завершено")] };
+      return { inputs: [exec("in"), data("condition", "условие", "boolean")], outputs: [exec("body", "тело"), exec("then", "дальше")] };
     case "for":
-      return { inputs: [exec("in"), data("condition", "Условие", "boolean")], outputs: [exec("body", "Тело"), exec("then", "Завершено")] };
+      return { inputs: [exec("in"), data("condition", "условие", "boolean")], outputs: [exec("body", "тело"), exec("then", "дальше")] };
     case "foreach":
-      return { inputs: [exec("in"), data("collection", "Коллекция", "array")], outputs: [exec("body", "Тело"), exec("then", "Завершено")] };
+      return { inputs: [exec("in"), data("collection", "коллекция", "array")], outputs: [exec("body", "тело"), exec("then", "дальше")] };
     case "call": {
       const args = Array.from({ length: Number(p.argc ?? 0) }, (_, i) => data("a" + i, "арг " + (i + 1)));
       return {
@@ -150,11 +150,11 @@ export function nodeTitle(node, graph) {
   const p = node.props ?? {};
   switch (node.type) {
     case "entry":
-      return `▶ ${graph?.method?.name ?? "метод"}(${(graph?.method?.params ?? []).map((x) => x.name).join(", ")})`;
+      return `${graph?.method?.returnType ?? "void"} ${graph?.method?.name ?? "method"}(${(graph?.method?.params ?? []).map((x) => `${x.type} ${x.name}`).join(", ")})`;
     case "return":
-      return "Вернуть";
+      return "return";
     case "set":
-      return p.declare ? `Объявить ${p.type} ${p.name}` : ["++", "--"].includes(p.assignOp) ? `${p.name}${p.assignOp}` : `${p.name} ${p.assignOp && p.assignOp !== "=" ? p.assignOp : "="}`;
+      return p.declare ? `${p.type} ${p.name}` : ["++", "--"].includes(p.assignOp) ? `${p.name}${p.assignOp}` : `${p.name} ${p.assignOp && p.assignOp !== "=" ? p.assignOp : "="}`;
     case "get":
       return p.name;
     case "literal":
@@ -166,13 +166,13 @@ export function nodeTitle(node, graph) {
     case "select":
       return "c ? a : b";
     case "branch":
-      return "Если";
+      return "if";
     case "while":
-      return "Пока";
+      return "while";
     case "for":
       return `for (${p.init ?? ""}; …; ${p.update ?? ""})`;
     case "foreach":
-      return `Для каждого ${p.type} ${p.name}`;
+      return `for (${p.type} ${p.name} : …)`;
     case "call":
       return `${p.target && !p.targetPin ? p.target + "." : ""}${p.name}()`;
     case "member":
@@ -182,7 +182,7 @@ export function nodeTitle(node, graph) {
     case "cast":
       return `(${p.type})`;
     case "throw":
-      return "Бросить исключение";
+      return "throw";
     case "break":
       return "break";
     case "continue":

@@ -41,7 +41,7 @@ export function titleActions(project, busy) {
 }
 
 export function welcome({ recent = [], project = null, summary = "" }) {
-  return `<section class="ide-welcome"><div class="welcome-content">${project ? `<div class="welcome-resume"><div><small>Продолжить</small><b>${e(project.name)}</b><span>${e(summary || project.root)}</span></div><div>${button("workspace", "Обзор", "nodes", "ide-button small primary", 'data-workspace="overview"')}${button("workspace", "Задачи", "target", "ide-button small", 'data-workspace="tasks"')}${button("workspace", "Проверка", "shield", "ide-button small", 'data-workspace="verify"')}</div></div>` : ""}<div class="welcome-eyebrow"><img src="/ide/mark.svg" alt=""/>JAVA ↔ БЛУПРИНТ · АНАЛИЗ · ПРОВЕРКА ПОВЕДЕНИЯ</div><h1>Разберитесь в чужом Java-коде.<br><span>Меняйте без страха сломать.</span></h1><p class="welcome-lead">Откройте проект и сразу увидите карту: точку входа, дерево вызовов, путь данных от ввода к выводу и самые рискованные методы. IDE сама исправит то, что умеет, и после каждого изменения запустит старую и новую версию на ваших тестах. Если поведение разошлось, изменение откатывается одной кнопкой.</p><div class="welcome-actions">${button("open-folder", "Открыть папку", "folder", "ide-button primary large")}${button("open-example", "Открыть пример монолита", "rocket", "ide-button large", 'data-example="shop-monolith"')}${button("new-project", "Новый проект", "plus", "ide-button large subtle")}</div><div class="welcome-flow"><div><span>Обзор</span><b>Понять программу</b><small>Карта, дерево вызовов, с чего начать</small></div><i>→</i><div><span>Метод</span><b>Прочитать логику</b><small>Схема шагов рядом с кодом, правка блоками</small></div><i>→</i><div><span>Задачи</span><b>Исправить</b><small>Риски по приоритету, автоисправления</small></div><i>→</i><div><span>Проверка</span><b>Ничего не сломать</b><small>Эталон против новой версии на тестах</small></div></div><div class="welcome-bottom"><span>${glyph("folder", 15)}Файлы сохраняются в вашу папку</span><span>${glyph("bolt", 15)}Java 21 на сервере</span><span>${glyph("code", 15)}Исходники остаются обычной Java</span></div></div><aside class="welcome-right"><div class="welcome-graph"><div class="welcome-node entry">${glyph("method", 16)}countPairs(values)</div><span class="welcome-wire"></span><div class="welcome-node condition">${glyph("loop", 16)}for a · for b · O(n²)</div><div class="welcome-branches"><div><small>было</small><span class="welcome-wire"></span><div class="welcome-node">Сравнить каждую пару</div></div><div><small>стало</small><span class="welcome-wire"></span><div class="welcome-node result">Индекс частот · O(n)</div></div></div><span class="welcome-graph-caption">Диагноз → патч → проверка поведения ✓</span></div><div class="welcome-recent"><h2>Примеры</h2>${EXAMPLES.map((item) => `<button data-action="open-example" data-example="${item.id}">${glyph(item.icon, 17)}<span><b>${e(item.title)}</b><small>${e(item.detail)}</small></span>${glyph("chevron", 14)}</button>`).join("")}<h2>Недавние проекты</h2>${
+  return `<section class="ide-welcome"><div class="welcome-content">${project ? `<div class="welcome-resume"><div><small>Продолжить</small><b>${e(project.name)}</b><span>${e(summary || project.root)}</span></div><div>${button("workspace", "Обзор", "nodes", "ide-button small primary", 'data-workspace="overview"')}${button("workspace", "Задачи", "target", "ide-button small", 'data-workspace="tasks"')}${button("workspace", "Проверка", "shield", "ide-button small", 'data-workspace="verify"')}</div></div>` : ""}<div class="welcome-eyebrow"><img src="/ide/mark.svg" alt=""/>JAVA ↔ БЛУПРИНТ · АНАЛИЗ · ПРОВЕРКА ПОВЕДЕНИЯ</div><h1>Разберитесь в чужом Java-коде.<br><span>Меняйте без страха сломать.</span></h1><p class="welcome-lead">Откройте проект и сразу увидите карту: точку входа, дерево вызовов, путь данных от ввода к выводу и самые рискованные методы. IDE сама исправит то, что умеет, и после каждого изменения запустит старую и новую версию на ваших тестах. Если поведение разошлось, изменение откатывается одной кнопкой.</p><div class="welcome-actions">${button("open-folder", "Открыть папку", "folder", "ide-button primary large")}${button("open-example", "Открыть пример монолита", "rocket", "ide-button large", 'data-example="shop-monolith"')}${button("new-project", "Новый проект", "plus", "ide-button large subtle")}</div><div class="welcome-flow"><div><span>Обзор</span><b>Понять программу</b><small>Карта, дерево вызовов, с чего начать</small></div><i>→</i><div><span>Метод</span><b>Прочитать логику</b><small>Схема шагов рядом с кодом, правка блоками</small></div><i>→</i><div><span>Задачи</span><b>Исправить</b><small>Риски по приоритету, автоисправления</small></div><i>→</i><div><span>Проверка</span><b>Ничего не сломать</b><small>Исходная версия против новой версии на тестах</small></div></div><div class="welcome-bottom"><span>${glyph("folder", 15)}Файлы сохраняются в вашу папку</span><span>${glyph("bolt", 15)}Java 21 на сервере</span><span>${glyph("code", 15)}Исходники остаются обычной Java</span></div></div><aside class="welcome-right"><div class="welcome-graph"><div class="welcome-node entry">${glyph("method", 16)}countPairs(values)</div><span class="welcome-wire"></span><div class="welcome-node condition">${glyph("loop", 16)}for a · for b · O(n²)</div><div class="welcome-branches"><div><small>было</small><span class="welcome-wire"></span><div class="welcome-node">Сравнить каждую пару</div></div><div><small>стало</small><span class="welcome-wire"></span><div class="welcome-node result">Индекс частот · O(n)</div></div></div><span class="welcome-graph-caption">Диагноз → патч → проверка поведения ✓</span></div><div class="welcome-recent"><h2>Примеры</h2>${EXAMPLES.map((item) => `<button data-action="open-example" data-example="${item.id}">${glyph(item.icon, 17)}<span><b>${e(item.title)}</b><small>${e(item.detail)}</small></span>${glyph("chevron", 14)}</button>`).join("")}<h2>Недавние проекты</h2>${
     recent.length
       ? recent
           .slice(0, 4)
@@ -102,8 +102,8 @@ export function toolbar(document, mode, project, busy) {
   return `<div class="ide-breadcrumb">${glyph("folder", 14)}${breadcrumbs}</div><span class="toolbar-spacer"></span>${
     document?.language === "java"
       ? `<div class="ide-mode-switch" role="group" aria-label="Представление файла">${[
-          ["blueprint", "Блупринт", "graph"],
-          ["split", "Вместе", "split"],
+          ["blueprint", "Схема", "graph"],
+          ["split", "Схема и код", "split"],
           ["code", "Код", "code"],
         ]
           .map(
@@ -112,7 +112,7 @@ export function toolbar(document, mode, project, busy) {
           )
           .join("")}</div>`
       : ""
-  }${document?.dirty && !document.readOnly ? button("save", "Сохранить", "download", "ide-button small primary") : ""}${button("verify", "Проверить", "shield", "ide-button small", 'title="Сравнить поведение с эталоном (F6)"')}`;
+  }${document?.dirty && !document.readOnly ? button("save", "Сохранить", "download", "ide-button small primary") : ""}${button("verify", "Проверить", "shield", "ide-button small", 'title="Сравнить поведение с исходной версией (F6)"')}`;
 }
 
 export function projectTree(
@@ -155,7 +155,7 @@ export function outlineSidebar(document) {
   const model = document.currentModel;
   if (!model)
     return `<div class="sidebar-empty compact"><p>Структура обновляется после изменения кода.</p>${button("analyse", "Обновить", "loop", "ide-button small")}</div>`;
-  return `<div class="outline-file"><span class="file-type java">J</span>${e(document.name)}</div>${model.package ? `<p class="outline-package">${e(model.package)}</p>` : ""}<div class="outline-methods">${model.methods.map((method) => `<button data-action="select-method" data-id="${e(method.id)}" class="${method.id === document.methodId ? "active" : ""}"><span>${glyph("method", 15)}</span><div><b>${e(method.name)}</b><small>${e(method.signature)}</small></div><em>${method.line}</em></button>`).join("") || '<p class="sidebar-note">У этого файла нет методов.</p>'}</div><p class="sidebar-note">Структуру разбирает javac. Выберите метод, чтобы открыть его блупринт.</p>`;
+  return `<div class="outline-file"><span class="file-type java">J</span>${e(document.name)}</div>${model.package ? `<p class="outline-package">${e(model.package)}</p>` : ""}<div class="outline-methods">${model.methods.map((method) => `<button data-action="select-method" data-id="${e(method.id)}" class="${method.id === document.methodId ? "active" : ""}"><span>${glyph("method", 15)}</span><div><b>${e(method.name)}</b><small>${e(method.signature)}</small></div><em>${method.line}</em></button>`).join("") || '<p class="sidebar-note">У этого файла нет методов.</p>'}</div><p class="sidebar-note">Структуру разбирает javac. Выберите метод, чтобы открыть его схему.</p>`;
 }
 
 export function gitSidebar(result, loading) {
@@ -179,10 +179,9 @@ export function historySidebar(document, entries, loading) {
   return `<div class="history-file">${glyph("history", 16)}<b>${e(document.name)}</b></div><p class="sidebar-note">До 20 предыдущих версий перед сохранением. Хранятся локально в данных IDE.</p>${loading ? '<p class="sidebar-note">Загрузка…</p>' : entries.length ? `<div class="history-entries">${entries.map((entry, index) => `<button data-action="history-version" data-version="${e(entry.id)}"><i></i><span><b>${e(timeLabel(entry.time))}</b><small>${entry.reason === "before-trash" ? "Перед удалением" : "Перед сохранением"} · ${byteSize(entry.bytes)}</small></span>${glyph("chevron", 13)}</button>`).join("")}</div>` : '<div class="sidebar-empty compact"><h3>Пока нет версий</h3><p>После первого сохранения здесь появится предыдущая версия.</p></div>'}`;
 }
 
-export function graphHeader(document) {
-  const model = document.currentModel;
-  const methods = model?.methods ?? [];
-  return `<div class="ide-graph-header"><div><span class="graph-header-icon">${glyph("graph", 17)}</span><b>Блупринт</b><span class="graph-live-label ${!model ? "stale" : ""}">${model ? "Из Java-кода" : "Нужно обновить"}</span></div><label class="sr-only" for="ide-method-select">Метод</label><select id="ide-method-select" ${!methods.length ? "disabled" : ""}>${methods.map((method) => `<option value="${e(method.id)}" ${method.id === document.methodId ? "selected" : ""}>${e(method.owner + " · " + method.name)}</option>`).join("") || "<option>Нет методов</option>"}</select><span id="ide-method-metrics" class="q-metrics"></span>${button("new-method", "Новый метод", "plus", "ide-button small subtle", model?.valid ? "" : "disabled")}${iconButton("analyse", "Обновить схему", "loop")}</div><div id="ide-method-why"></div>`;
+/** The method row now lives in the context strip above the diagram. */
+export function graphHeader() {
+  return "";
 }
 
 export function graphEmpty(document, analysing) {
@@ -190,12 +189,12 @@ export function graphEmpty(document, analysing) {
   if (analysing)
     return `<div class="graph-empty"><span class="ide-spinner"></span><h3>Читаем Java-код</h3><p>Собираем методы и связи между блоками.</p></div>`;
   if (document.analysisError)
-    return `<div class="graph-empty error">${glyph("warning", 35)}<h3>Не удалось построить блупринт</h3><p>${e(document.analysisError)}</p>${button("analyse", "Попробовать ещё раз", "loop", "ide-button small")}</div>`;
+    return `<div class="graph-empty error">${glyph("warning", 35)}<h3>Не удалось построить схему</h3><p>${e(document.analysisError)}</p>${button("analyse", "Попробовать ещё раз", "loop", "ide-button small")}</div>`;
   if (model && !model.valid)
     return `<div class="graph-empty error">${glyph("warning", 35)}<h3>Сначала исправьте синтаксис</h3><p>Ошибка в Java мешает построить точную схему. Подробности — в панели «Проблемы».</p>${button("show-problems", "Показать ошибки", "warning", "ide-button small")}</div>`;
   if (model && !model.methods.length)
     return `<div class="graph-empty">${glyph("layers", 35)}<h3>Здесь пока нет методов</h3><p>Выберите класс с методами или добавьте метод в редакторе кода.</p>${button("show-code", "Открыть код", "code", "ide-button small")}</div>`;
-  return `<div class="graph-empty">${glyph("graph", 35)}<h3>Код изменился</h3><p>Обновите блупринт, чтобы увидеть текущую логику.</p>${button("analyse", "Построить блупринт", "loop", "ide-button primary small")}</div>`;
+  return `<div class="graph-empty">${glyph("graph", 35)}<h3>Код изменился</h3><p>Обновите схему, чтобы увидеть текущую логику.</p>${button("analyse", "Построить схему", "loop", "ide-button primary small")}</div>`;
 }
 
 export function nodeInspector(node, document, findingsHtml = "") {
@@ -241,8 +240,8 @@ export function modalFrame(title, content, footer = "", className = "") {
 
 export function languageModal() {
   return modalFrame(
-    "Язык блупринтов",
-    `<p class="modal-lead">Сейчас IDE работает с Java. Остальные языки запланированы: их блупринты пока недоступны.</p><div class="language-grid">${LANGUAGES.map((language) => `<button class="language-card ${language.available ? "available" : "coming"}" data-action="${language.available ? "choose-java" : "coming-soon"}" data-language="${e(language.name)}" aria-disabled="${!language.available}"><span style="--language-color:${language.color}">${e(language.extension)}</span><div><h3>${e(language.name)}</h3><p>${e(language.description)}</p></div><small>${language.available ? "Доступно" : "Coming soon"}</small></button>`).join("")}</div>`,
+    "Язык блоков",
+    `<p class="modal-lead">Сейчас IDE работает с Java. Остальные языки запланированы: их блоки пока недоступны.</p><div class="language-grid">${LANGUAGES.map((language) => `<button class="language-card ${language.available ? "available" : "coming"}" data-action="${language.available ? "choose-java" : "coming-soon"}" data-language="${e(language.name)}" aria-disabled="${!language.available}"><span style="--language-color:${language.color}">${e(language.extension)}</span><div><h3>${e(language.name)}</h3><p>${e(language.description)}</p></div><small>${language.available ? "Доступно" : "Coming soon"}</small></button>`).join("")}</div>`,
     button("close-modal", "Готово", null, "ide-button primary"),
   );
 }
@@ -272,8 +271,8 @@ export function settingsModal(settings) {
       .join(
         "",
       )}</select></label><label>Размер кода<select name="fontSize">${[11, 12, 13, 14, 15, 16, 18, 20, 22, 24].map((value) => `<option value="${value}" ${settings.fontSize === value ? "selected" : ""}>${value} px</option>`).join("")}</select></label><label>Отступ<select name="tabSize">${[2, 4, 8].map((value) => `<option value="${value}" ${settings.tabSize === value ? "selected" : ""}>${value} пробела</option>`).join("")}</select></label><label>Открывать Java как<select name="editorView">${[
-      ["blueprint", "Блупринт"],
-      ["split", "Код и блупринт"],
+      ["blueprint", "Схема"],
+      ["split", "Код и схема"],
       ["code", "Код"],
     ]
       .map(
@@ -282,7 +281,7 @@ export function settingsModal(settings) {
       )
       .join(
         "",
-      )}</select></label><label>Направление графа<select name="graphDirection"><option value="TB" ${settings.graphDirection === "TB" ? "selected" : ""}>Сверху вниз</option><option value="LR" ${settings.graphDirection === "LR" ? "selected" : ""}>Слева направо</option></select></label></div><div class="settings-checkboxes">${checkbox("autoAnalyse", "Обновлять блупринт автоматически", "После паузы при редактировании Java")}${checkbox("wordWrap", "Переносить длинные строки", "Для удобства чтения исходного кода")}${checkbox("restoreSession", "Запоминать открытые вкладки", "Отдельно для каждой папки проекта")}${checkbox("reduceMotion", "Уменьшить анимацию", "Более спокойные переходы в интерфейсе")}${checkbox("showWhitespace", "Выделять область отступов", "Вертикальные направляющие в редакторе")}</div><p class="settings-local-note">Настройки хранятся только на этом компьютере.</p></form>`,
+      )}</select></label><label>Направление схемы<select name="graphDirection"><option value="TB" ${settings.graphDirection === "TB" ? "selected" : ""}>Сверху вниз</option><option value="LR" ${settings.graphDirection === "LR" ? "selected" : ""}>Слева направо</option></select></label></div><div class="settings-checkboxes">${checkbox("autoAnalyse", "Обновлять схему автоматически", "После паузы при редактировании Java")}${checkbox("wordWrap", "Переносить длинные строки", "Для удобства чтения исходного кода")}${checkbox("restoreSession", "Запоминать открытые вкладки", "Отдельно для каждой папки проекта")}${checkbox("reduceMotion", "Уменьшить анимацию", "Более спокойные переходы в интерфейсе")}${checkbox("showWhitespace", "Выделять область отступов", "Вертикальные направляющие в редакторе")}</div><p class="settings-local-note">Настройки хранятся только на этом компьютере.</p></form>`,
     `<button class="ide-button primary" type="submit" form="ide-settings-form">Сохранить настройки</button>`,
   );
 }
@@ -314,7 +313,7 @@ export function overviewModal(project, overview) {
       )
       .join(
         "",
-      )}</div></section><section><h3>О проекте</h3><p>Система сборки: <b>${e(project.buildSystem)}</b></p><p>Блупринты строятся для методов выбранного файла через настоящий Java-парсер. Навигационный обзор проекта использует быстрый лексический индекс.</p>${project.buildSystem !== "plain" ? '<div class="overview-notice">Maven/Gradle-проект можно открыть и изучать. Встроенная сборка использует стандартную Java 21; загрузка зависимостей и запуск build-скриптов пока не реализованы.</div>' : ""}${overview.limited ? '<div class="overview-notice">Обзор ограничен первыми 300 Java-файлами и 8 МиБ исходников. Остальные файлы доступны через дерево проекта.</div>' : ""}<h3>Файлы проекта</h3>${overview.configs.map((item) => `<button class="overview-config" data-action="open-config" data-path="${e(item.path)}">${glyph("file", 13)}${e(item.path)}</button>`).join("")}</section></div>`,
+      )}</div></section><section><h3>О проекте</h3><p>Система сборки: <b>${e(project.buildSystem)}</b></p><p>Схемы строятся для методов выбранного файла через настоящий Java-парсер. Навигационный обзор проекта использует быстрый лексический индекс.</p>${project.buildSystem !== "plain" ? '<div class="overview-notice">Maven/Gradle-проект можно открыть и изучать. Встроенная сборка использует стандартную Java 21; загрузка зависимостей и запуск build-скриптов пока не реализованы.</div>' : ""}${overview.limited ? '<div class="overview-notice">Обзор ограничен первыми 300 Java-файлами и 8 МиБ исходников. Остальные файлы доступны через дерево проекта.</div>' : ""}<h3>Файлы проекта</h3>${overview.configs.map((item) => `<button class="overview-config" data-action="open-config" data-path="${e(item.path)}">${glyph("file", 13)}${e(item.path)}</button>`).join("")}</section></div>`,
     button("close-modal", "К проекту", null, "ide-button primary"),
     "wide",
   );
@@ -323,8 +322,8 @@ export function overviewModal(project, overview) {
 export function newMethodModal(classes, selected) {
   return modalFrame(
     "Новый метод из блоков",
-    `<form id="new-method-form"><p class="modal-lead">IDE добавит пустой метод в класс и откроет его блупринт. Дальше стройте логику узлами: правый клик по полю — палитра, провода тянутся от пинов.</p><label class="modal-field">Класс<select name="owner">${classes.filter((item) => item.kind === "CLASS").map((item) => `<option ${item.name === selected ? "selected" : ""}>${e(item.name)}</option>`).join("")}</select></label><label class="modal-field">Имя метода<input name="name" value="calculate" required autocomplete="off" pattern="[A-Za-z_$][A-Za-z0-9_$]*"/></label><label class="modal-field">Тип результата<input name="returnType" value="int" list="new-method-types" autocomplete="off"/><datalist id="new-method-types">${["void", "int", "long", "double", "boolean", "String"].map((type) => `<option value="${type}">`).join("")}</datalist></label><label class="modal-field">Параметры<input name="params" value="int a, int b" autocomplete="off" placeholder="int a, String name"/></label><label class="setting-checkbox"><input type="checkbox" name="static" checked/><span><b>static</b><small>Метод класса, вызывается без объекта</small></span></label></form>`,
-    '<button type="submit" form="new-method-form" class="ide-button primary">Создать и открыть блупринт</button>',
+    `<form id="new-method-form"><p class="modal-lead">IDE добавит пустой метод в класс и откроет его схему. Дальше стройте логику блоками: правый клик по полю — палитра, провода тянутся от пинов.</p><label class="modal-field">Класс<select name="owner">${classes.filter((item) => item.kind === "CLASS").map((item) => `<option ${item.name === selected ? "selected" : ""}>${e(item.name)}</option>`).join("")}</select></label><label class="modal-field">Имя метода<input name="name" value="calculate" required autocomplete="off" pattern="[A-Za-z_$][A-Za-z0-9_$]*"/></label><label class="modal-field">Тип результата<input name="returnType" value="int" list="new-method-types" autocomplete="off"/><datalist id="new-method-types">${["void", "int", "long", "double", "boolean", "String"].map((type) => `<option value="${type}">`).join("")}</datalist></label><label class="modal-field">Параметры<input name="params" value="int a, int b" autocomplete="off" placeholder="int a, String name"/></label><label class="setting-checkbox"><input type="checkbox" name="static" checked/><span><b>static</b><small>Метод класса, вызывается без объекта</small></span></label></form>`,
+    '<button type="submit" form="new-method-form" class="ide-button primary">Создать и открыть схему</button>',
   );
 }
 
@@ -345,7 +344,7 @@ export function nodeEditModal(node, document, action = "replace") {
         : "Новый блок после выбранного"
       : "Изменить блок",
     `<p class="modal-lead">${e(nodeLabel(node.kind))} · строка ${node.line}. ${insert ? "Введите Java-инструкцию: она станет новым блоком на схеме." : "Изменение сначала проверит Java-парсер, затем оно появится в редакторе."} Сохраните файл, чтобы записать его на диск.</p><form id="edit-node-form"><label class="modal-field">${insert ? "Java-инструкция" : "Java для этого блока"}<textarea name="code" class="modal-code" rows="9" required spellcheck="false">${e(insert ? 'System.out.println("Шаг");' : node.editCode)}</textarea></label><div id="node-edit-error" class="modal-inline-error" role="alert" hidden></div></form>`,
-    `<button type="submit" form="edit-node-form" class="ide-button primary">${insert ? "Добавить блок" : "Применить к блупринту"}</button>`,
+    `<button type="submit" form="edit-node-form" class="ide-button primary">${insert ? "Добавить блок" : "Применить к схеме"}</button>`,
     "wide",
   );
 }
@@ -353,7 +352,7 @@ export function nodeEditModal(node, document, action = "replace") {
 export function aboutModal(boot) {
   return modalFrame(
     "Blueprints IDE 4",
-    `<div class="about-brand"><img src="/ide/mark.svg" alt=""/><div><h3>Java, которую видно и можно проверить</h3><p>Веб-IDE: карта проекта, схемы методов и блоки, диагностика и Big O, исправления и проверка сохранения поведения.</p></div></div><dl class="about-facts"><dt>Версия</dt><dd>${e(boot.version)}</dd><dt>Java</dt><dd>${e(boot.runtime?.java ?? "21")}</dd><dt>Данные</dt><dd>Файлы остаются в вашей папке (браузер сохраняет их через File System Access API), разбор и запуск выполняет Java-сервер</dd></dl><p class="modal-note">Java → AST javac → граф методов → правки → Java → javac + JVM → сравнение с эталоном. Полноценный отладчик JVM, загрузка зависимостей Maven/Gradle и другие языки в эту версию не входят.</p>`,
+    `<div class="about-brand"><img src="/ide/mark.svg" alt=""/><div><h3>Java, которую видно и можно проверить</h3><p>Веб-IDE: карта проекта, схемы методов и блоки, диагностика и Big O, исправления и проверка сохранения поведения.</p></div></div><dl class="about-facts"><dt>Версия</dt><dd>${e(boot.version)}</dd><dt>Java</dt><dd>${e(boot.runtime?.java ?? "21")}</dd><dt>Данные</dt><dd>Файлы остаются в вашей папке (браузер сохраняет их через File System Access API), разбор и запуск выполняет Java-сервер</dd></dl><p class="modal-note">Java → AST javac → граф методов → правки → Java → javac + JVM → сравнение с исходной версией. Полноценный отладчик JVM, загрузка зависимостей Maven/Gradle и другие языки в эту версию не входят.</p>`,
     button("close-modal", "Готово", null, "ide-button primary"),
   );
 }

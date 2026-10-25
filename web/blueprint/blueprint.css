@@ -21,7 +21,7 @@
   min-height: 0;
   background: var(--bg, #f5f7fb);
   color: var(--text, #25314a);
-  font: 12px "Segoe UI", system-ui, sans-serif;
+  font: 13.4px "Segoe UI", system-ui, sans-serif;
   user-select: none;
 }
 :root[data-theme="dark"] .bp-root {
@@ -33,84 +33,6 @@
   --cat-pure: #4cc3bc;
   --cat-value: #9aa6ba;
   --cat-code: #c9a46a;
-}
-.bp-vars {
-  width: 214px;
-  flex: none;
-  overflow: auto;
-  background: var(--surface, #fff);
-  border-right: 1px solid var(--line, #e3e8f1);
-  padding: 8px 0;
-}
-.bp-side-title {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--muted, #78849a);
-  padding: 8px 12px 6px;
-}
-.bp-side-hint {
-  color: var(--muted, #78849a);
-  font-size: 11px;
-  line-height: 1.55;
-  padding: 0 12px;
-  margin: 4px 0;
-}
-.bp-var {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 5px 8px 5px 12px;
-  cursor: pointer;
-  border-left: 3px solid transparent;
-}
-.bp-var:hover {
-  background: var(--surface-hover, #eff3fa);
-}
-.bp-var.active {
-  background: var(--accent-soft, #edf2ff);
-  border-left-color: var(--accent, #3767df);
-}
-.bp-var i {
-  width: 9px;
-  height: 9px;
-  border-radius: 2px;
-  flex: none;
-}
-.bp-var span {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  flex: 1;
-}
-.bp-var b {
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.bp-var small {
-  color: var(--muted, #78849a);
-  font-size: 10px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.bp-var button,
-.bp-hud button,
-.bp-details-actions button {
-  background: var(--surface, #fff);
-  border: 1px solid var(--line-strong, #cbd5e5);
-  color: var(--text, #25314a);
-  border-radius: 5px;
-  font-size: 10px;
-  padding: 2px 7px;
-  cursor: pointer;
-}
-.bp-var button:hover,
-.bp-hud button:hover,
-.bp-details-actions button:hover {
-  background: var(--surface-hover, #eff3fa);
 }
 .bp-canvas {
   position: relative;
@@ -134,10 +56,48 @@
 }
 .bp-wire {
   fill: none;
-  stroke-width: 2;
+  stroke-width: 2.6;
   stroke-linejoin: round;
+  pointer-events: none;
+}
+.bp-wire-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 18;
   pointer-events: stroke;
   cursor: pointer;
+}
+.bp-wire-hit:hover + .bp-wire {
+  stroke-width: 5;
+}
+.bp-wire.selected {
+  stroke: var(--accent, #3767df) !important;
+  stroke-width: 5;
+}
+.bp-wire-cut {
+  position: absolute;
+  z-index: 6;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--red, #bf4f5d);
+  border-radius: 50%;
+  background: var(--surface, #fff);
+  color: var(--red, #bf4f5d);
+  font-size: 22.4px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(35, 53, 75, 0.25);
+}
+.bp-wire-cut:hover {
+  background: var(--red, #bf4f5d);
+  color: #fff;
+}
+.bp-add {
+  width: auto !important;
+  padding: 0 12px !important;
+  font-weight: 600;
 }
 .bp-wire.exec {
   stroke: var(--bp-flow) !important;
@@ -146,9 +106,6 @@
 .bp-wire.data {
   stroke-dasharray: none;
   opacity: 0.9;
-}
-.bp-wire:hover {
-  stroke-width: 4;
 }
 .bp-wire.ghost {
   stroke: var(--accent, #3767df) !important;
@@ -208,7 +165,7 @@
   border-radius: 50%;
   background: var(--finding);
   color: #fff;
-  font: 700 10px/16px var(--mono, monospace);
+  font: 700 11.2px/16px var(--mono, monospace);
   text-align: center;
 }
 .cat-event {
@@ -251,7 +208,7 @@
   place-items: center;
   background: color-mix(in srgb, var(--cat) 16%, transparent);
   color: var(--cat);
-  font: 700 10px/1 var(--mono, monospace);
+  font: 700 11.2px/1 var(--mono, monospace);
 }
 .bp-header b {
   font-weight: 600;
@@ -260,12 +217,12 @@
 }
 .bp-header small {
   color: var(--muted, #78849a);
-  font-size: 10px;
+  font-size: 11.2px;
 }
 .bp-header i {
   margin-left: auto;
   font-style: normal;
-  font-size: 9px;
+  font-size: 10.1px;
   color: var(--muted, #78849a);
 }
 .bp-body {
@@ -287,7 +244,7 @@
 }
 .bp-pin-label {
   color: var(--secondary, #57657f);
-  font-size: 11px;
+  font-size: 12.3px;
   white-space: nowrap;
 }
 .bp-pin {
@@ -357,7 +314,7 @@
   align-items: center;
   justify-content: center;
   gap: 5px;
-  font: 600 12px var(--mono, monospace);
+  font: 600 13.4px var(--mono, monospace);
   padding: 0 4px 6px;
   white-space: nowrap;
   overflow: hidden;
@@ -365,14 +322,14 @@
 }
 .bp-compact.type-get .bp-compact-label::before {
   content: "x";
-  font-size: 9px;
+  font-size: 10.1px;
   color: var(--cat);
   border: 1px solid var(--cat);
   border-radius: 3px;
   padding: 0 3px;
 }
 .bp-compact.type-op .bp-compact-label {
-  font-size: 15px;
+  font-size: 16.8px;
   color: var(--cat);
 }
 .bp-reroute {
@@ -398,7 +355,7 @@
   background: var(--surface-alt, #f8f9fc);
   border: 1px dashed var(--line-strong, #cbd5e5);
   color: var(--text, #25314a);
-  font: 11px/16px var(--mono, monospace);
+  font: 12.3px/16px var(--mono, monospace);
   white-space: pre;
   overflow: hidden;
   max-height: 136px;
@@ -406,7 +363,7 @@
 .type-expr .bp-header b {
   font-family: var(--mono, monospace);
   font-weight: 400;
-  font-size: 11px;
+  font-size: 12.3px;
 }
 .bp-hud {
   position: absolute;
@@ -422,7 +379,7 @@
   box-shadow: 0 2px 8px rgba(35, 53, 75, 0.1);
 }
 .bp-hud button {
-  font-size: 13px;
+  font-size: 14.6px;
   min-width: 26px;
   height: 24px;
 }
@@ -430,7 +387,7 @@
   min-width: 42px;
   text-align: center;
   color: var(--muted, #78849a);
-  font-size: 11px;
+  font-size: 12.3px;
 }
 .bp-status {
   position: absolute;
@@ -439,7 +396,7 @@
   max-width: 70%;
   padding: 5px 10px;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: 12.3px;
   background: var(--surface, #fff);
   border: 1px solid var(--line, #e3e8f1);
   color: var(--secondary, #57657f);
@@ -487,7 +444,7 @@
   padding-bottom: 6px;
 }
 .bp-palette-group {
-  font-size: 10px;
+  font-size: 11.2px;
   font-weight: 700;
   color: var(--muted, #78849a);
   text-transform: uppercase;
@@ -533,7 +490,7 @@
   background: none;
   border: 0;
   color: var(--muted, #78849a);
-  font-size: 18px;
+  font-size: 20.2px;
   cursor: pointer;
 }
 .bp-form label {
@@ -541,7 +498,7 @@
   flex-direction: column;
   gap: 3px;
   color: var(--secondary, #57657f);
-  font-size: 11px;
+  font-size: 12.3px;
   margin-bottom: 9px;
 }
 .bp-form label:has(input[type="checkbox"]) {
@@ -557,7 +514,7 @@
   border-radius: 5px;
   color: var(--text, #25314a);
   padding: 5px 7px;
-  font: 12px var(--mono, monospace);
+  font: 13.4px var(--mono, monospace);
 }
 .bp-form textarea {
   resize: vertical;

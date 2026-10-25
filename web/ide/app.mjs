@@ -135,7 +135,7 @@ export class IdeApplication {
     await this.client.connect();
     if (!this.client.online)
       this.notify(
-        "Java-сервис пока недоступен. Чтение и редактирование файлов доступны; блупринты требуют локальный Java-сервис.",
+        "Java-сервис пока недоступен. Чтение и редактирование файлов доступны; схемы требуют локальный Java-сервис.",
         "warning",
         10000,
       );
@@ -208,7 +208,9 @@ export class IdeApplication {
     this.renderStatus();
   }
   renderTabs() {
-    $("#ide-tabs", this.root).innerHTML = view.tabs(this.documents);
+    const tabs = $("#ide-tabs", this.root);
+    tabs.innerHTML = view.tabs(this.documents);
+    tabs.hidden = this.documents.tabs.length < 2;
   }
   get workspace() {
     return this._workspace;
@@ -451,6 +453,8 @@ export class IdeApplication {
       analysis: this.quality.analysis,
       fileName: file.path,
       methodId: method?.id,
+      methods: file.currentModel?.methods ?? [],
+      canAdd: Boolean(file.currentModel?.valid),
       canBack: this.navStack.length > 0,
       editing: this.blueprintEditing,
     });
@@ -487,7 +491,7 @@ export class IdeApplication {
     }
     const java = file.language === "java";
     const mode = java ? this.mode : "code";
-    target.innerHTML = `<div id="ide-conflict"></div>${!java && ["python", "javascript", "typescript", "kotlin", "csharp", "cpp", "go", "rust", "c"].includes(file.language) ? `<div class="language-coming-strip">${view.glyph("info", 14)}Блупринты для ${e(file.language)} — <b>Coming soon</b>. Сейчас доступен текстовый редактор.</div>` : ""}<div class="ide-workarea mode-${mode}"><div id="ide-code-pane">${editorShell()}</div><div class="ide-splitter" role="separator" aria-label="Ширина редактора" tabindex="0"></div><section id="ide-graph-pane" aria-label="Блупринт метода"></section></div>`;
+    target.innerHTML = `<div id="ide-conflict"></div>${!java && ["python", "javascript", "typescript", "kotlin", "csharp", "cpp", "go", "rust", "c"].includes(file.language) ? `<div class="language-coming-strip">${view.glyph("info", 14)}Блоки для ${e(file.language)} — <b>Coming soon</b>. Сейчас доступен текстовый редактор.</div>` : ""}<div class="ide-workarea mode-${mode}"><div id="ide-code-pane">${editorShell()}</div><div class="ide-splitter" role="separator" aria-label="Ширина редактора" tabindex="0"></div><section id="ide-graph-pane" aria-label="Схема метода"></section></div>`;
     this.editor = new SourceEditor($("#ide-code-pane", target), {
       onChange: (document) => this.editorChanged(document),
       onPosition: (position, length) => this.renderPosition(position, length),
@@ -532,9 +536,6 @@ export class IdeApplication {
       $(".bp-root", target)
     ) {
       if (!method) return (this.blueprintReady = Promise.resolve());
-      $("#ide-method-why", target)?.remove();
-      const header = $(".ide-graph-header", target);
-      if (header) header.outerHTML = view.graphHeader(file);
       const context = $(".ws-context", target);
       if (context) context.outerHTML = this.methodContext(file, method);
       this.quality.decorateGraph(this.graph, file, method);
@@ -548,9 +549,8 @@ export class IdeApplication {
     }
     target.classList.toggle("bp-reading", !this.blueprintEditing);
     target.innerHTML =
-      view.graphHeader(file) +
-      (method ? this.methodContext(file, method) : "") +
-      `<div class="ide-graph-body">${method && file.currentModel?.valid ? '<div class="graph-empty"><span class="ide-spinner"></span><h3>Собираем блупринт</h3></div>' : view.graphEmpty(file, this.analysing.has(file.path))}</div><div id="ide-node-inspector" hidden></div>`;
+      (file.currentModel ? this.methodContext(file, method) : "") +
+      `<div class="ide-graph-body">${method && file.currentModel?.valid ? '<div class="graph-empty"><span class="ide-spinner"></span><h3>Строим схему</h3></div>' : view.graphEmpty(file, this.analysing.has(file.path))}</div><div id="ide-node-inspector" hidden></div>`;
     if (!method || !file.currentModel?.valid) return (this.blueprintReady = Promise.resolve());
     if (!this.blueprintEditing) {
       this.mountFlowchart(file, method, target);
@@ -559,7 +559,7 @@ export class IdeApplication {
     this.blueprintReady = this.mountBlueprint(file, method, key, target).catch((error) => {
       const body = $(".ide-graph-body", target);
       if (body && this.documents.active === file)
-        body.innerHTML = `<div class="graph-empty error"><h3>Не удалось построить блупринт</h3><p>${e(readableError(error))}</p></div>`;
+        body.innerHTML = `<div class="graph-empty error"><h3>Не удалось построить схему</h3><p>${e(readableError(error))}</p></div>`;
     });
     return this.blueprintReady;
   }
@@ -572,7 +572,7 @@ export class IdeApplication {
     body.innerHTML = graphShell({ title: `${method.owner}.${method.name}`, toolbar: false });
     const chart = ws.condenseGraph(method.graph);
     const flowchart = new GraphWidget($(".graph-workbench", body), chart, {
-      view: { x: 0, y: 0, scale: 0.8 },
+      view: { x: 0, y: 0, scale: 1 },
       onSelect: (node) => {
         if (node?.line) this.editor?.goTo(node.line, 1);
       },
@@ -586,7 +586,7 @@ export class IdeApplication {
       const entry = nodes.find((node) => node.id === method.graph.entry) ?? nodes[0];
       const width = flowchart.viewport.clientWidth;
       if (!entry || !width) return flowchart.fit();
-      const scale = 0.8;
+      const scale = 1;
       flowchart.view = { scale, x: width / 2 - (entry.x + entry.width / 2) * scale, y: 24 - entry.y * scale };
       flowchart.transform();
     });
@@ -652,11 +652,6 @@ export class IdeApplication {
       this.graph.transform();
     }
     this.quality.decorateGraph(this.graph, file, method);
-    this.graph.setStatus(
-      graph.nodes.some((node) => node.type === "code" || node.type === "expr")
-        ? "Узлы «Java» хранят конструкции без отдельного блока — их можно редактировать текстом"
-        : "",
-    );
   }
 
   /** Graph edit → regenerate the method body in the document; layout-only changes are just saved. */
@@ -670,13 +665,13 @@ export class IdeApplication {
       file.content.slice(graph.bodyStart, graph.bodyEnd) !== state.body
     ) {
       this.blueprint = null;
-      this.notify("Код изменился, пока открыт граф: граф перестроен по текущему коду, правка не применена.", "warning");
+      this.notify("Код изменился, пока блоки были открыты: схема перестроена по текущему коду, правка не применена.", "warning");
       this.renderGraph();
       return;
     }
     if (structural) {
       if (file.readOnly) {
-        this.graph?.setStatus("Файл только для чтения: изменения графа не попадут в код", "error");
+        this.graph?.setStatus("Файл только для чтения: правки блоков не попадут в код", "error");
         return;
       }
       let result;
@@ -686,7 +681,7 @@ export class IdeApplication {
         result = generate(graph, { indent: outer + "    " });
         if (result.problems.length) {
           this.graph?.setStatus(
-            `Черновик: ${result.problems.length} неподключённых входов — код не изменён, пока граф не завершён`,
+            `Черновик: не подключено входов — ${result.problems.length}. Код не изменён, пока блоки не соединены полностью.`,
             "error",
           );
           const body = file.content.slice(graph.bodyStart, graph.bodyEnd);
@@ -702,11 +697,11 @@ export class IdeApplication {
         this.editor?.refresh();
         this.analyseSoon(file);
       } catch (error) {
-        this.graph?.setStatus(error instanceof CodegenError ? "Ошибка графа: " + error.message : readableError(error), "error");
+        this.graph?.setStatus(error instanceof CodegenError ? "Ошибка блоков: " + error.message : readableError(error), "error");
         if (error.nodeId) this.graph?.select(error.nodeId);
         return;
       }
-      this.graph?.setStatus("Java обновлена из блупринта (синтаксис проверит анализ, поведение — F6)", "ok");
+      this.graph?.setStatus("Java обновлена из блоков (поведение проверяет F6)", "ok");
     }
     const body = file.content.slice(graph.bodyStart, graph.bodyEnd);
     this.quality.saveLayout(state.key, body, graph);
@@ -843,7 +838,7 @@ export class IdeApplication {
     if (!file || file.language !== "java") return;
     if (file.content.length > 250000) {
       file.analysisError =
-        "Блупринт строится для файлов до 250 000 символов. Текстовый редактор поддерживает до 2 МиБ.";
+        "Схема строится для файлов до 250 000 символов. Текстовый редактор поддерживает до 2 МиБ.";
       if (file === this.documents.active) this.renderGraph();
       return;
     }
@@ -1632,12 +1627,12 @@ export class IdeApplication {
       case "choose-java":
         this.closeModal();
         this.notify(
-          "Java выбрана. Откройте .java файл, чтобы увидеть блупринт.",
+          "Java выбрана. Откройте .java файл, чтобы увидеть схему.",
         );
         break;
       case "coming-soon":
         this.notify(
-          `${element.dataset.language} · Coming soon. В этой версии доступны только Java-блупринты.`,
+          `${element.dataset.language} · Coming soon. В этой версии доступны только Java-блоки.`,
         );
         break;
       case "shortcuts":
@@ -2042,7 +2037,7 @@ export class IdeApplication {
         const created = doc.currentModel?.methods.find((item) => item.name === name && item.owner === owner.name);
         if (created) await this.selectMethod(created.id);
         if (this.mode === "code") this.setMode("blueprint");
-        this.notify(`Метод ${name} создан. Добавляйте узлы правой кнопкой мыши на поле блупринта.`);
+        this.notify(`Метод ${name} создан. Добавляйте блоки правой кнопкой мыши на поле блоков.`);
         break;
       }
       case "goto-line-form": {

@@ -28,12 +28,12 @@ export const TOOL_GROUPS = [
     id: "check",
     title: "Проверить",
     items: [
-      ws("verify", "Проверка поведения", "Эталон, ваши изменения, тестовые входы и результат", "shield", "Alt 4"),
-      { action: "verify", label: "Сравнить с эталоном", hint: "Запустить обе версии на всех входах: stdout, stderr, код завершения", icon: "play", shortcut: "F6", needs: "project" },
-      { action: "lab-mutation", label: "Сила тестов", hint: "Мутации метода: заметят ли тесты поломку", icon: "flask", needs: "method" },
-      { action: "baseline-diff", label: "Отличия от эталона", hint: "Что изменилось с момента, когда зафиксирован эталон", icon: "diff", needs: "project" },
-      { action: "baseline-set-current", label: "Принять текущую версию эталоном", hint: "Дальше сравнивать с тем, что сейчас в редакторе", icon: "bookmark", needs: "project" },
-      { action: "export-evidence", label: "Отчёт о проверке", hint: "ZIP: эталон, новая версия, входы, результаты", icon: "download", needs: "project" },
+      ws("verify", "Проверка поведения", "Исходная версия, ваши изменения, тестовые входы и результат", "shield", "Alt 4"),
+      { action: "verify", label: "Сравнить с исходной версией", hint: "Запустить обе версии на всех входах: stdout, stderr, код завершения", icon: "play", shortcut: "F6", needs: "project" },
+      { action: "lab-mutation", label: "Качество тестов", hint: "Вносит в метод мелкие поломки и смотрит, заметят ли их входы", icon: "flask", needs: "method" },
+      { action: "baseline-diff", label: "Отличия от исходной версии", hint: "Что изменилось с момента, когда зафиксирована исходная версия", icon: "diff", needs: "project" },
+      { action: "baseline-set-current", label: "Считать текущую версию исходной", hint: "Дальше сравнивать с тем, что сейчас в редакторе", icon: "bookmark", needs: "project" },
+      { action: "export-evidence", label: "Отчёт о проверке", hint: "ZIP: исходная версия, новая версия, входы, результаты", icon: "download", needs: "project" },
     ],
   },
   {

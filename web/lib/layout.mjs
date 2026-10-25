@@ -1,7 +1,7 @@
 import { clamp } from "./core.mjs";
 
-export const NODE_WIDTH = 286;
-export const NODE_HEIGHT = 76;
+export const NODE_WIDTH = 360;
+export const NODE_HEIGHT = 116;
 
 export function normalizeGraph(graph) {
   const nodes = (graph?.nodes ?? []).map((node) => ({ ...node }));

@@ -13,8 +13,8 @@
 .ws-tab {
   display: flex;
   align-items: center;
-  gap: 6px;
-  height: 29px;
+  gap: 7px;
+  height: 36px;
   padding: 0 12px;
   border: 0;
   border-radius: 7px;
@@ -44,7 +44,7 @@
   border-radius: 9px;
   background: var(--accent-soft);
   color: var(--accent);
-  font-size: 11px;
+  font-size: 12.6px;
   font-style: normal;
   font-weight: 700;
 }
@@ -100,7 +100,7 @@
 .ws-empty h2 {
   margin: 6px 0 0;
   color: var(--text);
-  font-size: 18px;
+  font-size: 20.7px;
 }
 .ws-empty p {
   max-width: 460px;
@@ -110,7 +110,7 @@
 .ws-eyebrow {
   margin: 0 0 4px;
   color: var(--accent);
-  font-size: 11px;
+  font-size: 12.6px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -124,11 +124,11 @@
 }
 .ws-hero h1 {
   margin: 0;
-  font-size: 26px;
+  font-size: 29.9px;
   letter-spacing: -0.01em;
 }
 .ws-hero.compact h1 {
-  font-size: 22px;
+  font-size: 25.3px;
 }
 .ws-lead {
   max-width: 640px;
@@ -160,19 +160,19 @@
   border-color: var(--accent);
 }
 .ws-kpi b {
-  font-size: 24px;
+  font-size: 27.6px;
   line-height: 1;
 }
 .ws-kpi span {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13.8px;
 }
 .ws-state {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   margin-top: 2px;
-  font-size: 11px !important;
+  font-size: 12.6px !important;
   font-weight: 600;
 }
 .ws-state.ok {
@@ -207,7 +207,7 @@
 .ws-scenarios b {
   display: block;
   color: var(--text);
-  font-size: 14px;
+  font-size: 16.1px;
 }
 .ws-scenarios small {
   display: block;
@@ -221,24 +221,24 @@
   gap: 8px;
   flex-wrap: wrap;
   margin: 22px 0 10px;
-  font-size: 15px;
+  font-size: 17.2px;
 }
 .ws-card .ws-section {
   margin-top: 0;
 }
 .ws-section small {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13.8px;
   font-weight: 400;
 }
 .ws-muted {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13.8px;
 }
 .ws-note {
   margin: 12px 0 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13.8px;
   line-height: 1.5;
 }
 .ws-tag {
@@ -249,7 +249,7 @@
   border-radius: 9px;
   background: var(--surface-hover);
   color: var(--secondary);
-  font-size: 11px;
+  font-size: 12.6px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -285,11 +285,11 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 13.8px;
   font-weight: 600;
 }
 .ws-method .q-big-o {
-  font-size: 10px;
+  font-size: 11.5px;
 }
 .ws-risk-dot {
   width: 7px;
@@ -329,7 +329,7 @@
 }
 .ws-lane header small {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12.6px;
 }
 .ws-lane-body {
   display: flex;
@@ -340,12 +340,12 @@
 }
 .ws-more {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12.6px;
 }
 .ws-lane-arrow {
   align-self: center;
   color: var(--line-strong);
-  font-size: 18px;
+  font-size: 20.7px;
   font-style: normal;
 }
 
@@ -378,7 +378,7 @@
 .ws-tree-row > small {
   overflow: hidden;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12.6px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -391,7 +391,7 @@
   border-radius: 4px;
   background: transparent;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12.6px;
   cursor: pointer;
 }
 button.ws-tree-toggle:hover {
@@ -410,7 +410,7 @@ button.ws-tree-toggle:hover {
   display: block;
   margin-top: 3px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13.8px;
 }
 
 /* tasks */
@@ -438,7 +438,7 @@ button.ws-tree-toggle:hover {
   flex-wrap: wrap;
 }
 .ws-task-head b {
-  font-size: 13.5px;
+  font-size: 15.5px;
 }
 .ws-task p {
   margin: 0;
@@ -451,11 +451,11 @@ button.ws-tree-toggle:hover {
   gap: 6px;
   flex-wrap: wrap;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13.8px;
 }
 .ws-task-meta > span:not(.ws-tag) {
   font-family: var(--mono);
-  font-size: 11.5px;
+  font-size: 13.2px;
 }
 .ws-fix {
   display: flex;
@@ -487,7 +487,7 @@ button.ws-tree-toggle:hover {
   align-items: center;
   gap: 8px;
   margin-bottom: 10px;
-  font-size: 15px;
+  font-size: 17.2px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -539,15 +539,15 @@ button.ws-tree-toggle:hover {
 }
 .ws-context-group > small {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12.6px;
 }
 .ws-context-group.current b {
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: 14.9px;
 }
 .ws-context-group.current small {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12.6px;
 }
 .ws-context-arrow {
   color: var(--line-strong);
@@ -560,7 +560,7 @@ button.ws-tree-toggle:hover {
   background: var(--surface);
   color: var(--accent);
   font-family: var(--mono);
-  font-size: 11.5px;
+  font-size: 13.2px;
   cursor: pointer;
 }
 .ws-chip:hover {
@@ -597,7 +597,7 @@ button.ws-tree-toggle:hover {
   background: transparent;
   color: var(--secondary);
   font: inherit;
-  font-size: 12px;
+  font-size: 13.8px;
   cursor: pointer;
 }
 .ws-edit-toggle button.active {
@@ -638,7 +638,7 @@ button.ws-tree-toggle:hover {
   border-radius: 50%;
   background: var(--surface-hover);
   color: var(--secondary);
-  font-size: 12px;
+  font-size: 13.8px;
   font-weight: 700;
 }
 .ws-step b {
@@ -648,7 +648,7 @@ button.ws-tree-toggle:hover {
   display: block;
   margin-top: 2px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13.8px;
   line-height: 1.4;
   word-break: break-word;
 }
@@ -713,21 +713,21 @@ button.ws-tree-toggle:hover {
 .welcome-flow > div > span {
   width: auto;
   padding: 0 8px;
-  font: 600 10px inherit;
+  font: 600 11.5px inherit;
   font-family: inherit;
 }
 .welcome-flow b {
-  font-size: 11.5px;
+  font-size: 13.2px;
   font-weight: 600;
 }
 .welcome-flow small {
-  font-size: 10.5px;
+  font-size: 12.1px;
 }
 
 /* ---- shell: one slim top bar, no activity rail ---- */
 .ide-titlebar {
-  height: 46px;
-  min-height: 46px;
+  height: 54px;
+  min-height: 54px;
   padding: 0 12px;
   gap: 10px;
 }
@@ -738,7 +738,7 @@ button.ws-tree-toggle:hover {
   border: 0;
   border-radius: 8px;
   background: transparent;
-  font-size: 15px;
+  font-size: 17.2px;
   cursor: pointer;
 }
 .ide-brand:hover {
@@ -752,8 +752,8 @@ button.ws-tree-toggle:hover {
   display: flex;
   align-items: center;
   gap: 6px;
-  height: 30px;
-  padding: 0 10px;
+  height: 36px;
+  padding: 0 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
@@ -776,7 +776,8 @@ button.ws-tree-toggle:hover {
 }
 .ide-titlebar .ide-command-trigger {
   flex: none;
-  width: 190px;
+  width: 200px;
+  height: 36px;
   margin: 0 0 0 auto;
 }
 .ide-title-actions {
@@ -794,8 +795,8 @@ button.ws-tree-toggle:hover {
   display: none;
 }
 .ide-sidebar-head {
-  height: 38px;
-  min-height: 38px;
+  height: 44px;
+  min-height: 44px;
   padding: 0 8px 0 8px;
   border-bottom: 1px solid var(--line);
 }
@@ -804,14 +805,14 @@ button.ws-tree-toggle:hover {
   gap: 2px;
 }
 .sidebar-tab {
-  height: 26px;
+  height: 32px;
   padding: 0 10px;
   border: 0;
   border-radius: 6px;
   background: transparent;
   color: var(--secondary);
   font: inherit;
-  font-size: 12px;
+  font-size: 13.8px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -823,16 +824,16 @@ button.ws-tree-toggle:hover {
   color: var(--accent);
 }
 .ide-toolbar {
-  height: 40px;
-  min-height: 40px;
+  height: 46px;
+  min-height: 46px;
 }
 .ide-statusbar {
-  height: 24px;
-  min-height: 24px;
-  font-size: 11px;
+  height: 28px;
+  min-height: 28px;
+  font-size: 12.6px;
 }
 .ide-statusbar button {
-  font-size: 11px;
+  font-size: 12.6px;
 }
 
 /* ---- tools menu: drops down under the logo ---- */
@@ -841,7 +842,7 @@ button.ws-tree-toggle:hover {
 }
 .ide-tools-menu {
   position: absolute;
-  top: 44px;
+  top: 52px;
   left: 8px;
   z-index: 60;
   width: min(780px, calc(100vw - 16px));
@@ -892,7 +893,7 @@ button.ws-tree-toggle:hover {
 }
 .tools-project b {
   color: var(--text);
-  font-size: 14px;
+  font-size: 16.1px;
 }
 .tools-project small {
   margin-top: 2px;
@@ -938,7 +939,7 @@ button.ws-tree-toggle:hover {
 .tool-group h3 {
   margin: 4px 8px 4px;
   color: var(--muted);
-  font-size: 10.5px;
+  font-size: 12.1px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -990,14 +991,14 @@ button.ws-tree-toggle:hover {
 }
 .tool-text b {
   display: block;
-  font-size: 12.5px;
+  font-size: 14.4px;
 }
 .tool-text small {
   display: block;
   margin-top: 1px;
   overflow: hidden;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12.6px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1008,7 +1009,7 @@ button.ws-tree-toggle:hover {
   border-radius: 4px;
   background: var(--surface);
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11.5px;
 }
 .tools-empty {
   margin: 18px 12px;
@@ -1033,18 +1034,18 @@ button.ws-tree-toggle:hover {
 .welcome-resume small {
   display: block;
   color: var(--accent);
-  font-size: 10.5px;
+  font-size: 12.1px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 .welcome-resume b {
-  font-size: 15px;
+  font-size: 17.2px;
 }
 .welcome-resume span {
   display: block;
   color: var(--secondary);
-  font-size: 12px;
+  font-size: 13.8px;
 }
 .welcome-resume > div:last-child {
   display: flex;
@@ -1061,4 +1062,42 @@ button.ws-tree-toggle:hover {
   .ide-tools-trigger span {
     display: none;
   }
+}
+
+/* the method row stays one line: the select shrinks, long lists of callers are cut */
+.ws-context {
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+.ws-context-group {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+.ws-context-group.current {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.ws-context-group .ws-chip:nth-of-type(n + 4) {
+  display: none;
+}
+#ide-method-select {
+  max-width: 260px;
+  min-width: 120px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  text-overflow: ellipsis;
+}
+.ws-bigo {
+  border: 0;
+  cursor: pointer;
+}
+.ws-metric {
+  color: var(--muted);
+  font-size: 13px;
 }

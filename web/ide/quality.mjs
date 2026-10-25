@@ -100,7 +100,7 @@ export class QualityLab {
       try {
         await this.captureBaseline("Снимок при открытии проекта", { fromDisk: true, quiet: true });
       } catch (error) {
-        this.app.notify("Эталон не зафиксирован: " + readableError(error), "warning");
+        this.app.notify("Исходная версия не зафиксирован: " + readableError(error), "warning");
       }
     }
     this.persistSoon();
@@ -177,7 +177,7 @@ export class QualityLab {
     this.baseline = { files, takenAt: new Date().toISOString(), label };
     this.report = null;
     this.persistSoon();
-    if (!quiet) this.app.notify("Эталон обновлён: дальнейшие изменения сравниваются с этой версией.");
+    if (!quiet) this.app.notify("Исходная версия обновлён: дальнейшие изменения сравниваются с этой версией.");
     this.render();
   }
 
@@ -571,7 +571,7 @@ export class QualityLab {
       this.app.renderGraph();
     }
     this.app.notify(
-      `Применено улучшений: ${result.applied.length}. Изменения в редакторе — проверяем поведение против эталона.`,
+      `Применено улучшений: ${result.applied.length}. Изменения в редакторе — проверяем поведение против исходной версии.`,
     );
     await this.loadPlans(document);
     await this.verifyAfterChange();
@@ -608,7 +608,7 @@ export class QualityLab {
   openExtract() {
     const document = this.app.documents.active;
     const method = document?.selectedMethod();
-    if (!method) throw new Error("Выберите метод на блупринте");
+    if (!method) throw new Error("Выберите метод в режиме «Метод»");
     if (!method.static) throw new Error("Выносятся static-методы: метод экземпляра зависит от состояния объекта");
     this.app.modalContext = { kind: "extract", fileName: document.path, methodId: method.id, projectId: this.project.id };
     this.app.showModal(qv.extractModal(method));
@@ -766,8 +766,8 @@ export class QualityLab {
     const passed = this.report.tests.filter((test) => test.passed).length;
     this.app.notify(
       this.report.passed
-        ? `Поведение сохранено: ${passed}/${this.report.tests.length} входов совпали с эталоном.`
-        : `Обнаружено расхождение с эталоном: ${this.report.tests.length - passed} из ${this.report.tests.length}.`,
+        ? `Поведение сохранено: ${passed}/${this.report.tests.length} входов совпали с исходной версией.`
+        : `Обнаружено расхождение с исходной версией: ${this.report.tests.length - passed} из ${this.report.tests.length}.`,
       this.report.passed ? "info" : "warning",
       8000,
     );
@@ -776,7 +776,7 @@ export class QualityLab {
   async mutation() {
     const document = this.app.documents.active;
     const method = document?.selectedMethod();
-    if (!method) throw new Error("Выберите метод на блупринте");
+    if (!method) throw new Error("Выберите метод в режиме «Метод»");
     const cases = this.enabledCases().slice(0, 5);
     if (!cases.length) throw new Error("Нужен хотя бы один тестовый вход");
     this.openPanel("mutation");
@@ -803,7 +803,7 @@ export class QualityLab {
       .map(Number)
       .filter((value) => Number.isInteger(value) && value > 0);
     const candidate = await this.collect();
-    if (!this.baseline.files[document.path]) throw new Error("Файла нет в эталоне — бенчмарк сравнивает одну и ту же функцию до и после");
+    if (!this.baseline.files[document.path]) throw new Error("Файла нет в исходной версии — бенчмарк сравнивает одну и ту же функцию до и после");
     const job = await this.runJob("benchmark", {
       original: this.baseline.files,
       candidate,
@@ -919,6 +919,14 @@ export class QualityLab {
       case "open-hotspot":
         await this.openLocation(data.file, { methodId: data.method });
         return true;
+      case "complexity-why": {
+        const document = this.app.documents.active;
+        const method = document?.currentModel?.methods.find((item) => item.id === data.method);
+        if (!document || !method) return true;
+        const detail = this.detailFor(document, method) ?? (await this.loadDetail(document, method), this.detailFor(document, method));
+        this.app.showModal(qv.complexityModal(method, detail));
+        return true;
+      }
       case "improve":
       case "analysis-view":
         this.app.setWorkspace("tasks");
@@ -995,7 +1003,7 @@ export class QualityLab {
         await this.captureBaseline("Зафиксировано вручную");
         return true;
       case "baseline-diff":
-        if (!this.baseline) throw new Error("Эталон ещё не зафиксирован");
+        if (!this.baseline) throw new Error("Исходная версия ещё не зафиксирован");
         this.app.showModal(qv.baselineDiffModal(this.baselineChanges(await this.collect())));
         return true;
       case "export-evidence":

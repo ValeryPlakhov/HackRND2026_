@@ -8,7 +8,7 @@ export const WORKSPACES = [
   { id: "overview", label: "Обзор", icon: "nodes", hint: "Что это за программа и с чего начать", key: "1" },
   { id: "method", label: "Метод", icon: "method", hint: "Логика метода блоками и кодом, кто его вызывает", key: "2" },
   { id: "tasks", label: "Задачи", icon: "target", hint: "Риски, ускорения и разделение монолита по приоритету", key: "3" },
-  { id: "verify", label: "Проверка", icon: "shield", hint: "Эталон, ваши изменения и результат сравнения поведения", key: "4" },
+  { id: "verify", label: "Проверка", icon: "shield", hint: "Исходная версия, ваши изменения и результат сравнения поведения", key: "4" },
 ];
 
 export const LANES = [
@@ -156,7 +156,7 @@ export function overviewHtml(state) {
     : stale
       ? `<span class="ws-state neutral">${glyph("shield", 13)}Проверка устарела</span>`
       : report.passed
-        ? `<span class="ws-state ok">${glyph("circleCheck", 13)}Совпадает с эталоном ${passed}/${report.tests.length}</span>`
+        ? `<span class="ws-state ok">${glyph("circleCheck", 13)}Совпадает с исходной версией ${passed}/${report.tests.length}</span>`
         : `<span class="ws-state bad">${glyph("warning", 13)}Расхождение ${report.tests.length - passed}/${report.tests.length}</span>`;
   const lanes = LANES.map((lane) => {
     const members = analysis.methods
@@ -185,7 +185,7 @@ export function overviewHtml(state) {
       <div class="ws-hero-cards">
         <button class="ws-kpi" data-action="workspace" data-workspace="tasks"><b>${tasks.risks.length}</b><span>рисков требуют внимания</span></button>
         <button class="ws-kpi" data-action="workspace" data-workspace="tasks"><b>${fixable}</b><span>исправлений IDE сделает сама</span></button>
-        <button class="ws-kpi" data-action="workspace" data-workspace="verify"><b>${cases.length}</b><span>тестовых входов${baseline ? " · эталон есть" : ""}</span>${behaviour}</button>
+        <button class="ws-kpi" data-action="workspace" data-workspace="verify"><b>${cases.length}</b><span>тестовых входов${baseline ? " · исходная версия есть" : ""}</span>${behaviour}</button>
       </div></header>
     <div class="ws-scenarios">
       <button data-action="ws-tour">${glyph("eye", 18)}<span><b>Разобраться в коде</b><small>Пройдите от main по дереву вызовов. Клик по методу откроет его логику блоками рядом с кодом</small></span></button>
@@ -222,7 +222,7 @@ function taskCard(task) {
 
 function changeBanner({ pending, report, stale, job }) {
   if (job && ["queued", "running"].includes(job.state))
-    return `<div class="ws-banner running"><span class="ide-spinner small"></span><span><b>Проверяем поведение…</b> Эталон и новая версия собираются и запускаются на тестовых входах.</span></div>`;
+    return `<div class="ws-banner running"><span class="ide-spinner small"></span><span><b>Проверяем поведение…</b> Исходная версия и новая версия собираются и запускаются на тестовых входах.</span></div>`;
   if (!pending) return "";
   if (!report || stale)
     return `<div class="ws-banner">${glyph("info", 15)}<span><b>Применено: ${e(pending.label)}.</b> Поведение ещё не проверено.</span>${button("verify", "Проверить", "shield", "ide-button small primary")}${button("rollback-change", "Откатить", "undo", "ide-button small")}</div>`;
@@ -240,7 +240,7 @@ export function tasksHtml(state) {
   const section = (title, hint, items, empty) =>
     `<h2 class="ws-section">${title} <span class="ws-count">${items.length}</span><small>${hint}</small></h2><div class="ws-task-grid">${items.map(taskCard).join("") || `<p class="ws-muted">${empty}</p>`}</div>`;
   return `<section class="ws-page ws-tasks">
-    <header class="ws-hero compact"><div><p class="ws-eyebrow">Задачи</p><h1>Что сделать с кодом</h1><p class="ws-lead">Сначала риски, затем то, что IDE исправит сама. Каждое изменение проверяется запуском эталона и новой версии на тестовых входах. Если поведение разошлось, изменение откатывается одной кнопкой.</p></div></header>
+    <header class="ws-hero compact"><div><p class="ws-eyebrow">Задачи</p><h1>Что сделать с кодом</h1><p class="ws-lead">Сначала риски, затем то, что IDE исправит сама. Каждое изменение проверяется запуском исходной версии и новой версии на тестовых входах. Если поведение разошлось, изменение откатывается одной кнопкой.</p></div></header>
     ${changeBanner(state)}
     ${section("Риски", "места, где вероятна ошибка или медленная работа", tasks.risks, "Правила не нашли рисков. Это не доказывает отсутствие ошибок — проверьте поведение тестами.")}
     ${plansLoading ? '<div class="q-loading"><span class="ide-spinner small"></span>Ищем применимые преобразования во всех файлах…</div>' : ""}
@@ -251,27 +251,30 @@ export function tasksHtml(state) {
   </section>`;
 }
 
-/** The strip above a method's blueprint: what it costs, who calls it and what it calls. */
-export function methodContextHtml({ analysis, fileName, methodId, canBack, editing }) {
-  const toggle = `<div class="ws-edit-toggle" role="group" aria-label="Режим блупринта"><button data-action="blueprint-edit" data-edit="0" class="${editing ? "" : "active"}" aria-pressed="${!editing}">${glyph("eye", 13)}Чтение</button><button data-action="blueprint-edit" data-edit="1" class="${editing ? "active" : ""}" aria-pressed="${editing}">${glyph("plus", 13)}Правка блоками</button></div>`;
-  const back = canBack ? `<button class="ws-back" data-action="nav-back" title="Вернуться (Alt+←)">${glyph("undo", 13)}Назад</button>` : "";
-  if (!analysis) return `<div class="ws-context">${back}<span class="ws-muted">Связи метода появятся после анализа проекта</span><span class="toolbar-spacer"></span>${toggle}</div>`;
+/** One row above the method: who calls it, which method is open (with cost), what it calls. */
+export function methodContextHtml({ analysis, fileName, methodId, methods = [], canBack, editing, canAdd }) {
+  const toggle = `<div class="ws-edit-toggle" role="group" aria-label="Вид метода"><button data-action="blueprint-edit" data-edit="0" class="${editing ? "" : "active"}" aria-pressed="${!editing}" title="Читать алгоритм: схема шагов">Схема</button><button data-action="blueprint-edit" data-edit="1" class="${editing ? "active" : ""}" aria-pressed="${editing}" title="Править блоками: каждая правка сразу меняет Java">Блоки</button></div>`;
+  const back = canBack ? `<button class="ws-back" data-action="nav-back" title="Вернуться к предыдущему методу (Alt+←)">${glyph("undo", 13)}Назад</button>` : "";
+  const select = `<label class="sr-only" for="ide-method-select">Метод</label><select id="ide-method-select" ${!methods.length ? "disabled" : ""}>${methods.map((item) => `<option value="${e(item.id)}" ${item.id === methodId ? "selected" : ""}>${e(item.owner)}.${e(item.name === "<init>" ? item.owner : item.name)}()</option>`).join("") || "<option>Нет методов</option>"}</select>`;
+  const add = editing && canAdd ? button("new-method", "Метод", "plus", "ide-button small subtle") : "";
+  const tail = `<span class="toolbar-spacer"></span>${add}${toggle}`;
+  if (!analysis) return `<div class="ws-context">${back}<div class="ws-context-group current">${select}</div>${tail}</div>`;
   const index = callIndex(analysis);
   const key = methodKey(fileName, methodId);
   const method = index.methods.get(key);
-  if (!method) return `<div class="ws-context">${back}<span class="ws-muted">Метод изменился после анализа</span>${button("quality-analyse", "Обновить", "loop", "ide-button small subtle")}<span class="toolbar-spacer"></span>${toggle}</div>`;
+  if (!method) return `<div class="ws-context">${back}<div class="ws-context-group current">${select}<span class="ws-muted">изменён после анализа</span>${button("quality-analyse", "Обновить", "loop", "ide-button small subtle")}</div>${tail}</div>`;
   const chips = (ids) =>
     ids
       .map((id) => index.methods.get(id))
       .filter(Boolean)
-      .slice(0, 6)
+      .slice(0, 5)
       .map((item) => `<button class="ws-chip" data-action="ws-open-method" data-file="${e(item.fileName)}" data-method="${e(item.methodId)}" title="${e(item.owner)}.${e(item.name)}">${e(item.name === "<init>" ? item.owner : item.name)}()</button>`)
-      .join("") + (ids.length > 6 ? `<span class="ws-muted">+${ids.length - 6}</span>` : "");
+      .join("") + (ids.length > 5 ? `<span class="ws-muted">+${ids.length - 5}</span>` : "");
   const callers = index.callers.get(key) ?? [];
   const callees = index.callees.get(key) ?? [];
-  const external = index.external.get(key) ?? [];
   const risks = (index.findings.get(key) ?? []).filter((finding) => finding.severity !== "info").length;
-  return `<div class="ws-context">${back}<div class="ws-context-group"><small>Вызывают</small>${callers.length ? chips(callers) : `<span class="ws-muted">${method.name === "main" ? "точка входа" : "никто в проекте"}</span>`}</div><i class="ws-context-arrow">→</i><div class="ws-context-group current"><b>${e(method.name)}()</b>${bigO(method.complexity)}<small>CC ${method.cyclomatic} · ${method.lines} стр.</small>${risks ? `<span class="ws-tag warn">${glyph("warning", 11)}${risks}</span>` : ""}</div><i class="ws-context-arrow">→</i><div class="ws-context-group"><small>Вызывает</small>${callees.length ? chips(callees) : '<span class="ws-muted">методы проекта не вызывает</span>'}${external.length ? `<span class="ws-muted" title="${e(external.join(", "))}">+ библиотека ${external.length}</span>` : ""}</div><span class="toolbar-spacer"></span>${toggle}</div>`;
+  const metrics = `${method.complexity ? `<button class="q-big-o ws-bigo ${complexityTone(method.complexity)}" data-action="complexity-why" data-file="${e(fileName)}" data-method="${e(methodId)}" title="Оценка времени работы. Нажмите, чтобы увидеть, из чего она сложилась">${e(method.complexity)}</button>` : ""}<span class="ws-metric" title="Число ветвлений: if, циклы, case, catch, &&, ||">ветвлений ${method.cyclomatic}</span>${risks ? `<button class="ws-tag warn" data-action="workspace" data-workspace="tasks" title="Риски этого метода в списке задач">${glyph("warning", 11)}рисков ${risks}</button>` : ""}`;
+  return `<div class="ws-context">${back}<div class="ws-context-group"><small>Вызывают</small>${callers.length ? chips(callers) : `<span class="ws-muted">${method.name === "main" ? "точка входа" : "никто в проекте"}</span>`}</div><i class="ws-context-arrow">→</i><div class="ws-context-group current">${select}${metrics}</div><i class="ws-context-arrow">→</i><div class="ws-context-group"><small>Вызывает</small>${callees.length ? chips(callees) : '<span class="ws-muted">ничего из проекта</span>'}</div>${tail}</div>`;
 }
 
 /** Changed files relative to the baseline, from what the editor currently holds. */
@@ -294,7 +297,7 @@ export function verifyHeaderHtml({ baseline, changes, report, stale, job, pendin
   const result = running
     ? ["running", "Идёт проверка", "Сборка javac и запуск обеих версий"]
     : !report
-      ? ["neutral", "Не проверено", changes.length ? "Нажмите «Проверить поведение»" : "Изменений относительно эталона нет"]
+      ? ["neutral", "Не проверено", changes.length ? "Нажмите «Проверить поведение»" : "Изменений относительно исходной версии нет"]
       : stale
         ? ["neutral", "Устарело", "Код или тесты изменились после проверки"]
         : report.inconclusive
@@ -303,10 +306,10 @@ export function verifyHeaderHtml({ baseline, changes, report, stale, job, pendin
             ? ["ok", `Совпало ${passed}/${report.tests.length}`, "stdout, stderr и код завершения одинаковы"]
             : ["bad", `Расхождение ${report.tests.length - passed}/${report.tests.length}`, "Откройте вход с расхождением ниже"];
   const step = (n, title, body, tone = "") => `<div class="ws-step ${tone}"><span>${n}</span><div><b>${title}</b>${body}</div></div>`;
-  return `<header class="ws-hero compact"><div><p class="ws-eyebrow">Проверка поведения</p><h1>Ничего не сломалось?</h1><p class="ws-lead">IDE хранит эталон — версию кода до ваших изменений. Обе версии компилируются javac и запускаются в отдельных JVM на одних и тех же входах. Совпадение на этих входах — сильное свидетельство, но не доказательство для всех данных.</p></div></header>
+  return `<header class="ws-hero compact"><div><p class="ws-eyebrow">Проверка поведения</p><h1>Ничего не сломалось?</h1><p class="ws-lead">IDE хранит исходную версию — код до ваших изменений. Обе версии компилируются javac и запускаются в отдельных JVM на одних и тех же входах. Совпадение на этих входах — сильное свидетельство, но не доказательство для всех данных.</p></div></header>
   <div class="ws-steps">
-    ${step(1, "Эталон", `<small>${baseline ? `${e(baseline.label || "Снимок")} · ${Object.keys(baseline.files).length} файлов${baseline.takenAt ? " · " + e(timeLabel(baseline.takenAt)) : ""}` : "не зафиксирован"}</small>`)}
-    ${step(2, "Ваши изменения", `<small>${changes.length ? changes.map((item) => `${e(basename(item.path))}${item.status === "added" ? " (новый)" : ""}`).join(", ") : "нет отличий от эталона"}${pending ? ` · последнее: ${e(pending.label)}` : ""}</small>`, changes.length ? "active" : "")}
+    ${step(1, "Исходная версия", `<small>${baseline ? `${e(baseline.label || "Снимок")} · ${Object.keys(baseline.files).length} файлов${baseline.takenAt ? " · " + e(timeLabel(baseline.takenAt)) : ""}` : "не зафиксирован"}</small>`)}
+    ${step(2, "Ваши изменения", `<small>${changes.length ? changes.map((item) => `${e(basename(item.path))}${item.status === "added" ? " (новый)" : ""}`).join(", ") : "нет отличий от исходной версии"}${pending ? ` · последнее: ${e(pending.label)}` : ""}</small>`, changes.length ? "active" : "")}
     ${step(3, "Тестовые входы", `<small>${enabled} из ${cases.length} включено</small>`, enabled ? "" : "bad")}
     ${step(4, result[1], `<small>${result[2]}</small>`, result[0])}
     <div class="ws-step-actions">${button("verify", running ? "Проверяется…" : "Проверить поведение", "shield", "ide-button primary", running || !enabled ? "disabled" : "")}${pending ? button("rollback-change", "Откатить изменение", "undo", "ide-button") : ""}${report?.passed && !stale && changes.length ? button("save-all", "Принять и сохранить", "check", "ide-button") : ""}</div>
@@ -321,6 +324,25 @@ export function plural(count, one, few, many) {
   if (tens >= 11 && tens <= 14) return many;
   if (units === 1) return one;
   return units >= 2 && units <= 4 ? few : many;
+}
+
+const COMPOUND = new Set(["entry", "condition", "loop", "switch", "try", "catch"]);
+const KEYWORD = /^\s*(else\s+if|if|else|for|while|do|switch|try|catch|finally|return|throw|break|continue|synchronized)\b/;
+
+/** What a step looks like in Java terms: the keyword as the tag and the statement head as the text. */
+export function javaFace(node) {
+  const code = String(node.code ?? "").trim();
+  const flat = (value) => value.replace(/\s+/g, " ").trim();
+  if (node.kind === "entry") return { tag: "method", text: flat(code.slice(0, Math.max(code.indexOf("{"), 0) || code.length)) || node.label };
+  if (node.kind === "exit") return { tag: "end", text: "конец метода" };
+  const word = KEYWORD.exec(code)?.[1]?.replace(/\s+/g, " ");
+  const head = COMPOUND.has(node.kind) && code.includes("{") ? flat(code.slice(0, code.indexOf("{"))) : flat(code || node.label);
+  if (word) return { tag: word, text: head };
+  if (node.kind === "variable") return { tag: "var", text: head };
+  if (node.kind === "operation") return { tag: /^[\w.\[\]]+\s*(=|\+=|-=|\*=|\/=|%=)[^=]|^[\w.\[\]]+(\+\+|--)/.test(head) || /^(\+\+|--)/.test(head) ? "assign" : "call", text: head };
+  if (node.kind === "condition") return { tag: "if", text: head };
+  if (node.kind === "loop") return { tag: "loop", text: head };
+  return { tag: node.kind, text: head };
 }
 
 /**
@@ -388,7 +410,8 @@ export function condenseGraph(graph) {
     seen.add(key);
     edges.push({ ...edge, from, to });
   }
-  return { ...graph, nodes: result, edges };
+  const faced = result.map((node) => (node.kind === "sequence" ? { ...node, tag: "steps", text: node.label } : { ...node, ...javaFace(node) }));
+  return { ...graph, nodes: faced.map((node) => ({ ...node, label: node.text })), edges };
 }
 
 export function methodEmptyHtml() {

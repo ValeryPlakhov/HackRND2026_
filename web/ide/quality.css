@@ -1,7 +1,7 @@
 /* Analysis, improvements and behaviour verification. Uses the IDE tokens from ide.css. */
 .q-muted {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11.5px;
 }
 .q-ok {
   color: var(--green);
@@ -14,7 +14,7 @@
   justify-content: space-between;
   align-items: center;
   margin: 18px 14px 7px;
-  font-size: 9px;
+  font-size: 10.3px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -32,7 +32,7 @@
   margin: 10px 12px;
   padding: 8px 10px;
   border-radius: 6px;
-  font-size: 10px;
+  font-size: 11.5px;
   display: flex;
   align-items: center;
   gap: 7px;
@@ -64,11 +64,11 @@
   flex-direction: column;
 }
 .q-summary b {
-  font-size: 16px;
+  font-size: 18.4px;
   font-weight: 600;
 }
 .q-summary span {
-  font-size: 9px;
+  font-size: 10.3px;
   color: var(--muted);
 }
 .q-filters {
@@ -85,11 +85,11 @@
   border: 1px solid var(--line);
   border-radius: 6px;
   padding: 5px 4px;
-  font-size: 9px;
+  font-size: 10.3px;
   color: var(--secondary);
 }
 .q-filter b {
-  font-size: 11px;
+  font-size: 12.6px;
 }
 .q-filter.error b {
   color: var(--red);
@@ -136,11 +136,11 @@
   background: var(--surface-hover);
 }
 .q-finding b {
-  font-size: 11px;
+  font-size: 12.6px;
   font-weight: 600;
 }
 .q-finding small {
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--secondary);
   line-height: 1.5;
   display: -webkit-box;
@@ -150,7 +150,7 @@
 }
 .q-finding em {
   font-style: normal;
-  font: 9px var(--mono);
+  font: 10.3px var(--mono);
   color: var(--accent);
 }
 .q-finding-top {
@@ -160,7 +160,7 @@
   width: 100%;
 }
 .q-finding-top code {
-  font: 8px var(--mono);
+  font: 9.2px var(--mono);
   color: var(--muted);
 }
 .q-fixable {
@@ -172,7 +172,7 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-size: 8px;
+  font-size: 9.2px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -206,18 +206,18 @@
   min-width: 0;
 }
 .q-hotspots b {
-  font-size: 11px;
+  font-size: 12.6px;
   font-weight: 600;
 }
 .q-hotspots small {
-  font-size: 9px;
+  font-size: 10.3px;
   color: var(--muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .q-big-o {
-  font: 600 10px var(--mono);
+  font: 600 11.5px var(--mono);
   padding: 2px 6px;
   border-radius: 4px;
   white-space: nowrap;
@@ -250,10 +250,10 @@
   min-width: 0;
 }
 .q-module b {
-  font-size: 11px;
+  font-size: 12.6px;
 }
 .q-module small {
-  font-size: 9px;
+  font-size: 10.3px;
   color: var(--muted);
 }
 .q-file {
@@ -261,7 +261,7 @@
   align-items: center;
   gap: 7px;
   margin: 10px 12px 0;
-  font-size: 11px;
+  font-size: 12.6px;
 }
 .q-file .ide-icon-button {
   margin-left: auto;
@@ -283,11 +283,11 @@
   padding-top: 2px;
 }
 .q-plan-head b {
-  font-size: 11px;
+  font-size: 12.6px;
   display: block;
 }
 .q-plan-head small {
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--secondary);
   line-height: 1.5;
 }
@@ -297,11 +297,11 @@
   flex-wrap: wrap;
   gap: 6px;
   margin: 8px 0;
-  font-size: 9px;
+  font-size: 10.3px;
   color: var(--muted);
 }
 .q-plan-meta code {
-  font: 9px var(--mono);
+  font: 10.3px var(--mono);
   background: var(--surface-hover);
   padding: 2px 5px;
   border-radius: 4px;
@@ -333,7 +333,7 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font: 9px var(--mono);
+  font: 10.3px var(--mono);
   color: var(--secondary);
   background: var(--surface-alt);
   border: 1px solid var(--line);
@@ -353,7 +353,7 @@
   display: none;
 }
 .q-complexity {
-  font-size: 10px;
+  font-size: 11.5px;
   padding: 0 15px;
   border-bottom: 1px solid var(--line);
   background: var(--surface);
@@ -389,7 +389,7 @@
   border-radius: 50%;
   background: var(--amber);
   color: #fff;
-  font: 700 10px/16px var(--mono);
+  font: 700 11.5px/16px var(--mono);
   text-align: center;
 }
 .flow-node.has-finding[data-finding="error"]::after {
@@ -421,10 +421,10 @@
   background: var(--accent-soft);
 }
 .q-node-finding b {
-  font-size: 11px;
+  font-size: 12.6px;
 }
 .q-node-finding small {
-  font-size: 10px;
+  font-size: 11.5px;
   line-height: 1.5;
   color: var(--secondary);
 }
@@ -467,10 +467,10 @@
   color: var(--text);
 }
 .q-baseline b {
-  font-size: 10px;
+  font-size: 11.5px;
 }
 .q-baseline small {
-  font-size: 9px;
+  font-size: 10.3px;
   color: var(--muted);
   white-space: nowrap;
 }
@@ -486,7 +486,7 @@
   gap: 5px;
   padding: 5px 9px;
   border-radius: 6px;
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--secondary);
 }
 .q-tabs button.active {
@@ -495,7 +495,7 @@
   box-shadow: 0 0 0 1px var(--line);
 }
 .q-tabs button span {
-  font: 9px var(--mono);
+  font: 10.3px var(--mono);
   padding: 1px 4px;
   border-radius: 4px;
   background: var(--surface-hover);
@@ -517,7 +517,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--secondary);
 }
 .q-verify-body {
@@ -537,7 +537,7 @@
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 9px;
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--secondary);
 }
 .q-cases-toolbar > div {
@@ -573,7 +573,7 @@
   min-width: 0;
   border: 0;
   background: transparent;
-  font-size: 11px;
+  font-size: 12.6px;
   font-weight: 600;
   padding: 3px 2px;
 }
@@ -586,7 +586,7 @@
   resize: vertical;
   min-height: 54px;
   padding: 7px 9px;
-  font: 11px/1.5 var(--mono);
+  font: 12.6px/1.5 var(--mono);
   background: transparent;
   color: var(--text);
 }
@@ -613,19 +613,19 @@
   color: var(--text);
 }
 .q-result-banner b {
-  font-size: 13px;
+  font-size: 14.9px;
 }
 .q-result-banner small {
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--secondary);
 }
 .q-hashes {
   margin-left: auto;
-  font-size: 9px;
+  font-size: 10.3px;
   color: var(--secondary);
 }
 .q-hash {
-  font: 9px var(--mono);
+  font: 10.3px var(--mono);
 }
 .q-tests {
   display: flex;
@@ -646,7 +646,7 @@
   gap: 9px;
   padding: 7px 10px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 12.6px;
 }
 .q-test.pass summary svg {
   color: var(--green);
@@ -655,7 +655,7 @@
   color: var(--red);
 }
 .q-test summary code {
-  font: 10px var(--mono);
+  font: 11.5px var(--mono);
   color: var(--muted);
   flex: 1;
   overflow: hidden;
@@ -663,7 +663,7 @@
   text-overflow: ellipsis;
 }
 .q-test summary small {
-  font-size: 9px;
+  font-size: 10.3px;
   color: var(--muted);
   white-space: nowrap;
 }
@@ -692,7 +692,7 @@
   justify-content: space-between;
   gap: 8px;
   padding: 4px 8px;
-  font-size: 9px;
+  font-size: 10.3px;
   background: var(--surface-alt);
   border-bottom: 1px solid var(--line);
   color: var(--secondary);
@@ -702,7 +702,7 @@
   padding: 7px 9px;
   max-height: 180px;
   overflow: auto;
-  font: 10px/1.55 var(--mono);
+  font: 11.5px/1.55 var(--mono);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -710,7 +710,7 @@
   color: var(--red);
 }
 .q-footnote {
-  font-size: 9px;
+  font-size: 10.3px;
   color: var(--muted);
   margin: 10px 0 0;
   line-height: 1.6;
@@ -722,11 +722,11 @@
   margin-bottom: 9px;
 }
 .q-mutation-summary b {
-  font-size: 22px;
+  font-size: 25.3px;
   color: var(--accent);
 }
 .q-mutation-summary span {
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--secondary);
 }
 .q-mutants {
@@ -738,7 +738,7 @@
   border: 1px solid var(--line);
   border-radius: 7px;
   padding: 7px 9px;
-  font-size: 10px;
+  font-size: 11.5px;
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -750,7 +750,7 @@
   flex-wrap: wrap;
 }
 .q-chip {
-  font-size: 8px;
+  font-size: 9.2px;
   font-weight: 700;
   text-transform: uppercase;
   padding: 2px 5px;
@@ -766,7 +766,7 @@
   color: var(--amber);
 }
 .q-mutant code {
-  font: 9px var(--mono);
+  font: 10.3px var(--mono);
   color: var(--muted);
 }
 .q-mutant-code {
@@ -779,7 +779,7 @@
   padding: 5px 7px;
   background: var(--surface-alt);
   border-radius: 5px;
-  font: 9px/1.5 var(--mono);
+  font: 10.3px/1.5 var(--mono);
   white-space: pre-wrap;
   max-height: 90px;
   overflow: auto;
@@ -790,7 +790,7 @@
   gap: 9px;
   flex-wrap: wrap;
   margin-bottom: 10px;
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--secondary);
 }
 .q-inline-form label {
@@ -804,7 +804,7 @@
 }
 .q-inline-form input,
 .q-inline-form textarea {
-  font: 11px var(--mono);
+  font: 12.6px var(--mono);
   padding: 5px 7px;
   border: 1px solid var(--line-strong);
   border-radius: 5px;
@@ -813,12 +813,12 @@
 }
 .q-inline-form small {
   color: var(--muted);
-  font-size: 9px;
+  font-size: 10.3px;
 }
 .q-table {
   width: 100%;
   border-collapse: collapse;
-  font: 10px var(--mono);
+  font: 11.5px var(--mono);
 }
 .q-table th,
 .q-table td {
@@ -827,7 +827,7 @@
   border-bottom: 1px solid var(--line);
 }
 .q-table th {
-  font: 600 9px inherit;
+  font: 600 10.3px inherit;
   color: var(--muted);
 }
 .q-reduction {
@@ -845,12 +845,12 @@
   background: var(--accent-soft);
 }
 .q-reduction small {
-  font-size: 9px;
+  font-size: 10.3px;
   color: var(--secondary);
 }
 .q-reduction pre {
   margin: 5px 0 0;
-  font: 11px var(--mono);
+  font: 12.6px var(--mono);
   white-space: pre-wrap;
 }
 
@@ -871,7 +871,7 @@
   padding: 6px 8px;
   border: 1px solid var(--line);
   border-radius: 6px;
-  font-size: 11px;
+  font-size: 12.6px;
 }
 .q-method-picks label.disabled {
   opacity: 0.5;
@@ -881,7 +881,7 @@
   flex-direction: column;
 }
 .q-method-picks small {
-  font-size: 9px;
+  font-size: 10.3px;
   color: var(--muted);
 }
 .q-form-grid {

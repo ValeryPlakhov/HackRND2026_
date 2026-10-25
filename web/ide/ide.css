@@ -28,7 +28,7 @@
     -apple-system,
     BlinkMacSystemFont,
     sans-serif;
-  font-size: 13px;
+  font-size: 14.9px;
   font-weight: 400;
   color: var(--text);
   background: var(--bg);
@@ -157,7 +157,7 @@ select {
   cursor: pointer;
 }
 kbd {
-  font: 10px var(--mono);
+  font: 11.5px var(--mono);
   padding: 3px 5px;
   color: var(--muted);
   border: 1px solid var(--line);
@@ -208,7 +208,7 @@ kbd {
   color: var(--text);
   gap: 9px;
   flex: 0 0 236px;
-  font-size: 17px;
+  font-size: 19.5px;
   letter-spacing: -0.4px;
 }
 .ide-brand:hover {
@@ -228,7 +228,7 @@ kbd {
   color: var(--accent);
   border-radius: 4px;
   padding: 1px 5px;
-  font-size: 9px;
+  font-size: 10.3px;
   margin-top: 2px;
 }
 .ide-command-trigger {
@@ -244,7 +244,7 @@ kbd {
   padding: 0 10px;
   gap: 9px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13.8px;
 }
 .ide-command-trigger:hover {
   border-color: var(--line-strong);
@@ -255,7 +255,7 @@ kbd {
   text-align: left;
 }
 .ide-command-trigger kbd {
-  font-size: 9px;
+  font-size: 10.3px;
   padding: 1px 4px;
   background: var(--surface);
 }
@@ -293,7 +293,7 @@ kbd {
 }
 .ide-sidebar-head h2 {
   margin: 0;
-  font-size: 11px;
+  font-size: 12.6px;
   font-weight: 600;
   letter-spacing: 0.3px;
   color: var(--secondary);
@@ -383,7 +383,7 @@ kbd {
   gap: 9px;
   height: 100%;
   padding: 0 8px 0 15px;
-  font-size: 11px;
+  font-size: 12.6px;
   white-space: nowrap;
   flex: 1;
   min-width: 0;
@@ -397,7 +397,7 @@ kbd {
   height: 25px;
   border-radius: 4px;
   margin-right: 5px;
-  font-size: 17px;
+  font-size: 19.5px;
   color: var(--muted);
 }
 .tab-close:hover {
@@ -416,10 +416,10 @@ kbd {
   color: var(--amber);
   border-radius: 3px;
   padding: 0 3px;
-  font: 10px var(--mono);
+  font: 11.5px var(--mono);
 }
 .file-type {
-  font-size: 11px;
+  font-size: 12.6px;
   font-weight: 700;
 }
 .file-type.java,
@@ -427,7 +427,7 @@ kbd {
   color: #b88740;
 }
 .ide-tab-placeholder {
-  font-size: 11px;
+  font-size: 12.6px;
   color: var(--muted);
   padding: 12px 18px;
 }
@@ -442,7 +442,7 @@ kbd {
 }
 .toolbar-hint {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12.6px;
 }
 .toolbar-spacer {
   flex: 1;
@@ -452,7 +452,7 @@ kbd {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--muted);
   overflow: hidden;
   white-space: nowrap;
@@ -484,7 +484,7 @@ kbd {
   align-items: center;
   gap: 6px;
   border-radius: 4px;
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--muted);
   white-space: nowrap;
 }
@@ -505,7 +505,7 @@ kbd {
   border: 1px solid var(--line-strong);
   border-radius: 6px;
   padding: 8px 13px;
-  font-size: 12px;
+  font-size: 13.8px;
   font-weight: 500;
   white-space: nowrap;
   min-height: 34px;
@@ -541,7 +541,7 @@ kbd {
 .ide-button.small {
   padding: 5px 9px;
   min-height: 28px;
-  font-size: 10px;
+  font-size: 11.5px;
   gap: 5px;
 }
 .ide-button.small svg {
@@ -550,7 +550,7 @@ kbd {
 }
 .ide-button.large {
   padding: 13px 20px;
-  font-size: 13px;
+  font-size: 14.9px;
   border-radius: 8px;
   min-height: 45px;
 }
@@ -632,7 +632,7 @@ kbd {
   background: var(--surface-alt);
   border-top: 1px solid var(--line);
   color: var(--muted);
-  font-size: 9px;
+  font-size: 10.3px;
   user-select: none;
 }
 .ide-statusbar > div {
@@ -644,7 +644,7 @@ kbd {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 9px;
+  font-size: 10.3px;
   padding: 4px 2px;
 }
 .ide-statusbar button:hover {
@@ -662,7 +662,7 @@ kbd {
   text-align: left;
 }
 .tree-project b {
-  font-size: 10px;
+  font-size: 11.5px;
   font-weight: 600;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -671,7 +671,7 @@ kbd {
 .tree-project button > span {
   margin-left: auto;
   color: var(--muted);
-  font: 8px var(--mono);
+  font: 9.2px var(--mono);
   padding: 2px 5px;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -687,7 +687,7 @@ kbd {
   padding-top: 0;
   padding-bottom: 0;
   padding-right: 12px;
-  font-size: 11px;
+  font-size: 12.6px;
   color: var(--secondary);
 }
 .tree-item > button > span:last-child {
@@ -723,11 +723,11 @@ kbd {
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 11px;
+  font-size: 12.6px;
   color: #8c9fbb;
 }
 .tree-loading {
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--muted);
   padding: 5px 26px;
 }
@@ -736,7 +736,7 @@ kbd {
   margin-top: 22px;
   border-top: 1px solid var(--line);
   color: var(--muted);
-  font-size: 9px;
+  font-size: 10.3px;
   line-height: 1.7;
 }
 .explorer-bottom button {
@@ -745,7 +745,7 @@ kbd {
   gap: 6px;
   color: var(--secondary);
   margin-top: 8px;
-  font-size: 10px;
+  font-size: 11.5px;
   padding: 0;
 }
 .sidebar-empty {
@@ -758,13 +758,13 @@ kbd {
   opacity: 0.65;
 }
 .sidebar-empty h3 {
-  font-size: 13px;
+  font-size: 14.9px;
   font-weight: 500;
   color: var(--secondary);
   margin: 8px 0;
 }
 .sidebar-empty p {
-  font-size: 11px;
+  font-size: 12.6px;
   line-height: 1.8;
   margin: 8px 0 17px;
 }
@@ -774,7 +774,7 @@ kbd {
 .sidebar-note {
   margin: 12px 17px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11.5px;
   line-height: 1.8;
 }
 .project-search-form {
@@ -782,7 +782,7 @@ kbd {
 }
 .project-search-form input:not([type="checkbox"]) {
   width: 100%;
-  font-size: 11px;
+  font-size: 12.6px;
   padding: 8px;
   min-width: 0;
 }
@@ -811,14 +811,14 @@ kbd {
   align-items: center;
   gap: 4px;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 10.3px;
 }
 .search-options input[type="checkbox"] {
   width: 12px;
   height: 12px;
 }
 .project-search-form details {
-  font-size: 10px;
+  font-size: 11.5px;
   margin-top: 12px;
   color: var(--secondary);
 }
@@ -833,7 +833,7 @@ kbd {
   margin-top: 7px;
 }
 .search-summary {
-  font-size: 9px;
+  font-size: 10.3px;
   padding: 11px 17px;
   border-top: 1px solid var(--line);
   color: var(--muted);
@@ -852,16 +852,16 @@ kbd {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--secondary);
 }
 .project-search-results small {
   margin-left: auto;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 10.3px;
 }
 .project-search-results code {
-  font: 10px/1.7 var(--mono);
+  font: 11.5px/1.7 var(--mono);
   color: var(--muted);
   display: block;
   white-space: nowrap;
@@ -874,13 +874,13 @@ kbd {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: 12.6px;
   padding: 6px 17px 12px;
   color: var(--secondary);
 }
 .outline-package {
   color: var(--muted);
-  font: 10px var(--mono);
+  font: 11.5px var(--mono);
   padding: 0 17px;
 }
 .outline-methods > button {
@@ -908,12 +908,12 @@ kbd {
   flex: 1;
 }
 .outline-methods b {
-  font-size: 11px;
+  font-size: 12.6px;
   font-weight: 500;
 }
 .outline-methods small {
   display: block;
-  font: 9px/1.8 var(--mono);
+  font: 10.3px/1.8 var(--mono);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -923,7 +923,7 @@ kbd {
 .outline-methods em {
   font-style: normal;
   color: var(--muted);
-  font: 9px var(--mono);
+  font: 10.3px var(--mono);
   padding-top: 3px;
 }
 .git-branch {
@@ -931,20 +931,20 @@ kbd {
   align-items: center;
   gap: 7px;
   padding: 7px 17px 14px;
-  font-size: 11px;
+  font-size: 12.6px;
   color: var(--secondary);
 }
 .git-branch small {
   margin-left: auto;
   color: var(--muted);
-  font: 9px var(--mono);
+  font: 10.3px var(--mono);
 }
 .git-counts {
   display: flex;
   justify-content: space-between;
   padding: 9px 17px;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 10.3px;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
@@ -960,7 +960,7 @@ kbd {
   background: var(--surface-hover);
 }
 .git-code {
-  font: 10px var(--mono);
+  font: 11.5px var(--mono);
   color: var(--amber);
   width: 23px;
   flex: 0 0 23px;
@@ -974,7 +974,7 @@ kbd {
   flex: 1;
 }
 .git-files b {
-  font-size: 10px;
+  font-size: 11.5px;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -983,7 +983,7 @@ kbd {
 }
 .git-files small {
   color: var(--muted);
-  font-size: 9px;
+  font-size: 10.3px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -992,7 +992,7 @@ kbd {
 }
 .git-files em {
   color: var(--muted);
-  font-size: 8px;
+  font-size: 9.2px;
   font-style: normal;
 }
 .history-entries {
@@ -1021,12 +1021,12 @@ kbd {
 }
 .history-entries b {
   display: block;
-  font-size: 10px;
+  font-size: 11.5px;
   font-weight: 500;
 }
 .history-entries small {
   display: block;
-  font-size: 9px;
+  font-size: 10.3px;
   color: var(--muted);
   margin-top: 5px;
 }
@@ -1051,7 +1051,7 @@ kbd {
   align-items: center;
   gap: 9px;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 10.3px;
   font-weight: 600;
   letter-spacing: 1.6px;
 }
@@ -1071,7 +1071,7 @@ kbd {
 }
 .welcome-lead {
   color: var(--secondary);
-  font-size: 13px;
+  font-size: 14.9px;
   line-height: 1.9;
   max-width: 430px;
   margin: 0 0 24px;
@@ -1084,7 +1084,7 @@ kbd {
 .welcome-demo-link {
   padding: 13px 0;
   color: var(--accent);
-  font-size: 11px;
+  font-size: 12.6px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1108,18 +1108,18 @@ kbd {
   background: var(--accent-soft);
   color: var(--accent);
   border-radius: 7px;
-  font: 9px var(--mono);
+  font: 10.3px var(--mono);
   align-items: center;
   justify-content: center;
   margin-bottom: 10px;
 }
 .welcome-flow b {
-  font-size: 10px;
+  font-size: 11.5px;
   font-weight: 500;
   display: block;
 }
 .welcome-flow small {
-  font-size: 9px;
+  font-size: 10.3px;
   color: var(--muted);
   display: block;
   margin-top: 5px;
@@ -1138,7 +1138,7 @@ kbd {
   margin-top: 28px;
   border-top: 1px solid var(--line);
   color: var(--muted);
-  font-size: 9px;
+  font-size: 10.3px;
 }
 .welcome-bottom > span {
   display: flex;
@@ -1169,7 +1169,7 @@ kbd {
   background: var(--surface);
   border: 1px solid var(--line-strong);
   border-radius: 8px;
-  font-size: 11px;
+  font-size: 12.6px;
   box-shadow: 0 4px 9px #25314a05;
   display: flex;
   align-items: center;
@@ -1221,21 +1221,21 @@ kbd {
   align-items: center;
 }
 .welcome-branches small {
-  font-size: 9px;
+  font-size: 10.3px;
   margin-top: 11px;
   color: var(--muted);
   background: var(--surface-alt);
   padding: 0 4px;
 }
 .welcome-branches .welcome-node {
-  font-size: 10px;
+  font-size: 11.5px;
   padding: 11px 10px;
 }
 .welcome-branches .welcome-wire {
   height: 13px;
 }
 .welcome-graph-caption {
-  font-size: 9px;
+  font-size: 10.3px;
   color: var(--muted);
   text-align: center;
   margin-top: 25px;
@@ -1244,13 +1244,13 @@ kbd {
   margin-top: 24px;
 }
 .welcome-recent h2 {
-  font-size: 11px;
+  font-size: 12.6px;
   font-weight: 500;
   color: var(--secondary);
   margin: 0 0 13px;
 }
 .welcome-recent p {
-  font-size: 10px;
+  font-size: 11.5px;
   line-height: 1.8;
   color: var(--muted);
   margin: 0;
@@ -1271,7 +1271,7 @@ kbd {
 .welcome-recent b {
   display: block;
   color: var(--text);
-  font-size: 11px;
+  font-size: 12.6px;
   font-weight: 500;
 }
 .welcome-recent small {
@@ -1279,7 +1279,7 @@ kbd {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 9px;
+  font-size: 10.3px;
   margin-top: 3px;
 }
 .welcome-recent > button:hover b {
@@ -1300,20 +1300,20 @@ kbd {
   margin-bottom: 8px;
 }
 .ide-empty-editor h1 {
-  font-size: 21px;
+  font-size: 24.1px;
   font-weight: 500;
   margin: 15px 0 4px;
 }
 .ide-empty-editor p {
   color: var(--muted);
   line-height: 1.9;
-  font-size: 12px;
+  font-size: 13.8px;
   margin-bottom: 23px;
 }
 .ide-empty-editor > small {
   color: var(--muted);
   margin-top: 27px;
-  font-size: 10px;
+  font-size: 11.5px;
 }
 .ide-empty-editor kbd {
   margin: 0 4px;
@@ -1325,7 +1325,7 @@ kbd {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  --editor-font-size: 14px;
+  --editor-font-size: 16.1px;
   --editor-tab-size: 4;
   background: var(--surface);
 }
@@ -1509,10 +1509,10 @@ kbd {
   width: 155px;
   min-width: 80px;
   padding: 5px 6px;
-  font-size: 10px;
+  font-size: 11.5px;
 }
 .editor-find button {
-  font-size: 11px;
+  font-size: 12.6px;
   padding: 5px;
   border-radius: 3px;
   color: var(--muted);
@@ -1523,7 +1523,7 @@ kbd {
   color: var(--accent);
 }
 #editor-match-count {
-  font-size: 9px;
+  font-size: 10.3px;
   color: var(--muted);
   padding: 0 3px;
   white-space: nowrap;
@@ -1537,7 +1537,7 @@ kbd {
   color: var(--amber);
   background: var(--amber-soft);
   border-top: 1px solid var(--line);
-  font-size: 9px;
+  font-size: 10.3px;
   padding: 5px 10px;
 }
 .editor-completions {
@@ -1565,11 +1565,11 @@ kbd {
   background: var(--accent-soft);
 }
 .editor-completions button > span {
-  font: 11px var(--mono);
+  font: 12.6px var(--mono);
 }
 .editor-completions small {
   color: var(--muted);
-  font-size: 9px;
+  font-size: 10.3px;
   margin-left: auto;
   white-space: nowrap;
   overflow: hidden;
@@ -1583,7 +1583,7 @@ kbd {
   padding: 7px 14px;
   background: var(--amber-soft);
   color: var(--amber);
-  font-size: 10px;
+  font-size: 11.5px;
   border-bottom: 1px solid var(--line);
 }
 .file-conflict-strip > button {
@@ -1629,7 +1629,7 @@ kbd {
 .ide-panel-head [role="tab"] {
   padding: 0;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11.5px;
   border-bottom: 2px solid transparent;
   display: flex;
   align-items: center;
@@ -1643,7 +1643,7 @@ kbd {
   background: var(--surface-hover);
   border-radius: 4px;
   padding: 1px 5px;
-  font: 8px var(--mono);
+  font: 9.2px var(--mono);
 }
 .ide-panel-tools {
   display: flex;
@@ -1677,10 +1677,10 @@ kbd {
 }
 .panel-empty > span {
   color: var(--secondary);
-  font-size: 11px;
+  font-size: 12.6px;
 }
 .panel-empty > small {
-  font-size: 10px;
+  font-size: 11.5px;
 }
 .task-summary {
   display: flex;
@@ -1688,14 +1688,14 @@ kbd {
   gap: 14px;
   padding: 8px 17px;
   border-bottom: 1px solid var(--line);
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--muted);
 }
 .task-summary > span {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--accent);
 }
 .task-summary.done > span {
@@ -1713,7 +1713,7 @@ kbd {
 }
 .task-summary small {
   margin-left: auto;
-  font-size: 9px;
+  font-size: 10.3px;
 }
 .task-streams {
   padding: 10px 17px 17px;
@@ -1722,7 +1722,7 @@ kbd {
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
-  font: 11px/1.8 var(--mono);
+  font: 12.6px/1.8 var(--mono);
 }
 .task-stdout {
   color: var(--text);
@@ -1732,14 +1732,14 @@ kbd {
   background: var(--amber-soft);
   padding: 8px 17px;
   border-bottom: 1px solid var(--line);
-  font-size: 10px;
+  font-size: 11.5px;
   line-height: 1.7;
 }
 .task-stderr {
   color: var(--red);
 }
 .task-limit {
-  font-size: 11px;
+  font-size: 12.6px;
   color: var(--red);
   background: var(--red-soft);
   padding: 8px;
@@ -1747,7 +1747,7 @@ kbd {
 }
 .task-hint {
   color: var(--amber);
-  font-size: 10px;
+  font-size: 11.5px;
   line-height: 1.8;
   background: var(--amber-soft);
   padding: 9px 12px;
@@ -1763,7 +1763,7 @@ kbd {
   width: 100%;
   padding: 7px 16px;
   text-align: left;
-  font-size: 10px;
+  font-size: 11.5px;
 }
 .problem-list > button:hover {
   background: var(--surface-hover);
@@ -1773,12 +1773,12 @@ kbd {
   min-width: 0;
 }
 .problem-list small {
-  font: 9px var(--mono);
+  font: 10.3px var(--mono);
   color: var(--muted);
 }
 .problem-list em {
   color: var(--muted);
-  font-size: 8px;
+  font-size: 9.2px;
   font-style: normal;
 }
 .problem-severity.error {
@@ -1794,7 +1794,7 @@ kbd {
 }
 .run-settings-form label {
   color: var(--secondary);
-  font-size: 10px;
+  font-size: 11.5px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -1802,11 +1802,11 @@ kbd {
 }
 .run-settings-form input {
   width: 100%;
-  font: 10px var(--mono);
+  font: 11.5px var(--mono);
 }
 .run-settings-form textarea {
   resize: none;
-  font: 10px/1.7 var(--mono);
+  font: 11.5px/1.7 var(--mono);
 }
 .run-settings-form .run-input-label {
   flex: 1;
@@ -1816,7 +1816,7 @@ kbd {
   padding-top: 18px;
 }
 .run-settings-form p {
-  font-size: 9px;
+  font-size: 10.3px;
   color: var(--muted);
   line-height: 1.7;
 }
@@ -1861,7 +1861,7 @@ kbd {
   box-shadow: 0 6px 24px #25314a1c;
   border-radius: 7px;
   padding: 13px 12px 13px 16px;
-  font-size: 11px;
+  font-size: 12.6px;
   line-height: 1.8;
   color: var(--secondary);
   pointer-events: auto;
@@ -1877,7 +1877,7 @@ kbd {
   color: var(--muted);
   padding: 0 2px;
   line-height: 1.3;
-  font-size: 19px;
+  font-size: 21.8px;
 }
 @keyframes ide-slide {
   from {
@@ -1926,12 +1926,12 @@ dialog::backdrop {
 }
 .ide-modal h2 {
   font-weight: 600;
-  font-size: 16px;
+  font-size: 18.4px;
   letter-spacing: -0.3px;
   margin: 0;
 }
 .ide-modal > header > button {
-  font-size: 24px;
+  font-size: 27.6px;
   color: var(--muted);
   padding: 0 3px;
   line-height: 1;
@@ -1953,34 +1953,34 @@ dialog::backdrop {
   border-radius: 0 0 13px 13px;
 }
 .modal-lead {
-  font-size: 12px;
+  font-size: 13.8px;
   color: var(--secondary);
   line-height: 1.9;
   margin: 0 0 20px;
 }
 .modal-note {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11.5px;
   line-height: 1.9;
 }
 .modal-field {
   display: flex;
   flex-direction: column;
   gap: 9px;
-  font-size: 11px;
+  font-size: 12.6px;
   color: var(--secondary);
   margin-bottom: 18px;
 }
 .modal-field input,
 .modal-field select {
   width: 100%;
-  font-size: 12px;
+  font-size: 13.8px;
 }
 .modal-code {
   width: 100%;
   min-height: 150px;
   max-height: 50vh;
-  font: 12px/1.8 var(--mono);
+  font: 13.8px/1.8 var(--mono);
   tab-size: 4;
   background: var(--surface-alt);
   white-space: pre;
@@ -1990,7 +1990,7 @@ dialog::backdrop {
   background: var(--red-soft);
   padding: 10px 13px;
   border-radius: 5px;
-  font: 10px/1.8 var(--mono);
+  font: 11.5px/1.8 var(--mono);
   word-break: break-word;
 }
 .language-grid {
@@ -2026,24 +2026,24 @@ dialog::backdrop {
   justify-content: center;
   color: var(--language-color);
   background: color-mix(in srgb, var(--language-color) 10%, var(--surface));
-  font: 11px var(--mono);
+  font: 12.6px var(--mono);
 }
 .language-card > div {
   flex: 1;
 }
 .language-card h3 {
   margin: 0;
-  font-size: 12px;
+  font-size: 13.8px;
   font-weight: 600;
 }
 .language-card p {
   margin: 4px 0 0;
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--muted);
   line-height: 1.6;
 }
 .language-card > small {
-  font-size: 9px;
+  font-size: 10.3px;
   color: var(--muted);
   background: var(--surface);
   border: 1px solid var(--line);
@@ -2066,7 +2066,7 @@ dialog::backdrop {
   padding: 10px 0;
   border-bottom: 1px solid var(--line);
   gap: 15px;
-  font-size: 11px;
+  font-size: 12.6px;
   color: var(--secondary);
 }
 .settings-fields {
@@ -2079,7 +2079,7 @@ dialog::backdrop {
   flex-direction: column;
   gap: 8px;
   color: var(--secondary);
-  font-size: 11px;
+  font-size: 12.6px;
 }
 .settings-checkboxes {
   margin-top: 23px;
@@ -2094,17 +2094,17 @@ dialog::backdrop {
 }
 .setting-checkbox b {
   display: block;
-  font-size: 11px;
+  font-size: 12.6px;
   font-weight: 500;
 }
 .setting-checkbox small {
   display: block;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11.5px;
   margin-top: 4px;
 }
 .settings-local-note {
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--muted);
   margin: 10px 0 0;
 }
@@ -2120,13 +2120,13 @@ dialog::backdrop {
   padding: 9px 13px;
   color: var(--muted);
   background: var(--surface-alt);
-  font-size: 10px;
+  font-size: 11.5px;
   border-bottom: 1px solid var(--line);
 }
 .diff-lines {
   max-height: 45vh;
   overflow: auto;
-  font: 11px/1.8 var(--mono);
+  font: 12.6px/1.8 var(--mono);
   background: var(--surface);
 }
 .diff-line {
@@ -2141,7 +2141,7 @@ dialog::backdrop {
   text-align: right;
   padding-right: 7px;
   border-right: 1px solid var(--line);
-  font-size: 9px;
+  font-size: 10.3px;
 }
 .diff-line > i {
   font-style: normal;
@@ -2173,14 +2173,14 @@ dialog::backdrop {
 }
 .replace-preview-file summary {
   cursor: pointer;
-  font-size: 11px;
+  font-size: 12.6px;
   color: var(--secondary);
 }
 .replace-preview-file .ide-diff {
   margin-bottom: 0;
 }
 .overview-project-path {
-  font: 10px/1.7 var(--mono);
+  font: 11.5px/1.7 var(--mono);
   color: var(--muted);
   display: flex;
   align-items: center;
@@ -2200,13 +2200,13 @@ dialog::backdrop {
   border-radius: 8px;
 }
 .overview-stats b {
-  font-size: 23px;
+  font-size: 26.4px;
   font-weight: 500;
   display: block;
   color: var(--accent);
 }
 .overview-stats span {
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--muted);
   display: block;
   margin-top: 5px;
@@ -2217,7 +2217,7 @@ dialog::backdrop {
   gap: 30px;
 }
 .overview-columns h3 {
-  font-size: 12px;
+  font-size: 13.8px;
   font-weight: 600;
   margin: 0 0 13px;
 }
@@ -2225,7 +2225,7 @@ dialog::backdrop {
   margin-top: 25px;
 }
 .overview-columns p {
-  font-size: 11px;
+  font-size: 12.6px;
   line-height: 1.9;
   color: var(--secondary);
 }
@@ -2245,12 +2245,12 @@ dialog::backdrop {
   min-width: 0;
 }
 .overview-entry b {
-  font-size: 11px;
+  font-size: 12.6px;
   font-weight: 500;
 }
 .overview-entry small {
   display: block;
-  font-size: 9px;
+  font-size: 10.3px;
   color: var(--muted);
   margin-top: 4px;
 }
@@ -2268,11 +2268,11 @@ dialog::backdrop {
   gap: 10px;
   padding: 7px 0;
   border-bottom: 1px solid var(--line);
-  font: 10px var(--mono);
+  font: 11.5px var(--mono);
 }
 .package-list small {
   font:
-    9px "Segoe UI",
+    10.3px "Segoe UI",
     sans-serif;
   color: var(--muted);
   white-space: nowrap;
@@ -2282,7 +2282,7 @@ dialog::backdrop {
   color: var(--amber);
   padding: 10px 12px;
   border-radius: 6px;
-  font-size: 10px;
+  font-size: 11.5px;
   line-height: 1.9;
   margin: 15px 0;
 }
@@ -2290,7 +2290,7 @@ dialog::backdrop {
   display: flex;
   align-items: center;
   gap: 6px;
-  font: 10px var(--mono);
+  font: 11.5px var(--mono);
   color: var(--accent);
   padding: 8px 0;
 }
@@ -2306,12 +2306,12 @@ dialog::backdrop {
 }
 .about-brand h3 {
   margin: 0 0 8px;
-  font-size: 17px;
+  font-size: 19.5px;
   font-weight: 500;
 }
 .about-brand p {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12.6px;
   line-height: 1.7;
   margin: 0;
 }
@@ -2319,7 +2319,7 @@ dialog::backdrop {
   display: grid;
   grid-template-columns: 80px 1fr;
   gap: 12px 15px;
-  font-size: 11px;
+  font-size: 12.6px;
   margin-bottom: 25px;
 }
 .about-facts dt {
@@ -2330,7 +2330,7 @@ dialog::backdrop {
   color: var(--secondary);
 }
 .git-diff-pre {
-  font: 11px/1.8 var(--mono);
+  font: 12.6px/1.8 var(--mono);
   white-space: pre;
   overflow: auto;
   max-height: 55vh;
@@ -2367,7 +2367,7 @@ dialog::backdrop {
   padding: 0;
   flex: 1;
   min-width: 0;
-  font-size: 14px;
+  font-size: 16.1px;
   background: transparent;
 }
 .palette-input-wrap input:focus {
@@ -2404,13 +2404,13 @@ dialog::backdrop {
 }
 .palette-result b {
   display: block;
-  font-size: 12px;
+  font-size: 13.8px;
   font-weight: 400;
   color: var(--text);
 }
 .palette-result small {
   display: block;
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--muted);
   margin-top: 3px;
   white-space: nowrap;
@@ -2418,7 +2418,7 @@ dialog::backdrop {
   text-overflow: ellipsis;
 }
 .palette-result kbd {
-  font-size: 9px;
+  font-size: 10.3px;
 }
 .command-palette > footer {
   display: flex;
@@ -2426,13 +2426,13 @@ dialog::backdrop {
   gap: 15px;
   padding: 10px 17px;
   border-top: 1px solid var(--line);
-  font-size: 9px;
+  font-size: 10.3px;
   color: var(--muted);
   background: var(--surface-alt);
 }
 .command-palette > footer b {
   margin-left: auto;
-  font-size: 8px;
+  font-size: 9.2px;
   letter-spacing: 0.6px;
   font-weight: 400;
 }
@@ -2440,7 +2440,7 @@ dialog::backdrop {
   color: var(--muted);
   text-align: center;
   padding: 25px;
-  font-size: 12px;
+  font-size: 13.8px;
 }
 .ide-start-error {
   max-width: 550px;
@@ -2451,7 +2451,7 @@ dialog::backdrop {
   border-radius: 12px;
 }
 .ide-start-error h1 {
-  font-size: 22px;
+  font-size: 25.3px;
   font-weight: 500;
 }
 .ide-start-error p {
