@@ -39,7 +39,12 @@ export function shell() {
 
 export function titleActions(project, busy, notices = { unread: 0, error: false }) {
   const bell = `<button class="ide-icon-button ide-bell ${notices.error ? "has-error" : ""} ${notices.unread ? "has-unread" : ""}" data-action="notifications" aria-label="Уведомления${notices.unread ? ": новых " + notices.unread : ""}" title="Уведомления" aria-haspopup="dialog">${glyph("bell")}${notices.unread ? `<b class="ide-bell-count">${notices.unread > 9 ? "9+" : notices.unread}</b>` : ""}</button>`;
-  return `${busy ? iconButton("stop", "Остановить запуск", "close") : ""}${iconButton("help-menu", "Помощь", "help", 'aria-haspopup="true" aria-expanded="false"')}${bell}${iconButton("settings", "Настройки", "settings")}`;
+  const run = project
+    ? busy
+      ? `<button class="ide-icon-button ide-run-icon busy" data-action="stop" aria-label="Остановить программу" title="Остановить программу (Shift+F5)">${glyph("close")}</button>`
+      : `<button class="ide-icon-button ide-run-icon" data-action="run" aria-label="Запустить программу" title="Запустить программу, вывод — в консоли (F5)">${glyph("play")}</button>`
+    : "";
+  return `${run}${iconButton("help-menu", "Помощь", "help", 'aria-haspopup="true" aria-expanded="false"')}${bell}${iconButton("settings", "Настройки", "settings")}`;
 }
 
 const NOTICE_ICON = { error: "warning", warning: "warning", success: "circleCheck", info: "info" };
@@ -208,18 +213,20 @@ export function problemsPanel(problems) {
   return `<div class="problem-list">${problems.map((problem) => `<button data-action="problem" data-path="${e(problem.path)}" data-line="${problem.line ?? 1}" data-column="${problem.column ?? 1}"><span class="problem-severity ${String(problem.severity).toLocaleLowerCase()}">${glyph(problem.severity === "ERROR" || problem.severity === "error" ? "warning" : "info", 14)}</span><span>${e(problem.message)}</span><small>${e(basename(problem.path))}:${problem.line ?? 1}</small><em>${e(problem.source ?? "javac parse")}</em></button>`).join("")}</div>`;
 }
 
-export function outputPanel(task) {
+/** Console: what the program printed, and the field for what it reads from the keyboard. */
+export function outputPanel(task, input = "", ask = "") {
+  const form = `<form id="console-form" class="console-input ${ask ? "asking" : ""}"><label for="console-stdin">${ask ? e(ask) : "Ввод для программы (то, что она читает с клавиатуры: Scanner, System.in). Каждое значение — с новой строки"}</label><div><textarea id="console-stdin" name="input" rows="2" spellcheck="false" placeholder="например: 5" maxlength="32768">${e(input)}</textarea><button type="submit" class="ide-button primary">${glyph("play", 15)}<span>Запустить</span></button></div></form>`;
   if (!task)
-    return `<div class="panel-empty">${glyph("terminal", 23)}<span>Программа ещё не запускалась</span><small>Нажмите «Запустить» или F5. Результат появится здесь.</small></div>`;
+    return `<div class="console">${form}<div class="panel-empty">${glyph("terminal", 23)}<span>Программа ещё не запускалась</span><small>Кнопка ▶ сверху справа или F5. Здесь появится то, что программа выведет.</small></div></div>`;
   const busy = ["queued", "running"].includes(task.status);
   const labels = {
     queued: "В очереди",
     running: "Выполняется",
-    done: "Успешно",
-    failed: "Ошибка",
+    done: "Завершилась",
+    failed: "Завершилась с ошибкой",
     cancelled: "Остановлено",
   };
-  return `${task.stale ? '<div class="task-stale-notice">Код изменён после запуска. Этот результат относится к предыдущей версии; запустите программу снова.</div>' : ""}<div class="task-summary ${e(task.status)}"><span>${busy ? '<i class="ide-spinner small"></i>' : glyph(task.status === "done" ? "circleCheck" : "warning", 14)}${labels[task.status] ?? task.status}</span><b>${e(task.stage ?? "")}</b><small>${task.exitCode !== null && task.exitCode !== undefined ? "Код " + task.exitCode : ""}${task.finishedAt ? " · " + timeLabel(task.finishedAt) : ""}</small></div><div class="task-streams"><pre class="task-stdout">${e(task.stdout || (!busy && task.status === "done" ? "Программа завершилась без вывода." : ""))}</pre>${task.stderr ? `<pre class="task-stderr">${e(task.stderr)}</pre>` : ""}${task.timedOut ? '<p class="task-limit">Превышено время выполнения. Задача остановлена.</p>' : ""}${task.truncated ? '<p class="task-limit">Превышен лимит вывода 256 КиБ. Задача остановлена.</p>' : ""}${task.hint ? `<p class="task-hint">${e(task.hint)}</p>` : ""}</div>`;
+  return `<div class="console">${task.stale ? '<div class="task-stale-notice">Код изменён после запуска. Этот результат относится к предыдущей версии; запустите программу снова.</div>' : ""}<div class="task-summary ${e(task.status)}"><span>${busy ? '<i class="ide-spinner small"></i>' : glyph(task.status === "done" ? "circleCheck" : "warning", 14)}${labels[task.status] ?? task.status}</span><b>${e(task.entryPoint ? "Запущено: " + task.entryPoint : task.stage ?? "")}</b><small>${task.exitCode !== null && task.exitCode !== undefined ? "код выхода " + task.exitCode : ""}${task.finishedAt ? " · " + timeLabel(task.finishedAt) : ""}</small></div><div class="task-streams"><pre class="task-stdout">${e(task.stdout || (!busy ? "Программа ничего не вывела." : ""))}</pre>${task.stderr ? `<pre class="task-stderr">${e(task.stderr)}</pre>` : ""}${task.timedOut ? '<p class="task-limit">Превышено время выполнения. Задача остановлена.</p>' : ""}${task.truncated ? '<p class="task-limit">Превышен лимит вывода 256 КиБ. Задача остановлена.</p>' : ""}${task.hint ? `<p class="task-hint">${e(task.hint)}</p>` : ""}</div>${form}</div>`;
 }
 
 export function runSettingsPanel(config, overview) {

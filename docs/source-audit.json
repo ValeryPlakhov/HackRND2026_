@@ -8,19 +8,19 @@
     "documentation and SVG assets"
   ],
   "total": {
-    "files": 79,
-    "physical": 26257,
-    "nonempty": 25021
+    "files": 85,
+    "physical": 27104,
+    "nonempty": 25811
   },
   "product": {
-    "files": 57,
-    "physical": 23149,
-    "nonempty": 22219
+    "files": 60,
+    "physical": 23779,
+    "nonempty": 22825
   },
   "tests": {
-    "files": 22,
-    "physical": 3108,
-    "nonempty": 2802
+    "files": 25,
+    "physical": 3325,
+    "nonempty": 2986
   },
   "languages": {
     "C#": {
@@ -29,29 +29,29 @@
       "nonempty": 0
     },
     "CSS": {
-      "files": 5,
-      "physical": 5991,
-      "nonempty": 5959
+      "files": 6,
+      "physical": 6222,
+      "nonempty": 6187
     },
     "HTML": {
       "files": 2,
-      "physical": 34,
-      "nonempty": 34
+      "physical": 35,
+      "nonempty": 35
     },
     "Java": {
       "files": 23,
-      "physical": 6258,
-      "nonempty": 5921
+      "physical": 6403,
+      "nonempty": 6061
     },
     "JavaScript": {
-      "files": 41,
-      "physical": 12633,
-      "nonempty": 11935
+      "files": 45,
+      "physical": 13023,
+      "nonempty": 12294
     },
     "Python": {
-      "files": 8,
-      "physical": 1341,
-      "nonempty": 1172
+      "files": 9,
+      "physical": 1421,
+      "nonempty": 1234
     }
   },
   "files": [
@@ -191,15 +191,15 @@
     {
       "path": "src/Runner.java",
       "language": "Java",
-      "physical": 478,
-      "nonempty": 455,
+      "physical": 621,
+      "nonempty": 593,
       "category": "product"
     },
     {
       "path": "src/StudioApi.java",
       "language": "Java",
-      "physical": 256,
-      "nonempty": 246,
+      "physical": 258,
+      "nonempty": 248,
       "category": "product"
     },
     {
@@ -233,8 +233,8 @@
     {
       "path": "web/blueprint/editor.mjs",
       "language": "JavaScript",
-      "physical": 770,
-      "nonempty": 720,
+      "physical": 795,
+      "nonempty": 745,
       "category": "product"
     },
     {
@@ -252,6 +252,13 @@
       "category": "product"
     },
     {
+      "path": "web/blueprint/presentation.mjs",
+      "language": "JavaScript",
+      "physical": 28,
+      "nonempty": 26,
+      "category": "product"
+    },
+    {
       "path": "web/components/graph.mjs",
       "language": "JavaScript",
       "physical": 351,
@@ -261,15 +268,15 @@
     {
       "path": "web/ide/app.mjs",
       "language": "JavaScript",
-      "physical": 2450,
-      "nonempty": 2364,
+      "physical": 2578,
+      "nonempty": 2487,
       "category": "product"
     },
     {
       "path": "web/ide/bridge.mjs",
       "language": "JavaScript",
-      "physical": 718,
-      "nonempty": 689,
+      "physical": 731,
+      "nonempty": 701,
       "category": "product"
     },
     {
@@ -336,6 +343,13 @@
       "category": "product"
     },
     {
+      "path": "web/ide/learning.mjs",
+      "language": "JavaScript",
+      "physical": 33,
+      "nonempty": 28,
+      "category": "product"
+    },
+    {
       "path": "web/ide/palette.mjs",
       "language": "JavaScript",
       "physical": 108,
@@ -345,8 +359,8 @@
     {
       "path": "web/ide/quality-views.mjs",
       "language": "JavaScript",
-      "physical": 362,
-      "nonempty": 330,
+      "physical": 366,
+      "nonempty": 334,
       "category": "product"
     },
     {
@@ -359,43 +373,50 @@
     {
       "path": "web/ide/quality.mjs",
       "language": "JavaScript",
-      "physical": 1092,
-      "nonempty": 1023,
+      "physical": 1115,
+      "nonempty": 1046,
       "category": "product"
     },
     {
       "path": "web/ide/tools.mjs",
       "language": "JavaScript",
-      "physical": 130,
-      "nonempty": 123,
+      "physical": 138,
+      "nonempty": 131,
+      "category": "product"
+    },
+    {
+      "path": "web/ide/usability.css",
+      "language": "CSS",
+      "physical": 157,
+      "nonempty": 156,
       "category": "product"
     },
     {
       "path": "web/ide/views.mjs",
       "language": "JavaScript",
-      "physical": 374,
-      "nonempty": 344,
+      "physical": 357,
+      "nonempty": 327,
       "category": "product"
     },
     {
       "path": "web/ide/workspace.css",
       "language": "CSS",
-      "physical": 1502,
-      "nonempty": 1474,
+      "physical": 1576,
+      "nonempty": 1546,
       "category": "product"
     },
     {
       "path": "web/ide/workspace.mjs",
       "language": "JavaScript",
-      "physical": 419,
-      "nonempty": 392,
+      "physical": 426,
+      "nonempty": 396,
       "category": "product"
     },
     {
       "path": "web/ide.html",
       "language": "HTML",
-      "physical": 22,
-      "nonempty": 22,
+      "physical": 23,
+      "nonempty": 23,
       "category": "product"
     },
     {
@@ -436,8 +457,8 @@
     {
       "path": "web/lib/icons.mjs",
       "language": "JavaScript",
-      "physical": 100,
-      "nonempty": 97,
+      "physical": 101,
+      "nonempty": 98,
       "category": "product"
     },
     {
@@ -501,6 +522,13 @@
       "language": "Python",
       "physical": 307,
       "nonempty": 268,
+      "category": "tests"
+    },
+    {
+      "path": "tests/test_run_entry.py",
+      "language": "Python",
+      "physical": 79,
+      "nonempty": 61,
       "category": "tests"
     },
     {
@@ -588,10 +616,24 @@
       "category": "tests"
     },
     {
+      "path": "tests/unit/plain.test.mjs",
+      "language": "JavaScript",
+      "physical": 18,
+      "nonempty": 16,
+      "category": "tests"
+    },
+    {
       "path": "tests/unit/quality.test.mjs",
       "language": "JavaScript",
       "physical": 161,
       "nonempty": 147,
+      "category": "tests"
+    },
+    {
+      "path": "tests/unit/usability.test.mjs",
+      "language": "JavaScript",
+      "physical": 119,
+      "nonempty": 106,
       "category": "tests"
     },
     {
@@ -604,8 +646,8 @@
     {
       "path": "tests/verify.py",
       "language": "Python",
-      "physical": 97,
-      "nonempty": 92,
+      "physical": 98,
+      "nonempty": 93,
       "category": "tests"
     }
   ]

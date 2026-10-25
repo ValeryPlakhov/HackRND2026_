@@ -129,6 +129,8 @@ public final class StudioApi {
         request.containsKey("inputs") ? strings(request.get("inputs"), 30) : List.of();
     String mainClass = Json.str(request, "mainClass", "");
     if (mainClass.length() > 300) throw new IllegalArgumentException("Слишком длинное имя класса");
+    String entryFile = Json.str(request, "entryFile", "");
+    if (!entryFile.isEmpty() && entryFile.length() <= 400) mainClass = mainClass + "\n@" + entryFile;
     return submit(kind, request, original, candidate, files, inputs, mainClass);
   }
 

@@ -13,6 +13,10 @@ public final class Runner {
   static final String MODE = System.getenv().getOrDefault("BLUEPRINTS_RUNNER", "disabled");
   /** Entry point requested by the IDE run configuration; empty means the first main found. */
   private static final ThreadLocal<String> MAIN = ThreadLocal.withInitial(() -> "");
+  /** File open in the editor when the user pressed Run: its methods are preferred as entry points. */
+  private static final ThreadLocal<String> ENTRY = ThreadLocal.withInitial(() -> "");
+  /** Generated class that calls the chosen method when the project has no main(String[]). */
+  static final String LAUNCHER = "BlueprintsRun__";
 
   static record Build(Path directory, String mainClass, Map<String, Object> result)
       implements AutoCloseable {
@@ -21,14 +25,89 @@ public final class Runner {
     }
   }
 
-  static <T> T withMain(String mainClass, Callable<T> work) throws Exception {
+  /** {@code spec} is a class name, optionally followed by a line "@path/File.java" naming the open file. */
+  static <T> T withMain(String spec, Callable<T> work) throws Exception {
     String previous = MAIN.get();
-    MAIN.set(mainClass == null ? "" : mainClass.trim());
+    String previousEntry = ENTRY.get();
+    String value = spec == null ? "" : spec;
+    int at = value.indexOf("\n@");
+    MAIN.set((at < 0 ? value : value.substring(0, at)).trim());
+    ENTRY.set(at < 0 ? "" : value.substring(at + 2).trim());
     try {
       return work.call();
     } finally {
       MAIN.set(previous);
+      ENTRY.set(previousEntry);
     }
+  }
+
+  private static final java.util.regex.Pattern TYPE =
+      java.util.regex.Pattern.compile("\\b(class|interface|enum|record)\\s+[A-Za-z_$]");
+  private static final java.util.regex.Pattern METHOD =
+      java.util.regex.Pattern.compile(
+          "(?m)^\\s*(?:(?:public|private|protected|static|final|synchronized)\\s+)*[\\w<>\\[\\],.? ]+\\s+[A-Za-z_$][\\w$]*\\s*\\([^;{]*\\)\\s*(?:throws [\\w., ]+)?\\{");
+
+  /** Strips comments and string literals so that words inside them are not taken for code. */
+  static String codeOnly(String source) {
+    return source
+        .replaceAll("(?s)/\\*.*?\\*/", " ")
+        .replaceAll("//[^\\n]*", " ")
+        .replaceAll("\"(?:\\\\.|[^\"\\\\])*\"", "\"\"");
+  }
+
+  /**
+   * A file without any class can still be run: statements become the body of main, a set of
+   * methods becomes a class. The wrapper is added on existing lines, so line numbers do not move.
+   */
+  static String wrapLoose(String path, String source) {
+    String code = codeOnly(source);
+    if (TYPE.matcher(code).find() || code.isBlank()) return source;
+    String name = simpleName(path).replace(".java", "");
+    String[] lines = source.split("\n", -1);
+    int first = 0;
+    while (first < lines.length
+        && (lines[first].isBlank()
+            || lines[first].trim().startsWith("import ")
+            || lines[first].trim().startsWith("package ")
+            || lines[first].trim().startsWith("//")))
+      first++;
+    if (first == lines.length) return source;
+    boolean methods = METHOD.matcher(code).find();
+    String open =
+        methods
+            ? "public class " + name + " { "
+            : "public class " + name + " { public static void main(String[] args) throws Exception { ";
+    lines[first] = open + lines[first];
+    lines[lines.length - 1] = lines[lines.length - 1] + (methods ? "\n}" : "\n} }");
+    return String.join("\n", lines);
+  }
+
+  record Candidate(String file, String type, String name, boolean isStatic, boolean args) {}
+
+  static String launcher(Candidate target) {
+    return "public class " + LAUNCHER + " {\n"
+        + "  public static void main(String[] args) throws Throwable {\n"
+        + "    Class<?> type = Class.forName(\"" + target.type() + "\");\n"
+        + "    java.lang.reflect.Method method = null;\n"
+        + "    for (java.lang.reflect.Method m : type.getDeclaredMethods())\n"
+        + "      if (m.getName().equals(\"" + target.name() + "\") && (m.getParameterCount() == 0"
+        + " || (m.getParameterCount() == 1 && m.getParameterTypes()[0] == String[].class))) { method = m; break; }\n"
+        + "    method.setAccessible(true);\n"
+        + "    Object self = null;\n"
+        + "    if (!java.lang.reflect.Modifier.isStatic(method.getModifiers())) {\n"
+        + "      java.lang.reflect.Constructor<?> c = type.getDeclaredConstructor();\n"
+        + "      c.setAccessible(true);\n"
+        + "      self = c.newInstance();\n"
+        + "    }\n"
+        + "    Object result;\n"
+        + "    try {\n"
+        + "      result = method.getParameterCount() == 0 ? method.invoke(self) : method.invoke(self, (Object) args);\n"
+        + "    } catch (java.lang.reflect.InvocationTargetException e) {\n"
+        + "      throw e.getCause();\n"
+        + "    }\n"
+        + "    if (method.getReturnType() != void.class) System.out.println(result);\n"
+        + "  }\n"
+        + "}\n";
   }
 
   /** Project-relative paths such as src/app/Main.java; no traversal, drives or empty segments. */
@@ -84,15 +163,38 @@ public final class Runner {
     String main = "";
     List<String> mains = new ArrayList<>();
     List<String> sourceList = new ArrayList<>();
+    List<Candidate> loose = new ArrayList<>();
     try {
-      for (var e : files.entrySet()) {
+      for (var original : files.entrySet()) {
+        var e = Map.entry(original.getKey(), wrapLoose(original.getKey(), original.getValue()));
         Path p = sourceRoot.resolve(e.getKey()).normalize();
         if (!p.startsWith(sourceRoot)) throw new IllegalArgumentException("Path escapes project");
         Files.createDirectories(p.getParent());
         Files.writeString(p, e.getValue(), StandardCharsets.UTF_8);
         sourceList.add("\"" + p.toString().replace('\\', '/') + "\"");
-        if (!e.getValue().contains("main") || e.getValue().length() > 250_000) continue;
+        if (e.getValue().length() > 250_000) continue;
         try (JavaModel m = new JavaModel(e.getValue())) {
+          if (!m.valid()) continue;
+          String prefix = m.unit.getPackageName() == null ? "" : m.unit.getPackageName() + ".";
+          for (var method : m.methods) {
+            var tree = method.tree();
+            var flags = tree.getModifiers().getFlags();
+            boolean noArgs = tree.getParameters().isEmpty();
+            boolean stringArgs =
+                tree.getParameters().size() == 1
+                    && Set.of("String[]", "java.lang.String[]", "String...")
+                        .contains(tree.getParameters().get(0).getType().toString());
+            if (tree.getReturnType() == null || flags.contains(javax.lang.model.element.Modifier.ABSTRACT)
+                || !(noArgs || (stringArgs && tree.getName().contentEquals("main"))))
+              continue;
+            loose.add(
+                new Candidate(
+                    e.getKey(),
+                    prefix + method.owner().replace('.', '$'),
+                    tree.getName().toString(),
+                    flags.contains(javax.lang.model.element.Modifier.STATIC),
+                    stringArgs));
+          }
           for (var method : m.methods)
             if (method.tree().getName().contentEquals("main")
                 && method
@@ -138,7 +240,46 @@ public final class Runner {
       else if (!mains.isEmpty()) {
         List<String> named = mains.stream().filter(name -> name.equals("Main") || name.endsWith(".Main")).toList();
         if (named.size() == 1) main = named.get(0);
-        else mainError = "Несколько классов с main: " + String.join(", ", mains) + ". Укажите главный класс в параметрах запуска.";
+        else {
+          String entryFile = ENTRY.get();
+          List<String> inEntry =
+              mains.stream()
+                  .filter(name -> !entryFile.isEmpty() && entryFile.endsWith(name.substring(name.lastIndexOf('.') + 1).replaceAll("\\$.*", "") + ".java"))
+                  .toList();
+          if (inEntry.size() == 1) main = inEntry.get(0);
+          else mainError = "Несколько классов с main: " + String.join(", ", mains) + ". Укажите главный класс в параметрах запуска.";
+        }
+      }
+      // No main(String[]): run what the user clearly means — a main of another shape, or a method
+      // without parameters, preferring the file open in the editor. A small generated class calls it.
+      String entryPoint = main.isEmpty() ? "" : main + ".main";
+      // A requested class without main(String[]) still runs its own method; another class never does.
+      List<Candidate> pool =
+          requested.isEmpty()
+              ? loose
+              : loose.stream()
+                  .filter(c -> c.type().equals(requested) || c.type().equals(requested.replace('.', '$'))
+                      || c.type().endsWith("." + requested) || c.type().endsWith("$" + requested))
+                  .toList();
+      if (main.isEmpty() && (requested.isEmpty() ? mainError.isEmpty() : !pool.isEmpty() && mains.isEmpty())) {
+        mainError = "";
+        String entryFile = ENTRY.get();
+        Comparator<Candidate> order =
+            Comparator.comparing((Candidate c) -> !c.file().equals(entryFile))
+                .thenComparing(c -> !c.name().equals("main"))
+                .thenComparing(c -> !Set.of("run", "start", "execute", "solve", "demo").contains(c.name()))
+                .thenComparing(c -> !c.isStatic());
+        Candidate target = pool.stream().sorted(order).findFirst().orElse(null);
+        if (target != null) {
+          Path generated = sourceRoot.resolve(LAUNCHER + ".java");
+          Files.writeString(generated, launcher(target), StandardCharsets.UTF_8);
+          sourceList.add("\"" + generated.toString().replace('\\', '/') + "\"");
+          main = LAUNCHER;
+          entryPoint = target.type().replace('$', '.') + "." + target.name() + "()";
+        } else
+          mainError =
+              "Нечего запускать: нет ни main, ни метода без параметров. Добавьте метод без параметров"
+                  + " (например, void run()) или напишите инструкции прямо в файле.";
       }
       // An argument file keeps large projects below the Windows command-line limit.
       Path list = root.resolve("sources.txt");
@@ -163,6 +304,8 @@ public final class Runner {
               p.get("timeMs"),
               "mainClass",
               main,
+              "entryPoint",
+              entryPoint,
               "mainError",
               mainError));
     } catch (Exception e) {
@@ -188,7 +331,7 @@ public final class Runner {
     if (b.mainClass.isEmpty())
       throw new IllegalArgumentException(
           String.valueOf(b.result.getOrDefault("mainError", "")).isEmpty()
-              ? "public static void main(String[] args) not found"
+              ? "Нечего запускать: нет ни main, ни метода без параметров"
               : String.valueOf(b.result.get("mainError")));
     if (!MODE.equals("local") && !MODE.equals("docker"))
       throw new IllegalArgumentException(

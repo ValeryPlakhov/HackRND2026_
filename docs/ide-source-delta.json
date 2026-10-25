@@ -2,9 +2,9 @@
   "baselineCommit": "d0624b3",
   "method": "UTF-8 splitlines; nonempty excludes whitespace-only lines, includes comments.",
   "newAuthoredProduct": {
-    "files": 20,
-    "physical": 13292,
-    "nonempty": 12887
+    "files": 22,
+    "physical": 13723,
+    "nonempty": 13301
   },
   "excluded": [
     "Java runtime",
@@ -17,15 +17,15 @@
     {
       "path": "web/ide/app.mjs",
       "language": "JavaScript",
-      "physical": 2450,
-      "nonempty": 2364,
+      "physical": 2578,
+      "nonempty": 2487,
       "category": "product"
     },
     {
       "path": "web/ide/bridge.mjs",
       "language": "JavaScript",
-      "physical": 718,
-      "nonempty": 689,
+      "physical": 731,
+      "nonempty": 701,
       "category": "product"
     },
     {
@@ -92,6 +92,13 @@
       "category": "product"
     },
     {
+      "path": "web/ide/learning.mjs",
+      "language": "JavaScript",
+      "physical": 33,
+      "nonempty": 28,
+      "category": "product"
+    },
+    {
       "path": "web/ide/palette.mjs",
       "language": "JavaScript",
       "physical": 108,
@@ -101,8 +108,8 @@
     {
       "path": "web/ide/quality-views.mjs",
       "language": "JavaScript",
-      "physical": 362,
-      "nonempty": 330,
+      "physical": 366,
+      "nonempty": 334,
       "category": "product"
     },
     {
@@ -115,43 +122,50 @@
     {
       "path": "web/ide/quality.mjs",
       "language": "JavaScript",
-      "physical": 1092,
-      "nonempty": 1023,
+      "physical": 1115,
+      "nonempty": 1046,
       "category": "product"
     },
     {
       "path": "web/ide/tools.mjs",
       "language": "JavaScript",
-      "physical": 130,
-      "nonempty": 123,
+      "physical": 138,
+      "nonempty": 131,
+      "category": "product"
+    },
+    {
+      "path": "web/ide/usability.css",
+      "language": "CSS",
+      "physical": 157,
+      "nonempty": 156,
       "category": "product"
     },
     {
       "path": "web/ide/views.mjs",
       "language": "JavaScript",
-      "physical": 374,
-      "nonempty": 344,
+      "physical": 357,
+      "nonempty": 327,
       "category": "product"
     },
     {
       "path": "web/ide/workspace.css",
       "language": "CSS",
-      "physical": 1502,
-      "nonempty": 1474,
+      "physical": 1576,
+      "nonempty": 1546,
       "category": "product"
     },
     {
       "path": "web/ide/workspace.mjs",
       "language": "JavaScript",
-      "physical": 419,
-      "nonempty": 392,
+      "physical": 426,
+      "nonempty": 396,
       "category": "product"
     },
     {
       "path": "web/ide.html",
       "language": "HTML",
-      "physical": 22,
-      "nonempty": 22,
+      "physical": 23,
+      "nonempty": 23,
       "category": "product"
     }
   ]

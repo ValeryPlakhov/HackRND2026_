@@ -872,10 +872,19 @@ export class IdeApplication {
     if (this.panel === "output") {
       const atEnd =
         target.scrollTop + target.clientHeight >= target.scrollHeight - 30;
+      const typing = document.activeElement?.id === "console-stdin";
+      const caret = typing ? [document.activeElement.selectionStart, document.activeElement.selectionEnd] : null;
       target.innerHTML = view.outputPanel(
         this.taskState ? { ...this.taskState, stale: this.taskOutdated } : null,
+        this.runConfig.input,
+        this.askInput,
       );
       if (atEnd || this.busy) target.scrollTop = target.scrollHeight;
+      const field = $("#console-stdin", target);
+      if (field && (typing || this.askInput)) {
+        field.focus();
+        if (caret) field.setSelectionRange(...caret);
+      }
     }
     if (this.panel === "problems")
       target.innerHTML = view.problemsPanel(problems);
@@ -1424,6 +1433,17 @@ export class IdeApplication {
       return;
     }
     if (this.busy) throw new Error("Задача уже выполняется. Нажмите «Стоп».");
+    // A program that reads the keyboard would just crash on empty input: ask for it first.
+    const sources = [...this.documents.documents.values()].filter((item) => item.language === "java").map((item) => item.content);
+    if (kind === "run" && !this.runConfig.input.trim() && sources.some((code) => /System\.in|new\s+Scanner\s*\(/.test(code)) && !this.askedInput) {
+      this.askedInput = true;
+      this.askInput = "Программа читает ввод с клавиатуры. Впишите значения (каждое с новой строки) и нажмите «Запустить». Если ввод не нужен — просто нажмите «Запустить».";
+      this.panel = "output";
+      this.panelHidden = false;
+      return this.renderPanel();
+    }
+    this.askInput = "";
+    this.askedInput = false;
     if (!(await this.saveAll())) return;
     this.panelHidden = false;
     this.panel = "output";
@@ -1442,6 +1462,7 @@ export class IdeApplication {
       const task = await this.bridge.startTask(this.project.id, {
         kind,
         ...this.runConfig,
+        entryFile: this.documents.active?.language === "java" ? this.documents.active.path : "",
       });
       this.taskState = task;
       this.updateTask(task);
@@ -2148,6 +2169,11 @@ export class IdeApplication {
   async submit(form) {
     const data = new FormData(form);
     switch (form.id) {
+      case "console-form":
+        this.runConfig.input = String(data.get("input") ?? "");
+        this.askedInput = true;
+        await this.startTask("run");
+        break;
       case "project-search-form":
         await this.projectSearch(form);
         break;
@@ -2338,6 +2364,7 @@ export class IdeApplication {
     this.root.addEventListener(
       "input",
       (event) => {
+        if (event.target.id === "console-stdin") this.runConfig.input = event.target.value;
         if (event.target.id === "tools-filter") {
           const menu = $("#ide-tools-menu", this.root);
           filterTools(menu, event.target.value);

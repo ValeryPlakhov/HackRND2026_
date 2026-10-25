@@ -39,6 +39,17 @@ async function readDirectory(handle, prefix, files, state) {
   }
 }
 
+/** Plain words for the failures beginners hit most when a program reads the keyboard. */
+export function explainFailure(stderr = "") {
+  if (/NoSuchElementException/.test(stderr) && /Scanner/.test(stderr))
+    return "Программа ждала ввод (Scanner), но его нет или он закончился. Впишите значения в поле «Ввод для программы» под консолью и запустите снова.";
+  if (/InputMismatchException/.test(stderr))
+    return "Введено не то, что ждёт программа: например, текст вместо числа. Проверьте поле «Ввод для программы».";
+  if (/NumberFormatException/.test(stderr))
+    return "Строку не удалось превратить в число. Проверьте, что во вводе только цифры.";
+  return "";
+}
+
 async function digest(value) {
   const bytes = new TextEncoder().encode(value);
   return [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))]
@@ -644,7 +655,7 @@ export class BrowserBridge {
     const execute = async () => {
       try {
         if (request.kind === "compile") {
-          const result = await this.client.request("/compile", { files, mainClass: request.mainClass ?? "" });
+          const result = await this.client.request("/compile", { files, mainClass: request.mainClass ?? "", entryFile: request.entryFile ?? "" });
           job.status = result.success ? "done" : "failed";
           job.stdout = result.stdout ?? "";
           job.stderr =
@@ -653,7 +664,7 @@ export class BrowserBridge {
         } else {
           const result = await this.client.startJob(
             "run",
-            { files, input: request.input ?? "", mainClass: request.mainClass ?? "" },
+            { files, input: request.input ?? "", mainClass: request.mainClass ?? "", entryFile: request.entryFile ?? "" },
             (update) => {
               job.serverJob = update.id;
               this.taskChanged.emit({ ...job });
@@ -673,6 +684,8 @@ export class BrowserBridge {
               : "failed";
           job.exitCode = execution?.exitCode ?? null;
           job.timedOut = execution?.timedOut ?? false;
+          job.entryPoint = result.result?.compile?.entryPoint ?? "";
+          job.hint = explainFailure(job.stderr);
         }
       } catch (error) {
         job.status = job.cancelled ? "cancelled" : "failed";

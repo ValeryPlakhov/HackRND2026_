@@ -123,7 +123,7 @@ public final class BlueprintServer {
               case "/api/compile" ->
                   result =
                       Runner.withMain(
-                          Json.str(r, "mainClass", ""),
+                          Json.str(r, "mainClass", "") + (Json.str(r, "entryFile", "").isEmpty() ? "" : "\n@" + Json.str(r, "entryFile", "")),
                           () -> Runner.compileOnly(Runner.sources(r.get("files"))));
               case "/api/compare" -> {
                 Object values = r.get("inputs");

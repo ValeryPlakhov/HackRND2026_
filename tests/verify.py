@@ -69,6 +69,7 @@ def main():
             run([sys.executable, 'tests/test_ide_api.py'], env=environment, log='ide-integration.log')
             run([executable('node'), 'tests/blueprint_roundtrip.mjs', environment['BLUEPRINTS_URL']], env=environment, log='blueprint-roundtrip.log')
             run([sys.executable, 'tests/test_audit_regressions.py'], env=environment, log='audit-regressions.log')
+            run([sys.executable, 'tests/test_run_entry.py'], env=environment, log='run-entry.log')
         finally:
             server.terminate()
             try:

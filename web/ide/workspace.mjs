@@ -98,9 +98,30 @@ export function buildTasks(analysis, plansByFile = {}) {
   return { risks, faster, simpler, split, advice };
 }
 
-function bigO(label) {
-  return label ? `<em class="q-big-o ${complexityTone(label)}">${e(label)}</em>` : "";
+/** O(n^2) → O(n²): how developers write it. */
+export function prettyBigO(label = "") {
+  return String(label).replace(/\^2/g, "²").replace(/\^3/g, "³");
 }
+
+/** What a complexity class means in practice, without the notation. */
+export function costText(label = "") {
+  const value = prettyBigO(label).replace(/\s+/g, "");
+  if (/n³|n\^3/.test(value)) return "данных в 10 раз больше — работает в 1000 раз дольше";
+  if (/n²|n\*n/.test(value)) return "данных в 10 раз больше — работает в 100 раз дольше";
+  if (/nlogn|n·logn/.test(value)) return "данных в 10 раз больше — работает примерно в 13 раз дольше";
+  if (/^O\(logn\)$/.test(value)) return "почти не замедляется с ростом данных";
+  if (/^O\(n\)$/.test(value)) return "данных в 10 раз больше — работает в 10 раз дольше";
+  if (/^O\(1\)$/.test(value)) return "время не зависит от объёма данных";
+  return "";
+}
+
+function bigO(label) {
+  return label ? `<em class="q-big-o ${complexityTone(label)}" title="${e(costText(label))}">${e(prettyBigO(label))}</em>` : "";
+}
+
+const PLAIN_TITLES = {
+  NESTED_LOOPS: "Цикл внутри цикла — медленно на больших данных",
+};
 
 function riskLevel(method) {
   const risk = method?.risk ?? 0;
@@ -183,7 +204,7 @@ export function overviewHtml(state) {
     return `<li>${methodButton(method)}<span>${e(reasons.join(" · ") || "сложнее остальных")}</span></li>`;
   });
   return `<section class="ws-page ws-overview">
-    <header class="ws-hero"><div><p class="ws-eyebrow">Карта проекта</p><h1>${e(project.name)}</h1><p class="ws-lead">${stats.files ?? 0} файлов · ${classes.size} классов · ${stats.methods ?? 0} методов · ${stats.lines ?? 0} строк. ${entries.length ? `Точка входа: <b>${entries.map((method) => `${e(method.owner)}.main`).join(", ")}</b>.` : "Метод main не найден."}</p></div>
+    <header class="ws-hero"><div><p class="ws-eyebrow">Карта проекта — чтобы понять чужой код за минуту</p><h1>${e(project.name)}</h1><p class="ws-lead">Где программа начинается, что из чего вызывается и какие места самые сложные. Кликните метод, чтобы открыть его код и схему. ${stats.files ?? 0} файлов · ${classes.size} классов · ${stats.methods ?? 0} методов · ${stats.lines ?? 0} строк. ${entries.length ? `Точка входа: <b>${entries.map((method) => `${e(method.owner)}.main`).join(", ")}</b>.` : "Метод main не найден."}</p></div>
       <div class="ws-hero-cards">
         <button class="ws-kpi" data-action="workspace" data-workspace="tasks"><b>${tasks.risks.length}</b><span>рисков требуют внимания</span></button>
         <button class="ws-kpi" data-action="workspace" data-workspace="tasks"><b>${fixable}</b><span>исправлений IDE сделает сама</span></button>
@@ -205,10 +226,10 @@ export function overviewHtml(state) {
 function taskCard(task) {
   if (task.kind === "finding") {
     const { finding, method, index, fixes } = task;
-    return `<article class="ws-task ${fixes?.length ? "fix" : ""}"><div class="ws-task-head">${severityBadge(finding.severity)}<b>${e(finding.title)}</b></div><p>${e(finding.detail ?? "")}</p><div class="ws-task-meta">${method ? `<span>${e(method.owner)}.${e(method.name)}()</span>${bigO(method.complexity)}` : ""}<span>${e(basename(finding.fileName))}:${finding.line}</span></div>${(fixes ?? [])
+    return `<article class="ws-task ${fixes?.length ? "fix" : ""}"><div class="ws-task-head">${severityBadge(finding.severity)}<b>${e(PLAIN_TITLES[finding.rule] ?? prettyBigO(finding.title))}</b></div>${method?.complexity && costText(method.complexity) && /n/.test(method.complexity) ? `<p class="ws-plain"><b>Что это значит:</b> ${e(costText(method.complexity))} (${e(prettyBigO(method.complexity))}).</p>` : ""}<p>${e(finding.detail ?? "")}</p><div class="ws-task-meta">${method ? `<span>${e(method.owner)}.${e(method.name)}()</span>${bigO(method.complexity)}` : ""}<span>${e(basename(finding.fileName))}:${finding.line}</span></div>${(fixes ?? [])
       .map(
         ({ plan, fileName }) =>
-          `<div class="ws-fix">${glyph("sparkle", 13)}<span><b>${e(plan.title)}</b>${speeds(plan) ? ` ${bigO(plan.timeBefore)}→${bigO(plan.timeAfter)}` : ""}</span>${button("task-fix", "Разобрать исправление", "check", "ide-button small primary", `data-file="${e(fileName)}" data-id="${e(plan.id)}"`)}</div>`,
+          `<div class="ws-fix">${glyph("sparkle", 13)}<span><b>${e(plan.title)}</b>${speeds(plan) ? ` ${bigO(plan.timeBefore)}→${bigO(plan.timeAfter)}<small class="ws-plain">станет: ${e(costText(plan.timeAfter))}</small>` : ""}</span>${button("task-fix", "Разобрать исправление", "check", "ide-button small primary", `data-file="${e(fileName)}" data-id="${e(plan.id)}"`)}</div>`,
       )
       .join("")}<div class="ws-task-actions">${button("open-finding", "Показать в коде и блоках", "eye", "ide-button small", `data-index="${index}"`)}${fixes?.length ? "" : '<span class="ws-muted">Автоисправления нет — разберите вручную</span>'}</div></article>`;
   }
@@ -243,7 +264,7 @@ export function tasksHtml(state) {
   const section = (title, hint, items, empty) =>
     `<h2 class="ws-section">${title} <span class="ws-count">${items.length}</span><small>${hint}</small></h2><div class="ws-task-grid">${items.map(taskCard).join("") || `<p class="ws-muted">${empty}</p>`}</div>`;
   return `<section class="ws-page ws-tasks">
-    <header class="ws-hero compact"><div><p class="ws-eyebrow">Задачи</p><h1>Что сделать с кодом</h1><p class="ws-lead">Сначала риски, затем то, что IDE исправит сама. Каждое изменение проверяется запуском исходной версии и новой версии на тестовых входах. Если поведение разошлось, изменение откатывается одной кнопкой.</p></div></header>
+    <header class="ws-hero compact"><div><p class="ws-eyebrow">Задачи</p><h1>Что сделать с кодом</h1><p class="ws-lead">Места, где программа может тормозить или ломаться. У каждого — что не так простыми словами. Если IDE умеет это исправить, есть кнопка: она поправит код и сразу проверит, что программа выдаёт то же самое. Не понравилось — «Откатить».</p></div></header>
     ${changeBanner(state)}
     ${section("Риски", "места, где вероятна ошибка или медленная работа", tasks.risks, "Правила не нашли рисков. Это не доказывает отсутствие ошибок — проверьте поведение тестами.")}
     ${plansLoading ? '<div class="q-loading"><span class="ide-spinner small"></span>Ищем применимые преобразования во всех файлах…</div>' : ""}

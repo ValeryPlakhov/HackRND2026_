@@ -1500,3 +1500,77 @@ button.ws-tree-toggle:hover {
 #ide-sidebar-actions {
   flex: none;
 }
+
+/* ---- console: output and the program's keyboard input ---- */
+.console {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+.console .task-streams {
+  flex: 1;
+}
+.console-input {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-alt);
+}
+.console-input label {
+  color: var(--secondary);
+  font-size: 13px;
+}
+.console-input.asking {
+  background: var(--amber-soft);
+}
+.console-input.asking label {
+  color: var(--text);
+  font-weight: 600;
+}
+.console-input > div {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.console-input textarea {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+  font: 14px/1.5 var(--mono);
+  resize: vertical;
+}
+.console-input textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+.task-hint {
+  margin: 8px 14px;
+  padding: 8px 12px;
+  border-radius: 7px;
+  background: var(--amber-soft);
+  color: var(--text);
+}
+.ide-run-icon {
+  color: var(--green);
+}
+.ide-run-icon.busy {
+  color: var(--red);
+}
+
+.ws-plain {
+  color: var(--text);
+}
+small.ws-plain {
+  display: block;
+  margin-top: 2px;
+  color: var(--secondary);
+  font-size: 12.5px;
+}
