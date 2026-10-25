@@ -11,9 +11,31 @@ import { StudioClient } from "../lib/client.mjs";
 
 export class BridgeError extends Error {
   constructor(error) {
-    super(error?.message ?? "Ошибка настольного приложения");
+    super(error?.message ?? "Ошибка");
     this.code = error?.code;
     this.detail = error?.detail;
+  }
+}
+
+const SKIPPED_FOLDERS = new Set([".git", "node_modules", "target", "build", ".runtime", ".gradle", "dist", "out", ".idea"]);
+const READABLE = /\.(java|md|txt|json|xml|gradle|kts|properties|ya?ml|gitignore|js|ts|py|kt|cs|cpp|go|rs)$/i;
+
+/** Reads the readable text files of a directory handle into `files` (relative path -> text). */
+async function readDirectory(handle, prefix, files, state) {
+  for await (const [name, entry] of handle.entries()) {
+    if (files.size >= 3000 || state.bytes > 24 * 1024 * 1024) return;
+    const path = prefix + name;
+    if (entry.kind === "directory") {
+      if (!SKIPPED_FOLDERS.has(name)) await readDirectory(entry, path + "/", files, state);
+      continue;
+    }
+    if (!READABLE.test(name)) continue;
+    const file = await entry.getFile();
+    if (file.size > 2 * 1024 * 1024) continue;
+    const content = await file.text();
+    if (content.includes("\0")) continue;
+    state.bytes += file.size;
+    files.set(safeRelative(path), content);
   }
 }
 
@@ -24,128 +46,8 @@ async function digest(value) {
     .join("");
 }
 
-export class NativeBridge {
-  constructor(api) {
-    this.api = api;
-    this.desktop = true;
-    this.filesChanged = new Signal();
-    this.taskChanged = new Signal();
-    this.command = new Signal();
-    this.unsubscribe = [
-      api.onFilesChanged((value) => this.filesChanged.emit(value)),
-      api.onTaskChanged((value) => this.taskChanged.emit(value)),
-      api.onCommand((value) => this.command.emit(value)),
-    ];
-  }
-  async call(name, ...args) {
-    const result = await this.api[name](...args);
-    if (!result?.ok) throw new BridgeError(result?.error);
-    return result.value;
-  }
-  boot() {
-    return this.call("boot");
-  }
-  chooseFolder() {
-    return this.call("chooseFolder");
-  }
-  openRecent(root) {
-    return this.call("openRecent", root);
-  }
-  forgetRecent(root) {
-    return this.call("forgetRecent", root);
-  }
-  newProject(request) {
-    return this.call("newProject", request);
-  }
-  closeProject(id) {
-    return this.call("closeProject", id);
-  }
-  list(id, path = "") {
-    return this.call("list", id, path);
-  }
-  scan(id) {
-    return this.call("scan", id);
-  }
-  read(id, path) {
-    return this.call("read", id, path);
-  }
-  write(id, request) {
-    return this.call("write", id, request);
-  }
-  create(id, request) {
-    return this.call("create", id, request);
-  }
-  rename(id, request) {
-    return this.call("rename", id, request);
-  }
-  trash(id, path) {
-    return this.call("trash", id, path);
-  }
-  reveal(id, path) {
-    return this.call("reveal", id, path);
-  }
-  search(id, request) {
-    return this.call("search", id, request);
-  }
-  cancelSearch() {
-    return this.call("cancelSearch");
-  }
-  previewReplace(id, request) {
-    return this.call("previewReplace", id, request);
-  }
-  overview(id) {
-    return this.call("overview", id);
-  }
-  gitStatus(id) {
-    return this.call("gitStatus", id);
-  }
-  gitDiff(id, request) {
-    return this.call("gitDiff", id, request);
-  }
-  gitLog(id) {
-    return this.call("gitLog", id);
-  }
-  history(id, path) {
-    return this.call("history", id, path);
-  }
-  historyRead(id, path, version) {
-    return this.call("historyRead", id, path, version);
-  }
-  settings(value) {
-    return this.call("settings", value);
-  }
-  session(id, value) {
-    return this.call("session", id, value);
-  }
-  startTask(id, request) {
-    return this.call("startTask", id, request);
-  }
-  task(id) {
-    return this.call("task", id);
-  }
-  stopTask(id) {
-    return this.call("stopTask", id);
-  }
-  dirty(value) {
-    return this.call("dirty", value);
-  }
-  projectState(id, value) {
-    return this.call("projectState", id, value);
-  }
-  openExample(name) {
-    return this.call("openExample", name);
-  }
-  smokeReady(value) {
-    return this.api.smokeReady?.(value);
-  }
-  destroy() {
-    for (const unsubscribe of this.unsubscribe) unsubscribe();
-  }
-}
-
 export class BrowserBridge {
   constructor() {
-    this.desktop = false;
     this.filesChanged = new Signal();
     this.taskChanged = new Signal();
     this.command = new Signal();
@@ -155,6 +57,7 @@ export class BrowserBridge {
     this.jobs = new Map();
     this.client = new StudioClient();
     this.imported = false;
+    this.handle = null;
     this.searchGeneration = 0;
     this.savedSettings = {};
   }
@@ -166,12 +69,11 @@ export class BrowserBridge {
       );
     } catch {}
     return {
-      version: "4.3.0",
-      desktop: false,
+      version: "5.0.0",
       settings: this.savedSettings,
       recent: [],
       platform: "browser",
-      runtime: { java: "21 · локальный сервер", electron: "EXE" },
+      runtime: { java: "21" },
     };
   }
 
@@ -213,7 +115,68 @@ export class BrowserBridge {
       });
   }
 
+  /** Folder access through the browser: read and write the real directory (Chromium), copy elsewhere. */
   async chooseFolder() {
+    if (!("showDirectoryPicker" in window)) return this.chooseFolderCopy();
+    let handle;
+    try {
+      handle = await window.showDirectoryPicker({ id: "blueprints", mode: "readwrite" });
+    } catch (error) {
+      if (error?.name === "AbortError") return { cancelled: true };
+      throw error;
+    }
+    const files = new Map();
+    const state = { bytes: 0 };
+    await readDirectory(handle, "", files, state);
+    this.files = files;
+    this.versions.clear();
+    this.qualityState = null;
+    this.imported = true;
+    this.handle = handle;
+    this.project = {
+      id: crypto.randomUUID(),
+      name: handle.name,
+      root: handle.name,
+      buildSystem: files.has("pom.xml") ? "maven" : files.has("build.gradle") ? "gradle" : "plain",
+      git: false,
+      capabilities: { read: true, write: true, disk: true, java: true, otherLanguages: false },
+    };
+    return { project: this.project, recent: [], session: { tabs: [], expanded: [] } };
+  }
+
+  /** Mirrors a change into the opened folder; the in-memory copy is updated only after this succeeds. */
+  async persist(path, content) {
+    if (!this.handle) return;
+    const parts = path.split("/");
+    const name = parts.pop();
+    let directory = this.handle;
+    for (const part of parts) directory = await directory.getDirectoryHandle(part, { create: true });
+    const file = await directory.getFileHandle(name, { create: true });
+    const writer = await file.createWritable();
+    await writer.write(content);
+    await writer.close();
+  }
+
+  async persistDirectory(path) {
+    if (!this.handle) return;
+    let directory = this.handle;
+    for (const part of path.split("/")) directory = await directory.getDirectoryHandle(part, { create: true });
+  }
+
+  async unlink(path) {
+    if (!this.handle) return;
+    const parts = path.split("/");
+    const name = parts.pop();
+    try {
+      let directory = this.handle;
+      for (const part of parts) directory = await directory.getDirectoryHandle(part);
+      await directory.removeEntry(name, { recursive: true });
+    } catch (error) {
+      if (error?.name !== "NotFoundError") throw error;
+    }
+  }
+
+  async chooseFolderCopy() {
     const input = document.createElement("input");
     input.type = "file";
     input.setAttribute("webkitdirectory", "");
@@ -267,10 +230,11 @@ export class BrowserBridge {
             }
             this.files = files;
             this.imported = true;
+            this.handle = null;
             this.project = {
               id: crypto.randomUUID(),
               name,
-              root: "Импорт папки · копия в памяти страницы (сохраните ZIP-экспортом)",
+              root: "Копия папки в памяти страницы (сохраните ZIP)",
               buildSystem: files.has("pom.xml") ? "maven" : "plain",
               git: false,
               capabilities: {
@@ -308,6 +272,7 @@ export class BrowserBridge {
   async closeProject(id) {
     this.require(id);
     this.project = null;
+    this.handle = null;
     this.files.clear();
     return { closed: true };
   }
@@ -386,6 +351,7 @@ export class BrowserBridge {
         time: new Date().toISOString(),
         reason: "before-save",
       });
+    await this.persist(request.path, request.content);
     this.versions.set(request.path, history.slice(0, 20));
     this.files.set(request.path, request.content);
     return {
@@ -400,8 +366,13 @@ export class BrowserBridge {
     this.require(id);
     const path = safeRelative(request.path);
     if (this.files.has(path)) throw new Error("Файл уже существует");
-    if (request.kind === "directory") this.files.set(path + "/.gitkeep", "");
-    else this.files.set(path, request.content ?? "");
+    if (request.kind === "directory") {
+      await this.persistDirectory(path);
+      this.files.set(path + "/.gitkeep", "");
+    } else {
+      await this.persist(path, request.content ?? "");
+      this.files.set(path, request.content ?? "");
+    }
     return { path, kind: request.kind };
   }
 
@@ -417,6 +388,10 @@ export class BrowserBridge {
       ([path]) => path === request.path || path.startsWith(request.path + "/"),
     );
     if (!entries.length) throw new Error("Файл не найден");
+    for (const [path, content] of entries)
+      if (!path.endsWith("/.gitkeep")) await this.persist(to + path.slice(request.path.length), content);
+    if (entries.every(([path]) => path.endsWith("/.gitkeep"))) await this.persistDirectory(to);
+    await this.unlink(request.path);
     for (const [path, content] of entries) {
       this.files.delete(path);
       this.files.set(to + path.slice(request.path.length), content);
@@ -426,14 +401,12 @@ export class BrowserBridge {
 
   async trash(id, path) {
     this.require(id);
+    await this.unlink(path);
     for (const name of [...this.files.keys()])
       if (name === path || name.startsWith(path + "/")) this.files.delete(name);
     return { path, trashed: true };
   }
 
-  async reveal() {
-    throw new Error("Проводник открывается в настольном EXE-приложении");
-  }
   cancelSearch() {
     this.searchGeneration++;
     return Promise.resolve({ cancelled: true });
@@ -565,7 +538,7 @@ export class BrowserBridge {
     return {
       available: false,
       entries: [],
-      error: "Git-статус выбранной папки доступен в настольном приложении.",
+      error: "Git-статус в браузере недоступен.",
     };
   }
   async gitDiff() {
@@ -652,24 +625,15 @@ export class BrowserBridge {
   async startTask(id, request) {
     this.require(id);
     const files = {};
-    for (const [path, content] of this.files) {
-      if (!path.endsWith(".java")) continue;
-      if (Object.hasOwn(files, basename(path)))
-        throw new Error(
-          "В веб-предпросмотре имена Java-файлов должны отличаться. Проекты с пакетами запускайте в EXE.",
-        );
-      if (/^\s*package\s/m.test(content))
-        throw new Error(
-          "Запуск Java-пакетов доступен в настольной версии. Блупринты можно читать здесь.",
-        );
-      files[basename(path)] = content;
-    }
+    for (const [path, content] of this.files)
+      if (path.endsWith(".java") && !/(^|\/)src\/test\//.test(path)) files[path] = content;
+    if (!Object.keys(files).length) throw new Error("В проекте нет Java-файлов");
     const job = {
       id: crypto.randomUUID(),
       projectId: id,
       kind: request.kind,
       status: "running",
-      stage: "Java 21 · локальный сервер",
+      stage: "Java 21",
       stdout: "",
       stderr: "",
       diagnostics: [],
@@ -680,7 +644,7 @@ export class BrowserBridge {
     const execute = async () => {
       try {
         if (request.kind === "compile") {
-          const result = await this.client.request("/compile", { files });
+          const result = await this.client.request("/compile", { files, mainClass: request.mainClass ?? "" });
           job.status = result.success ? "done" : "failed";
           job.stdout = result.stdout ?? "";
           job.stderr =
@@ -689,7 +653,7 @@ export class BrowserBridge {
         } else {
           const result = await this.client.startJob(
             "run",
-            { files, input: request.input ?? "" },
+            { files, input: request.input ?? "", mainClass: request.mainClass ?? "" },
             (update) => {
               job.serverJob = update.id;
               this.taskChanged.emit({ ...job });
@@ -750,7 +714,5 @@ export class BrowserBridge {
 }
 
 export function createBridge() {
-  return window.blueprintsDesktop
-    ? new NativeBridge(window.blueprintsDesktop)
-    : new BrowserBridge();
+  return new BrowserBridge();
 }

@@ -390,3 +390,7 @@ export function condenseGraph(graph) {
   }
   return { ...graph, nodes: result, edges };
 }
+
+export function methodEmptyHtml() {
+  return `<section class="ws-page"><div class="ws-empty">${glyph("method", 30)}<h2>Выберите метод</h2><p>Откройте Java-файл в дереве слева или перейдите к методу с карты проекта: код и схема шагов появятся рядом.</p>${button("workspace", "Карта проекта", "nodes", "ide-button primary", 'data-workspace="overview"')}</div></section>`;
+}

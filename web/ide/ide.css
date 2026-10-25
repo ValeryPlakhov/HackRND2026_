@@ -264,98 +264,15 @@ kbd {
   align-items: center;
   gap: 15px;
 }
-.ide-language {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 9px;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 12px;
-}
-.ide-language:hover {
-  background: var(--surface-hover);
-}
 .language-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: #d89b4e;
 }
-.ide-preview-banner {
-  height: 26px;
-  min-height: 26px;
-  padding: 0 19px 0 79px;
-  background: var(--accent-soft);
-  border-bottom: 1px solid var(--line);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: var(--secondary);
-  font-size: 10px;
-}
-.ide-preview-banner > span {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.ide-preview-banner a {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-weight: 600;
-}
 .ide-body {
   display: flex;
   min-height: 0;
-  flex: 1;
-}
-.ide-activity {
-  width: 64px;
-  min-width: 64px;
-  background: var(--rail);
-  padding: 10px 5px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 7px;
-  user-select: none;
-}
-.activity-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 54px;
-  min-height: 54px;
-  gap: 5px;
-  color: var(--rail-muted);
-  border-radius: 8px;
-  position: relative;
-}
-.activity-item span {
-  font-size: 8px;
-  font-weight: 500;
-}
-.activity-item:hover {
-  color: #fff;
-  background: #ffffff0b;
-}
-.activity-item.active {
-  color: #e9f0ff;
-  background: #47648b55;
-}
-.activity-item.active:before {
-  content: "";
-  position: absolute;
-  width: 3px;
-  height: 24px;
-  left: -5px;
-  top: 13px;
-  border-radius: 0 3px 3px 0;
-  background: #92b6ff;
-}
-.activity-spacer {
   flex: 1;
 }
 .ide-sidebar {
@@ -732,17 +649,6 @@ kbd {
 }
 .ide-statusbar button:hover {
   color: var(--accent);
-}
-.ide-local-status {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.ide-local-status i {
-  width: 5px;
-  height: 5px;
-  background: var(--green);
-  border-radius: 50%;
 }
 .tree-project {
   padding: 2px 10px 7px;
@@ -2612,12 +2518,6 @@ dialog::backdrop {
   .welcome-recent {
     margin-top: 18px;
   }
-  .activity-item {
-    min-height: 47px;
-  }
-  .ide-activity {
-    gap: 3px;
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -2639,16 +2539,6 @@ dialog::backdrop {
   body {
     height: auto;
     overflow: visible;
-  }
-  .ide-titlebar,
-  .ide-sidebar,
-  .ide-activity,
-  .ide-statusbar,
-  .ide-toolbar,
-  .ide-panel,
-  .ide-tabs,
-  #ide-notifications {
-    display: none;
   }
   .ide-content,
   .ide-body,

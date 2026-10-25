@@ -77,10 +77,6 @@ def main():
                 server.kill()
                 server.wait(timeout=8)
     run([sys.executable, 'tests/source_audit.py'])
-    desktop = None
-    if os.name == 'nt' and (ROOT / '.runtime/desktop-java/bin/java.exe').is_file():
-        run([executable('node'), 'tests/desktop-runtime.mjs'], log='desktop-runtime.log')
-        desktop = json.loads((ROOT / 'docs/desktop-runtime-summary.json').read_text(encoding='utf-8'))
     legacy = json.loads((ROOT / 'docs/test-summary.json').read_text())
     studio = json.loads((ROOT / 'docs/studio-test-summary.json').read_text())
     ide = json.loads((ROOT / 'docs/ide-test-summary.json').read_text())
@@ -88,9 +84,8 @@ def main():
     audit = json.loads((ROOT / 'docs/audit-test-summary.json').read_text(encoding='utf-8'))
     roundtrip = {'tests': len(roundtrip['projects']), 'passed': roundtrip['passed'], 'projects': roundtrip['projects']}
     summary = {'passed': unit['passed'] and legacy['passed'] and studio['passed'] and ide['passed'] and roundtrip['passed'] and audit['passed'],
-               'tests': unit['tests'] + legacy['tests'] + studio['tests'] + ide['tests'] + roundtrip['tests'] + audit['tests'] + (desktop['tests'] if desktop else 0),
+               'tests': unit['tests'] + legacy['tests'] + studio['tests'] + ide['tests'] + roundtrip['tests'] + audit['tests'],
                'unit': unit, 'api': legacy, 'studioApi': studio, 'ideApi': ide, 'blueprintRoundTrip': roundtrip, 'auditRegressions': audit,
-               'desktopRuntime': desktop,
                'durationSeconds': round(time.monotonic() - started, 2),
                'environment': {'python': sys.version.split()[0], 'platform': sys.platform,
                                'runner': 'trusted-local', 'dockerTested': False}}

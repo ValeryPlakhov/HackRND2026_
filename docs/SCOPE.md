@@ -11,7 +11,7 @@
 | Разобрать код | `JavacTask.parse` + позиции UTF-16 для точных правок | `test_api.py` 01 |
 | Построить граф | Блупринт метода: entry/exit, инструкции, if, switch, циклы, try/catch/finally, return/break/continue/throw | `test_api.py` 02, `layout.test.mjs` |
 | Исследовать и править, синхронизация в обе стороны | Код → блупринт: автоматический разбор после паузы. Блупринт → код: изменить, вставить до/после, удалить блок; правка проверяется парсером и попадает в редактор | `test_api.py` 19, `ide.test.mjs` |
-| Собрать Java | Обычные `.java` в папке проекта, Ctrl+S, история версий, запуск F5 | `desktop-runtime.mjs` |
+| Собрать Java | Обычные `.java` в папке проекта, Ctrl+S, история версий, запуск F5 | `test_ide_api.py` |
 | Запустить и сравнить | Эталон (снимок при открытии или зафиксированный вручную) против текущей версии: stdout, stderr без номеров строк стека, код завершения | `test_ide_api.py` 05, 06, 09, 10, 12, 14, 16; `test_api.py` 16, 21 |
 
 ## Диагностика дефектов и Big O
@@ -69,7 +69,7 @@
 
 | Пункт брифа | Где |
 |---|---|
-| 01 Исходный код | Репозиторий: `src/` (движок на Java), `web/` (интерфейс IDE), `desktop/` (Electron-оболочка), инструкция запуска в README |
-| 02 Веб-демо | Воспроизводимая сборка: `start.ps1 -TrustedLocal` → `http://localhost:8080`; Windows-приложение `python tests/build_desktop.py` |
+| 01 Исходный код | Репозиторий: `src/` (движок на Java), `web/` (интерфейс IDE), инструкция запуска в README |
+| 02 Веб-демо | Воспроизводимая сборка: `start.ps1 -TrustedLocal` → `http://localhost:8080`; `docker compose up --build` |
 | 03 Проверка поведения | `python tests/verify.py`, результат в `docs/verification-summary.json` |
 | 04 Описание решения | README, [ARCHITECTURE.md](ARCHITECTURE.md), этот файл, [DEMO.md](DEMO.md) |

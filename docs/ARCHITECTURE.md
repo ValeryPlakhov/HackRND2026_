@@ -1,20 +1,18 @@
-# Архитектура Blueprints IDE 4
+# Архитектура Blueprints IDE
 
-Один продукт из трёх слоёв: Electron-оболочка работает с файлами, интерфейс IDE работает в изолированном renderer, а движок на Java 21 разбирает, анализирует, преобразует, компилирует и запускает код.
+Веб-приложение из двух слоёв: интерфейс в браузере и движок на Java 21, который разбирает, анализирует, преобразует, компилирует и запускает код. Файлы проекта браузер читает и пишет сам через File System Access API.
 
 ```mermaid
 flowchart LR
-  subgraph Desktop[Electron main · desktop/]
-    FS[Workspace: корень проекта, чтение/запись с проверкой хеша, история]
-    Tasks[TaskService: F5 — javac + java проекта]
-    State[Persistence: настройки, сессии, эталон и тесты проекта]
-  end
-  subgraph UI[Renderer · web/ide/]
+  subgraph Browser[Браузер · web/ide/]
+    Modes[Режимы: Обзор, Метод, Задачи, Проверка]
     Editor[Редактор и вкладки]
-    Graph[Блупринт · GraphWidget]
+    Graph[Схема метода · блоки]
     Quality[QualityLab: анализ, улучшения, декомпозиция, проверка]
+    Bridge[BrowserBridge: проект в памяти, запись в папку]
   end
-  subgraph Engine[Java 21 · src/  · 127.0.0.1]
+  Disk[(Папка на диске)]
+  subgraph Engine[Java 21 · src/ · BlueprintServer]
     AST[JavaModel: javac AST + UTF-16 позиции]
     Build[GraphBuilder / GraphAnalysis]
     Rules[Analyzer + RuleCatalog + ComplexityAnalysis]
@@ -22,16 +20,15 @@ flowchart LR
     Run[Runner: отдельные javac и JVM, сравнение]
     Jobs[JobService: очередь, отмена, прогресс]
   end
-  UI -- IPC через preload --> Desktop
-  UI -- HTTP JSON --> Engine
-  Desktop -- запускает --> Engine
+  Browser -- HTTP JSON --> Engine
+  Bridge -- File System Access API --> Disk
 ```
 
-## Процессы
+## Слои
 
-**Electron main** (`desktop/main.cjs`) выбирает папку проекта и ограничивает файловые операции её корнем (`services/workspace.cjs`). Запись идёт атомарно, с проверкой ожидаемого хеша, поэтому внешнее изменение файла не затирается молча. Предыдущая версия попадает в локальную историю. Main поднимает встроенную JVM с движком на случайном loopback-порту, открывает окно IDE и запускает проекты по F5 (`services/tasks.cjs`). Renderer работает в sandbox с `contextIsolation`, а IPC принимается только от окна IDE.
+**Файлы.** `BrowserBridge` держит проект в памяти и зеркалирует каждое изменение в выбранную папку (запись, создание, переименование, удаление). Память обновляется только после успешной записи на диск, поэтому при ошибке доступа редактор не расходится с папкой. Запись с проверкой ожидаемого хеша: если файл изменился между чтением и сохранением, правка отклоняется. В браузерах без File System Access API папка открывается копией в памяти, сохраняет её ZIP-экспорт.
 
-**Renderer** (`web/ide/`) — нативные ES-модули без фреймворков и зависимостей:
+**Интерфейс** (`web/ide/`) — нативные ES-модули без фреймворков и зависимостей:
 
 | Модуль | Ответственность |
 |---|---|
@@ -39,9 +36,10 @@ flowchart LR
 | `documents.mjs`, `editor.mjs` | Модель документа (ревизии, undo/redo, EOL, BOM) и редактор кода |
 | `../components/graph.mjs` | Блупринт: раскладка, маршрутизация рёбер, масштаб, миникарта, маркеры проблем |
 | `quality.mjs`, `quality-views.mjs` | Анализ проекта, улучшения, декомпозиция, эталон, тестовые входы, проверка поведения, лаборатория, экспорт отчёта |
-| `bridge.mjs` | Единый интерфейс к EXE (IPC) или к браузерному режиму (память страницы + HTTP) |
+| `bridge.mjs` | Проект в памяти, чтение и запись папки через File System Access API, запуск через HTTP |
+| `workspace.mjs`, `tools.mjs` | Режимы (карта проекта, задачи, контекст метода, схема для чтения) и меню «Инструменты» |
 
-**Движок** (`src/`) — JDK HttpServer, слушает только loopback, проверяет Host и Origin. Тяжёлые операции выполняются как задания `JobService` (2 worker, очередь, отмена, стадии).
+**Движок** (`src/`) — JDK HttpServer, раздаёт интерфейс и API, проверяет Host и Origin. Тяжёлые операции выполняются как задания `JobService` (2 worker, очередь, отмена, стадии).
 
 ## Java ↔ блупринт
 

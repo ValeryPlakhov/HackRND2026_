@@ -29,6 +29,7 @@ import * as view from "./views.mjs";
 import { QualityLab } from "./quality.mjs";
 import { nodeFindings } from "./quality-views.mjs";
 import * as ws from "./workspace.mjs";
+import { toolsMenuHtml, filterTools } from "./tools.mjs";
 
 const DEFAULT_SETTINGS = {
   theme: "light",
@@ -63,7 +64,9 @@ export class IdeApplication {
     this.panel = "output";
     this.panelHidden = true;
     this.mode = "blueprint";
+    this.home = false;
     this.workspace = "overview";
+    this.toolsOpen = false;
     this.treeExpanded = new Set();
     this.treeTouched = false;
     this.navStack = [];
@@ -105,7 +108,7 @@ export class IdeApplication {
   }
 
   async start() {
-    this.root.innerHTML = view.shell(this.bridge.desktop);
+    this.root.innerHTML = view.shell();
     this.dialog = $("#ide-dialog");
     this.palette = new CommandPalette(this.dialog, (item, mode) =>
       this.safe(() =>
@@ -136,82 +139,9 @@ export class IdeApplication {
         "warning",
         10000,
       );
-    if (
-      !this.bridge.desktop &&
-      new URLSearchParams(location.search).get("demo") === "1"
-    )
+    if (new URLSearchParams(location.search).get("demo") === "1")
       await this.adopt(await this.bridge.demo());
-    if (this.bootInfo.smoke) {
-      const scenario = this.bootInfo.scenario
-        ? await this.smokeScenario().catch((error) => ({
-            passed: false,
-            error: readableError(error),
-          }))
-        : null;
-      await this.bridge.smokeReady({ ready: true, scenario });
-    }
     this.root.dataset.ready = "true";
-  }
-
-  /**
-   * Self-test of the packaged app: open the bundled monolith, analyse, optimise, decompose,
-   * verify behaviour after each change and save to disk. Runs only with --smoke-scenario.
-   */
-  async smokeScenario() {
-    const until = async (condition, timeout = 90000) => {
-      const end = Date.now() + timeout;
-      while (!condition()) {
-        if (Date.now() > end) throw new Error("Сценарий: истекло время ожидания");
-        await delay(200);
-      }
-    };
-    const steps = {};
-    await this.switchProject(() => this.bridge.openExample("shop-monolith"));
-    steps.project = this.project?.name;
-    await until(() => this.quality.project && this.quality.baseline);
-    steps.cases = this.quality.cases.length;
-    steps.baselineFiles = Object.keys(this.quality.baseline.files).length;
-    await until(() => this.quality.analysis && !this.quality.analysing);
-    steps.findings = this.quality.analysis.findings.length;
-    const file = this.documents.active;
-    steps.file = file?.path;
-    await this.quality.loadPlans(file);
-    const plans = this.quality.plansFor(file)?.data?.plans ?? [];
-    steps.plans = plans.map((plan) => plan.rule);
-    const plan = plans.find((item) => item.rule === "histogram-pairs");
-    if (!plan) throw new Error("Сценарий: план histogram-pairs не найден");
-    await this.quality.applyPlans([plan.id]);
-    steps.optimisedVerified = this.quality.report?.passed === true;
-    steps.tests = this.quality.report?.tests.length ?? 0;
-    await this.quality.analyseProject({ reveal: false });
-    const output = this.quality.analysis.modules.find((item) => item.id === "output");
-    const methods = new Map(this.quality.analysis.methods.map((item) => [item.id, item]));
-    const ids = output.methods
-      .map((id) => methods.get(id))
-      .filter((item) => item?.fileName === file.path && item.static && item.name !== "main")
-      .map((item) => item.methodId);
-    await this.quality.decompose({
-      fileName: file.path,
-      methodIds: ids,
-      className: "ShopReports",
-      errorTarget: "#decompose-error",
-    });
-    steps.created = (await this.bridge.scan(this.project.id)).files.some((item) =>
-      item.path.endsWith("ShopReports.java"),
-    );
-    steps.decomposedVerified = this.quality.report?.passed === true;
-    steps.saved = await this.saveAll();
-    const disk = await this.bridge.read(this.project.id, file.path);
-    steps.diskHasDelegate = disk.content.includes("ShopReports.");
-    steps.passed =
-      steps.findings > 0 &&
-      steps.tests > 0 &&
-      steps.optimisedVerified &&
-      steps.created &&
-      steps.decomposedVerified &&
-      steps.saved === true &&
-      steps.diskHasDelegate;
-    return steps;
   }
 
   async safe(operation) {
@@ -280,7 +210,59 @@ export class IdeApplication {
   renderTabs() {
     $("#ide-tabs", this.root).innerHTML = view.tabs(this.documents);
   }
+  get workspace() {
+    return this._workspace;
+  }
+
+  /** Choosing a mode always leaves the home screen. */
+  set workspace(value) {
+    this._workspace = value;
+    this.home = false;
+  }
+
+  goHome() {
+    this.closeTools();
+    this.home = true;
+    this.renderWorkspaceNav();
+    this.renderTabs();
+    this.renderToolbar();
+    this.renderCenter();
+    this.renderStatus();
+  }
+
+  // ---------- tools menu ----------
+
+  toolsState() {
+    const file = this.documents.active;
+    const stats = this.quality.analysis?.stats;
+    return {
+      project: this.project,
+      document: file,
+      method: this.workspace === "method" ? file?.selectedMethod?.() ?? null : null,
+      workspace: this.workspace,
+      home: this.home,
+      summary: stats ? `${stats.files} файлов · ${stats.methods} методов · ${stats.lines} строк` : "",
+    };
+  }
+
+  openTools() {
+    const menu = $("#ide-tools-menu", this.root);
+    menu.innerHTML = toolsMenuHtml(this.toolsState());
+    menu.hidden = false;
+    this.toolsOpen = true;
+    $("#ide-tools-trigger", this.root).setAttribute("aria-expanded", "true");
+    requestAnimationFrame(() => $("#tools-filter", menu)?.focus());
+  }
+
+  closeTools() {
+    if (!this.toolsOpen) return;
+    this.toolsOpen = false;
+    $("#ide-tools-menu", this.root).hidden = true;
+    $("#ide-tools-trigger", this.root)?.setAttribute("aria-expanded", "false");
+  }
+
   renderToolbar() {
+    $("#ide-title-actions", this.root).innerHTML = view.titleActions(this.project, this.busy);
     $("#ide-toolbar", this.root).innerHTML = view.toolbar(
       this.workspace === "method" ? this.documents.active : null,
       this.mode,
@@ -290,26 +272,15 @@ export class IdeApplication {
   }
 
   renderSidebar() {
-    const titles = {
-      explorer: "Проект",
-      search: "Поиск",
-      outline: "Структура",
-      analysis: "Анализ проекта",
-      improve: "Улучшения",
-      git: "Изменения",
-      history: "История",
-    };
-    $("#ide-sidebar-title", this.root).textContent = titles[this.sidebar];
     $(".ide-shell", this.root).classList.toggle(
       "sidebar-hidden",
       this.sidebarHidden,
     );
-    $$(".activity-item[data-view]", this.root).forEach((item) =>
-      item.classList.toggle(
-        "active",
-        item.dataset.view === this.sidebar && !this.sidebarHidden,
-      ),
-    );
+    $$(".sidebar-tab", this.root).forEach((item) => {
+      const active = item.dataset.view === this.sidebar;
+      item.classList.toggle("active", active);
+      item.setAttribute("aria-selected", String(active));
+    });
     const actions = $("#ide-sidebar-actions", this.root);
     actions.innerHTML =
       this.sidebar === "explorer" && this.project
@@ -320,9 +291,7 @@ export class IdeApplication {
           ? view.iconButton("refresh-git", "Обновить Git", "loop")
           : this.sidebar === "history"
             ? view.iconButton("refresh-history", "Обновить историю", "loop")
-            : this.sidebar === "analysis" && this.project
-              ? view.iconButton("quality-analyse", "Проанализировать заново", "loop")
-              : "";
+            : "";
     const body = $("#ide-sidebar-body", this.root);
     if (this.sidebar === "explorer")
       body.innerHTML = view.projectTree(
@@ -338,10 +307,6 @@ export class IdeApplication {
         : view.projectTree(null);
     if (this.sidebar === "outline")
       body.innerHTML = view.outlineSidebar(this.documents.active);
-    if (this.sidebar === "analysis" || this.sidebar === "improve")
-      body.innerHTML = this.quality.sidebarHtml(this.sidebar);
-    if (this.sidebar === "git")
-      body.innerHTML = view.gitSidebar(this.gitState, false);
     if (this.sidebar === "history")
       body.innerHTML = view.historySidebar(
         this.documents.active,
@@ -366,10 +331,10 @@ export class IdeApplication {
   renderWorkspaceNav() {
     const target = $("#ide-workspaces", this.root);
     if (!target) return;
-    $(".ide-shell", this.root).dataset.workspace = this.project ? this.workspace : "none";
+    $(".ide-shell", this.root).dataset.workspace = !this.project ? "none" : this.home ? "home" : this.workspace;
     if (!this.project) return (target.innerHTML = "");
     const tasks = this.quality.analysis ? this.workspaceTasks() : null;
-    target.innerHTML = ws.workspaceNav(this.workspace, {
+    target.innerHTML = ws.workspaceNav(this.home ? null : this.workspace, {
       tasks: tasks ? tasks.risks.length + tasks.faster.length + tasks.simpler.length + tasks.split.length : 0,
     });
   }
@@ -449,10 +414,6 @@ export class IdeApplication {
 
   setWorkspace(name) {
     if (!ws.WORKSPACES.some((item) => item.id === name)) return;
-    if (name === "method" && !this.documents.active) {
-      this.notify("Выберите метод на карте проекта или файл в дереве слева");
-      name = "overview";
-    }
     this.workspace = name;
     this.renderWorkspaceNav();
     this.renderTabs();
@@ -498,6 +459,15 @@ export class IdeApplication {
   renderCenter() {
     this.disposeCenter();
     const target = $("#ide-content", this.root);
+    if (this.home) {
+      this.renderWorkspaceNav();
+      target.innerHTML = view.welcome({
+        recent: this.recent,
+        project: this.project,
+        summary: this.toolsState().summary,
+      });
+      return;
+    }
     if (this.project && this.workspace !== "method") {
       this.renderWorkspaceNav();
       if (this.workspace === "verify") {
@@ -510,11 +480,9 @@ export class IdeApplication {
     }
     const file = this.documents.active;
     if (!file) {
-      target.innerHTML = view.welcome({
-        desktop: this.bridge.desktop,
-        recent: this.recent,
-        project: this.project,
-      });
+      target.innerHTML = this.project
+        ? ws.methodEmptyHtml()
+        : view.welcome({ recent: this.recent });
       return;
     }
     const java = file.language === "java";
@@ -782,7 +750,6 @@ export class IdeApplication {
       target.innerHTML = view.runSettingsPanel(
         this.runConfig,
         this.overviewState,
-        this.bridge.desktop,
       );
   }
 
@@ -798,13 +765,9 @@ export class IdeApplication {
   }
 
   renderStatus() {
-    const project = $("#ide-project-status", this.root);
-    project.innerHTML =
-      view.glyph("folder", 12) + e(this.project?.name ?? "Нет проекта");
-    project.title = this.project?.root ?? "Открыть папку";
     const file = this.documents.active;
-    $("#ide-eol-status", this.root).textContent =
-      `UTF-8${file?.bom ? " BOM" : ""} · ${file?.eol ?? "LF"}`;
+    const cursor = $("#ide-cursor-status", this.root);
+    cursor.hidden = !file || this.workspace !== "method" || this.home;
     $("#ide-save-status", this.root).textContent = this.saving.size
       ? "Сохранение…"
       : this.documents.hasDirty
@@ -815,10 +778,6 @@ export class IdeApplication {
         file.position,
         file.selection.end - file.selection.start,
       );
-    const git = $("#ide-git-status", this.root);
-    git.hidden = !this.gitState?.available;
-    if (this.gitState?.available)
-      git.innerHTML = view.glyph("branch", 12) + e(this.gitState.branch);
     this.quality.renderStatus();
     this.bridge.dirty(this.documents.hasDirty).catch(() => {});
     document.title = `${file ? file.name + (file.dirty ? " ●" : "") + " — " : ""}${this.project ? this.project.name + " — " : ""}Blueprints IDE`;
@@ -970,9 +929,9 @@ export class IdeApplication {
     if (this.documents.active?.language === "java") await this.analyse();
     await this.quality.open(this.project);
     this.notify(
-      this.bridge.desktop
-        ? `Открыт проект «${this.project.name}»`
-        : "Открыт пример. Его изменения хранятся в памяти страницы.",
+      this.project.capabilities?.disk
+        ? `Открыта папка «${this.project.name}». Ctrl+S сохраняет изменения в неё.`
+        : "Проект открыт в памяти страницы. Скачайте ZIP, чтобы сохранить изменения.",
     );
     this.safe(() => this.refreshGit());
   }
@@ -1028,7 +987,7 @@ export class IdeApplication {
     if (!file || !file.dirty) return true;
     if (file.readOnly)
       throw new Error(
-        "Этот файл открыт только для чтения. Экспортируйте изменения или откройте проект в EXE.",
+        "Этот файл открыт только для чтения.",
       );
     if (this.saving.has(file.path)) return false;
     if (file.external) {
@@ -1455,6 +1414,7 @@ export class IdeApplication {
   }
 
   async action(name, element = null) {
+    if (this.toolsOpen && name !== "tools-menu") this.closeTools();
     const file = this.documents.active;
     const path = element?.dataset.path;
     switch (name) {
@@ -1501,6 +1461,13 @@ export class IdeApplication {
         break;
       case "toggle-folder":
         await this.toggleFolder(path);
+        break;
+      case "home":
+        this.goHome();
+        break;
+      case "tools-menu":
+        if (this.toolsOpen) this.closeTools();
+        else this.openTools();
         break;
       case "workspace":
         this.setWorkspace(element.dataset.workspace);
@@ -1593,14 +1560,16 @@ export class IdeApplication {
         this.setMode("code");
         break;
       case "sidebar":
-        await this.setSidebar(element.dataset.view);
-        break;
       case "search":
       case "outline":
-      case "git":
-      case "history":
-        await this.setSidebar(name);
+      case "history": {
+        const view_ = name === "sidebar" ? element.dataset.view : name;
+        if (["analysis", "improve"].includes(view_)) return this.setWorkspace("tasks");
+        if (view_ === "git") break;
+        if (this.project && (this.home || this.workspace !== "method")) this.setWorkspace("method");
+        await this.setSidebar(view_);
         break;
+      }
       case "toggle-sidebar":
         this.sidebarHidden = !this.sidebarHidden;
         this.renderSidebar();
@@ -1684,7 +1653,7 @@ export class IdeApplication {
         break;
       case "verify-open":
         if (!this.project) await this.action("open-folder");
-        else this.quality.openPanel();
+        else this.setWorkspace("verify");
         break;
       case "close-modal":
         this.closeModal();
@@ -1698,11 +1667,7 @@ export class IdeApplication {
         break;
       }
       case "overview":
-        if (this.project)
-          this.showModal(
-            view.overviewModal(this.project, await this.getOverview()),
-          );
-        else await this.action("open-folder");
+        this.openTools();
         break;
       case "open-entry":
         this.runConfig.mainClass = element.dataset.class;
@@ -1815,12 +1780,16 @@ export class IdeApplication {
           );
           if (dirty)
             throw new Error("Сначала сохраните или закройте изменённые файлы");
-          const result = this.bridge.desktop
-            ? await this.bridge.trash(this.project.id, selected)
-            : (await this.ask("Удалить из примера?", selected, [
-                  { id: "cancel", label: "Отмена" },
-                  { id: "delete", label: "Удалить", primary: true },
-                ])) === "delete"
+          const disk = this.project.capabilities?.disk;
+          const result =
+            (await this.ask(
+              disk ? "Удалить с диска?" : "Удалить из проекта?",
+              disk ? `«${selected}» будет удалён из папки без корзины.` : selected,
+              [
+                { id: "cancel", label: "Отмена" },
+                { id: "delete", label: "Удалить", primary: true },
+              ],
+            )) === "delete"
               ? await this.bridge.trash(this.project.id, selected)
               : { cancelled: true };
           if (!result.cancelled) {
@@ -1835,7 +1804,7 @@ export class IdeApplication {
         this.showModal(
           view.modalFrame(
             "Действия с проектом",
-            `<div class="file-actions-menu">${view.button("new-file", "Создать файл", "file")}${view.button("new-folder", "Создать папку", "folder")}${this.selectedPath ? view.button("rename-file", "Переименовать «" + basename(this.selectedPath) + "»", "edit") + view.button("trash-file", "Переместить в корзину", "close") : ""}${this.bridge.desktop ? view.button("reveal-root", "Открыть в проводнике", "external") : view.button("export-project", "Скачать проект (ZIP)", "download")}${view.button("close-project", "Закрыть проект", "folder")}</div>`,
+            `<div class="file-actions-menu">${view.button("new-file", "Создать файл", "file")}${view.button("new-folder", "Создать папку", "folder")}${this.selectedPath ? view.button("rename-file", "Переименовать «" + basename(this.selectedPath) + "»", "edit") + view.button("trash-file", "Переместить в корзину", "close") : ""}${view.button("export-project", "Скачать проект (ZIP)", "download")}${view.button("close-project", "Закрыть проект", "folder")}</div>`,
           ),
         );
         break;
@@ -1851,12 +1820,6 @@ export class IdeApplication {
         this.notify(`Скачан проект: ${Object.keys(files).length} файлов, включая несохранённые правки в редакторе.`);
         break;
       }
-      case "reveal-root":
-        if (this.project) await this.bridge.reveal(this.project.id, "");
-        break;
-      case "reveal-file":
-        if (file) await this.bridge.reveal(this.project.id, file.path);
-        break;
       case "download-file":
         if (file) download(file.name, file.content);
         break;
@@ -2175,6 +2138,7 @@ export class IdeApplication {
     document.addEventListener(
       "click",
       (event) => {
+        if (this.toolsOpen && !event.target.closest("#ide-tools-menu, #ide-tools-trigger")) this.closeTools();
         const target = event.target.closest("[data-action]");
         if (target && !target.disabled && !event.defaultPrevented) {
           event.preventDefault();
@@ -2191,6 +2155,13 @@ export class IdeApplication {
           event.preventDefault();
           this.safe(() => this.submit(event.target));
         }
+      },
+      { signal },
+    );
+    this.root.addEventListener(
+      "input",
+      (event) => {
+        if (event.target.id === "tools-filter") filterTools($("#ide-tools-menu", this.root), event.target.value);
       },
       { signal },
     );
@@ -2214,6 +2185,15 @@ export class IdeApplication {
       "keydown",
       (event) => {
         if (this.dialog.open) return;
+        if (event.key === "Escape" && this.toolsOpen) {
+          event.preventDefault();
+          this.closeTools();
+          return $("#ide-tools-trigger", this.root)?.focus();
+        }
+        if (event.altKey && !event.ctrlKey && event.code === "KeyT") {
+          event.preventDefault();
+          return this.safe(() => this.action("tools-menu"));
+        }
         if (event.altKey && !event.ctrlKey && this.project) {
           const target = ws.WORKSPACES.find((item) => item.key === event.key);
           if (target || event.key === "ArrowLeft") {
@@ -2276,7 +2256,7 @@ export class IdeApplication {
       "beforeunload",
       (event) => {
         this.saveSession();
-        if (!this.bridge.desktop && this.documents.hasDirty) {
+        if (this.documents.hasDirty) {
           event.preventDefault();
           event.returnValue = "";
         }

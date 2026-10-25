@@ -723,3 +723,342 @@ button.ws-tree-toggle:hover {
 .welcome-flow small {
   font-size: 10.5px;
 }
+
+/* ---- shell: one slim top bar, no activity rail ---- */
+.ide-titlebar {
+  height: 46px;
+  min-height: 46px;
+  padding: 0 12px;
+  gap: 10px;
+}
+.ide-brand {
+  flex: none;
+  gap: 8px;
+  padding: 4px 8px 4px 4px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 15px;
+  cursor: pointer;
+}
+.ide-brand:hover {
+  background: var(--surface-hover);
+}
+.ide-brand img {
+  width: 26px;
+  height: 26px;
+}
+.ide-tools-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ide-tools-trigger:hover,
+.ide-tools-trigger[aria-expanded="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.ide-tools-trigger svg:last-child {
+  transition: transform 0.18s ease;
+}
+.ide-tools-trigger[aria-expanded="true"] svg:last-child {
+  transform: rotate(180deg);
+}
+.ide-titlebar .ide-command-trigger {
+  flex: none;
+  width: 190px;
+  margin: 0 0 0 auto;
+}
+.ide-title-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+/* the side panel only exists where files matter */
+.ide-shell:not([data-workspace="method"]) .ide-sidebar,
+.ide-shell:not([data-workspace="method"]) .ide-sidebar-resizer,
+.ide-shell:not([data-workspace="method"]) .ide-toolbar,
+.ide-shell:not([data-workspace="method"]) .ide-tabs {
+  display: none;
+}
+.ide-sidebar-head {
+  height: 38px;
+  min-height: 38px;
+  padding: 0 8px 0 8px;
+  border-bottom: 1px solid var(--line);
+}
+.sidebar-tabs {
+  display: flex;
+  gap: 2px;
+}
+.sidebar-tab {
+  height: 26px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--secondary);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sidebar-tab:hover {
+  background: var(--surface-hover);
+}
+.sidebar-tab.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.ide-toolbar {
+  height: 40px;
+  min-height: 40px;
+}
+.ide-statusbar {
+  height: 24px;
+  min-height: 24px;
+  font-size: 11px;
+}
+.ide-statusbar button {
+  font-size: 11px;
+}
+
+/* ---- tools menu: drops down under the logo ---- */
+.ide-shell {
+  position: relative;
+}
+.ide-tools-menu {
+  position: absolute;
+  top: 44px;
+  left: 8px;
+  z-index: 60;
+  width: min(780px, calc(100vw - 16px));
+  max-height: calc(100vh - 62px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transform-origin: 90px 0;
+  animation: tools-in 0.16s ease-out;
+}
+.ide-tools-menu[hidden] {
+  display: none;
+}
+@keyframes tools-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ide-tools-menu {
+    animation: none;
+  }
+}
+.tools-project {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-alt);
+  color: var(--accent);
+}
+.tools-project > div {
+  flex: 1;
+  min-width: 0;
+}
+.tools-project b,
+.tools-project small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tools-project b {
+  color: var(--text);
+  font-size: 14px;
+}
+.tools-project small {
+  margin-top: 2px;
+  color: var(--muted);
+}
+.tools-project.empty {
+  color: var(--muted);
+}
+.tools-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 14px 4px;
+  padding: 0 10px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-alt);
+  color: var(--muted);
+}
+.tools-search:focus-within {
+  border-color: var(--accent);
+}
+.tools-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+}
+.tools-groups {
+  columns: 2 330px;
+  column-gap: 8px;
+  padding: 6px 10px 12px;
+  overflow: auto;
+}
+.tool-group {
+  break-inside: avoid;
+  padding: 6px 4px;
+}
+.tool-group h3 {
+  margin: 4px 8px 4px;
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.tool-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.tool-item[hidden],
+.tool-group[hidden] {
+  display: none;
+}
+.tool-item:hover:not(:disabled),
+.tool-item:focus-visible {
+  background: var(--accent-soft);
+  outline: 0;
+}
+.tool-item.current {
+  background: var(--surface-hover);
+}
+.tool-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.tool-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 7px;
+  background: var(--surface-hover);
+  color: var(--accent);
+}
+.tool-text {
+  flex: 1;
+  min-width: 0;
+}
+.tool-text b {
+  display: block;
+  font-size: 12.5px;
+}
+.tool-text small {
+  display: block;
+  margin-top: 1px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tool-item kbd {
+  flex: none;
+  padding: 1px 5px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 10px;
+}
+.tools-empty {
+  margin: 18px 12px;
+  color: var(--muted);
+}
+
+/* ---- home: resume card ---- */
+.welcome-resume {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+  padding: 12px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  background: var(--accent-soft);
+}
+.welcome-resume > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.welcome-resume small {
+  display: block;
+  color: var(--accent);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.welcome-resume b {
+  font-size: 15px;
+}
+.welcome-resume span {
+  display: block;
+  color: var(--secondary);
+  font-size: 12px;
+}
+.welcome-resume > div:last-child {
+  display: flex;
+  gap: 6px;
+}
+
+@media (max-width: 1100px) {
+  .ide-titlebar .ide-command-trigger {
+    width: 38px;
+    padding: 0 10px;
+  }
+  .ide-titlebar .ide-command-trigger span,
+  .ide-titlebar .ide-command-trigger kbd,
+  .ide-tools-trigger span {
+    display: none;
+  }
+}

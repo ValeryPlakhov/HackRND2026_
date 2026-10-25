@@ -135,7 +135,7 @@ export const COMMANDS = [
   },
   {
     id: "overview",
-    label: "Обзор Java-проекта",
+    label: "Инструменты и паспорт проекта",
     detail: "Проект",
     icon: "chart",
     project: true,
@@ -200,24 +200,10 @@ export const COMMANDS = [
     document: true,
   },
   {
-    id: "git",
-    label: "Изменения Git",
-    detail: "Проект",
-    icon: "diff",
-    project: true,
-  },
-  {
     id: "rename-file",
     label: "Переименовать файл…",
     detail: "Файл",
     icon: "edit",
-    document: true,
-  },
-  {
-    id: "reveal-file",
-    label: "Показать файл в проводнике",
-    detail: "Файл",
-    icon: "external",
     document: true,
   },
   {
@@ -287,14 +273,6 @@ export const COMMANDS = [
     shortcut: "Ctrl Shift Z",
     icon: "redo",
     document: true,
-  },
-  { id: "languages", label: "Язык блупринтов", detail: "IDE", icon: "code" },
-  {
-    id: "settings",
-    label: "Настройки IDE",
-    detail: "IDE",
-    shortcut: "Ctrl ,",
-    icon: "settings",
   },
   { id: "shortcuts", label: "Горячие клавиши", detail: "Помощь", icon: "info" },
   {
