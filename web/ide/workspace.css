@@ -1066,12 +1066,12 @@ button.ws-tree-toggle:hover {
 
 /* the method row stays one line: the select shrinks, long lists of callers are cut */
 .ws-context {
-  flex-wrap: nowrap;
-  overflow: hidden;
+  flex-wrap: wrap;
+  row-gap: 6px;
 }
 .ws-context-group {
-  flex-wrap: nowrap;
-  white-space: nowrap;
+  flex-wrap: wrap;
+  row-gap: 4px;
 }
 .ws-context-group.current {
   flex: 0 1 auto;
@@ -1100,4 +1100,403 @@ button.ws-tree-toggle:hover {
 .ws-metric {
   color: var(--muted);
   font-size: 13px;
+}
+
+/* the check page already shows the baseline and the run button above */
+.ws-verify .q-baseline,
+.ws-verify .q-verify-actions [data-action="verify"] {
+  display: none;
+}
+
+/* ---- loading: a slim bar instead of a spinner ---- */
+.ide-titlebar {
+  position: relative;
+}
+.ide-loader {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 3px;
+  overflow: hidden;
+  background: var(--accent-soft);
+  z-index: 5;
+}
+.ide-loader[hidden] {
+  display: none;
+}
+.ide-loader i,
+.ws-progress i {
+  display: block;
+  width: 35%;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent);
+  animation: ide-bar 1.15s ease-in-out infinite;
+}
+@keyframes ide-bar {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+.ws-progress {
+  display: block;
+  flex: 0 0 160px !important;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--accent-soft);
+}
+.ws-banner.running {
+  background: var(--surface);
+  color: var(--accent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ide-loader i,
+  .ws-progress i {
+    animation: none;
+    width: 100%;
+    opacity: 0.6;
+  }
+}
+
+/* ---- notifications: one bell, one list ---- */
+#ide-notifications {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.ide-bell {
+  position: relative;
+}
+.ide-bell-count {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  line-height: 17px;
+  text-align: center;
+}
+.ide-bell.has-error .ide-bell-count {
+  background: var(--red);
+}
+.ide-bell.pulse {
+  animation: bell-ring 0.7s ease-in-out 2;
+}
+@keyframes bell-ring {
+  25% {
+    transform: rotate(14deg);
+  }
+  75% {
+    transform: rotate(-14deg);
+  }
+}
+.ide-notify-panel {
+  position: absolute;
+  top: 52px;
+  right: 8px;
+  z-index: 61;
+  width: min(420px, calc(100vw - 16px));
+  max-height: calc(100vh - 70px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  animation: tools-in 0.16s ease-out;
+}
+.ide-notify-panel[hidden] {
+  display: none;
+}
+.notify-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-alt);
+}
+.notify-list {
+  overflow: auto;
+}
+.notify-item {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  gap: 10px;
+  align-items: start;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.notify-item:last-child {
+  border-bottom: 0;
+}
+.notify-item p {
+  margin: 0;
+  line-height: 1.45;
+  word-break: break-word;
+}
+.notify-item time {
+  color: var(--muted);
+  font-size: 12px;
+}
+.notify-icon {
+  color: var(--accent);
+}
+.notify-item.error .notify-icon {
+  color: var(--red);
+}
+.notify-item.warning .notify-icon {
+  color: var(--amber);
+}
+.notify-item.success .notify-icon {
+  color: var(--green);
+}
+.notify-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 30px 20px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.ide-mode-switch button {
+  width: 36px;
+  padding: 0;
+  justify-content: center;
+}
+.editor-active-line.span {
+  background: var(--accent-soft);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+/* ---- any width, any zoom: nothing is clipped, panels stack ---- */
+.ws-task-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(330px, 100%), 1fr));
+}
+.ws-hero-cards {
+  flex-wrap: wrap;
+}
+.ws-kpi {
+  flex: 1 1 150px;
+  width: auto;
+  min-width: 0;
+}
+.ide-welcome {
+  flex-wrap: wrap;
+}
+.welcome-content,
+.welcome-right {
+  min-width: 0;
+}
+.welcome-right {
+  flex: 1 1 260px;
+}
+.ide-main {
+  min-width: 0;
+}
+.ws-step {
+  min-width: min(170px, 100%);
+}
+
+@media (max-width: 900px) {
+  .ide-titlebar {
+    gap: 6px;
+    padding: 0 8px;
+  }
+  .ide-brand span {
+    display: none;
+  }
+  .ide-brand {
+    flex: none;
+  }
+  .ws-tab {
+    padding: 0 10px;
+  }
+  .ws-tab span {
+    display: none;
+  }
+  .ws-tab .ws-count {
+    display: inline-flex;
+  }
+  .ide-titlebar .ide-command-trigger {
+    margin-left: auto;
+  }
+  /* code above, diagram below */
+  .ide-workarea.mode-split {
+    flex-direction: column;
+  }
+  .mode-split #ide-code-pane,
+  .mode-split #ide-graph-pane {
+    flex: 1 1 50%;
+    width: 100%;
+    min-height: 0;
+  }
+  .mode-split .ide-splitter {
+    display: none;
+  }
+  /* file panel as an overlay */
+  .ide-shell[data-workspace="method"] .ide-sidebar {
+    position: absolute;
+    top: 54px;
+    bottom: 28px;
+    left: 0;
+    z-index: 40;
+    width: min(86vw, 320px);
+    min-width: 0;
+    box-shadow: var(--shadow);
+    border-right: 1px solid var(--line-strong);
+  }
+  .ide-shell.sidebar-hidden .ide-sidebar,
+  .ide-shell[data-workspace="method"] .ide-sidebar-resizer {
+    display: none;
+  }
+  .ws-context {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+  .ws-context-group {
+    flex-wrap: wrap;
+  }
+  .ws-page {
+    padding: 18px 16px 30px;
+  }
+  .ws-hero h1 {
+    font-size: 21px;
+  }
+}
+
+@media (max-width: 600px) {
+  .ide-titlebar .ide-command-trigger {
+    width: 36px;
+    padding: 0;
+    justify-content: center;
+  }
+  .ide-title-actions .ide-button.run span {
+    display: none;
+  }
+  .ide-toolbar {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 46px;
+    row-gap: 4px;
+    padding: 4px 8px;
+  }
+  .ide-breadcrumb {
+    flex: 1 1 100px;
+    max-width: none;
+    min-width: 0;
+  }
+  .ws-edit-toggle button {
+    padding: 3px 7px;
+  }
+  .ws-lane {
+    flex-basis: 100%;
+  }
+  .welcome-resume {
+    flex-wrap: wrap;
+  }
+  .ide-welcome {
+    padding: 22px 14px;
+  }
+  .welcome-flow {
+    flex-wrap: wrap;
+  }
+  .tools-groups {
+    columns: 1;
+  }
+  .tools-project {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 440px) {
+  .ide-titlebar .ide-command-trigger {
+    display: none;
+  }
+  .ide-titlebar {
+    gap: 4px;
+    padding: 0 6px;
+  }
+  .ws-tab {
+    padding: 0 8px;
+  }
+  .ide-tools-trigger {
+    padding: 0 9px;
+  }
+  .ide-title-actions {
+    margin-left: auto;
+  }
+  .ide-title-actions .ide-button.run {
+    padding: 0 9px;
+  }
+}
+@media (max-width: 360px) {
+  .ide-title-actions [data-action="settings"] {
+    display: none;
+  }
+}
+.ide-sidebar-body {
+  overflow-x: auto;
+}
+
+/* check page: every block may shrink below its content, tabs scroll instead of widening the page */
+.ws-verify,
+.ws-verify > *,
+#ws-verify-panel,
+#ws-verify-panel > * {
+  min-width: 0;
+}
+.ws-verify {
+  width: 100%;
+  overflow: hidden;
+}
+.q-tabs {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+.ws-steps,
+.ws-step-actions {
+  min-width: 0;
+}
+
+@media (max-width: 360px) {
+  .ide-workspaces {
+    gap: 0;
+  }
+  .ws-tab {
+    padding: 0 6px;
+  }
+  .ws-tab .ws-count,
+  .ide-tools-trigger svg:last-child {
+    display: none;
+  }
+  .ide-tools-trigger {
+    padding: 0 8px;
+  }
+  .ide-brand {
+    padding: 4px 2px;
+  }
+}
+
+.sidebar-tab {
+  padding: 0 8px;
+}
+#ide-sidebar-actions {
+  flex: none;
 }

@@ -190,6 +190,7 @@ export class QualityLab {
   }
 
   renderStatus() {
+    this.app.renderLoader?.();
     const target = $("#ide-quality-status", this.app.root);
     if (!target) return;
     target.hidden = !this.project;
@@ -280,7 +281,7 @@ export class QualityLab {
   // ---------- analysis ----------
 
   async analyseProject({ reveal = true } = {}) {
-    if (!this.project) return this.app.notify("Сначала откройте папку проекта");
+    if (!this.project) return reveal ? this.app.notify("Сначала откройте папку проекта") : undefined;
     if (this.analysing) return;
     this.analysing = true;
     this.analysisError = null;

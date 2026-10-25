@@ -121,3 +121,17 @@ test("russian plural forms for step counts", () => {
   assert.equal(plural(12, "шаг", "шага", "шагов"), "шагов");
   assert.equal(plural(22, "шаг", "шага", "шагов"), "шага");
 });
+
+test("an expanded run of statements is shown as single steps", () => {
+  const node = (id, kind, label) => ({ id, kind, label, code: label, depth: 0, line: 1, start: 0, end: 1 });
+  const graph = {
+    entry: "a",
+    nodes: [node("a", "entry", "f"), node("b", "variable", "int x = 0;"), node("c", "variable", "int y = 0;"), node("d", "exit", "")],
+    edges: [{ from: "a", to: "b" }, { from: "b", to: "c" }, { from: "c", to: "d" }],
+  };
+  const folded = condenseGraph(graph);
+  assert.deepEqual(folded.nodes.map((item) => item.tag), ["method", "steps", "end"]);
+  const open = condenseGraph(graph, new Set(folded.nodes[1].members));
+  assert.deepEqual(open.nodes.map((item) => item.tag), ["method", "var", "var", "end"]);
+  assert.equal(open.edges.length, 3);
+});

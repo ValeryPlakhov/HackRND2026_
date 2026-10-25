@@ -73,6 +73,10 @@ export class SourceEditor {
       signal,
       passive: true,
     });
+    for (const event of ["click", "keyup"])
+      this.input.addEventListener(event, () => {
+        this.span = null;
+      }, { signal });
     for (const event of ["click", "keyup", "select"])
       this.input.addEventListener(event, () => this.updatePosition(), {
         signal,
@@ -202,15 +206,18 @@ export class SourceEditor {
   updateActiveLine() {
     const position = positionAt(this.input.value, this.input.selectionStart);
     const height = parseFloat(getComputedStyle(this.input).lineHeight) || 22;
-    const top = 18 + (position.line - 1) * height - this.input.scrollTop;
+    const first = this.span?.from ?? position.line;
+    const last = this.span?.to ?? position.line;
+    const top = 18 + (first - 1) * height - this.input.scrollTop;
     const line = $(".editor-active-line", this.container);
     line.style.transform = `translateY(${top}px)`;
-    line.style.height = height + "px";
+    line.style.height = (last - first + 1) * height + "px";
+    line.classList.toggle("span", Boolean(this.span));
     line.hidden = this.settings.wordWrap === true;
     $$("[data-line]", this.numbers).forEach((element) =>
       element.classList.toggle(
         "current",
-        Number(element.dataset.line) === position.line,
+        Number(element.dataset.line) >= first && Number(element.dataset.line) <= last,
       ),
     );
   }
@@ -262,6 +269,19 @@ export class SourceEditor {
     );
     this.input.focus();
     this.updatePosition();
+    this.syncScroll();
+  }
+
+  /** Scrolls to a span and marks its lines, leaving keyboard focus where it is (e.g. on the block canvas). */
+  reveal(start, end) {
+    if (!this.document || start < 0) return;
+    const text = this.input.value;
+    const from = positionAt(text, start);
+    const to = positionAt(text, Math.max(start, end));
+    const height = parseFloat(getComputedStyle(this.input).lineHeight) || 22;
+    this.input.setSelectionRange(start, Math.max(start, end));
+    this.input.scrollTop = Math.max(0, (from.line - 1) * height - this.input.clientHeight / 3);
+    this.span = { from: from.line, to: Math.min(Math.max(to.line, from.line), from.line + 11) };
     this.syncScroll();
   }
 

@@ -45,7 +45,6 @@ export class BlueprintEditor {
       <div class="bp-canvas" tabindex="0" aria-label="Редактор блоков">
         <div class="bp-world"><svg class="bp-wires" width="1" height="1"></svg><div class="bp-nodes"></div></div>
         <div class="bp-hud"><button data-bp="add-node" class="bp-add" title="Добавить блок (или правая кнопка мыши по полю)">+ Блок</button><button data-bp="fit" title="Показать всё (F)">⤢</button><button data-bp="zoom-out" title="Уменьшить">−</button><span class="bp-scale"></span><button data-bp="zoom-in" title="Увеличить">+</button><button data-bp="layout" title="Расставить блоки заново">▦</button><button data-bp="undo" title="Отменить (Ctrl+Z)">↶</button><button data-bp="redo" title="Повторить (Ctrl+Y)">↷</button></div>
-        <div class="bp-status"></div>
         <div class="bp-palette" hidden><input class="bp-search" placeholder="Найти блок…" autocomplete="off"/><div class="bp-palette-list"></div></div>
       </div>
       <aside class="bp-details" hidden></aside>
@@ -135,10 +134,9 @@ export class BlueprintEditor {
     this.showDetails();
   }
 
+  /** Messages are handed to the host (one notification centre); the canvas shows none of its own. */
   setStatus(text, kind = "") {
-    const status = this.container.querySelector(".bp-status");
-    status.textContent = text ?? "";
-    status.className = "bp-status " + kind;
+    this.options.onStatus?.(text ?? "", kind);
   }
 
   destroy() {
@@ -244,7 +242,6 @@ export class BlueprintEditor {
     this.showDetails();
     this.applyHighlight();
     this.renderWires();
-    this.setStatus("Связь выбрана: нажмите × на ней или Delete, чтобы удалить.");
   }
 
   cutSelectedLink() {

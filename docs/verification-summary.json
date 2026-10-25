@@ -1,9 +1,9 @@
 {
   "passed": true,
-  "tests": 247,
+  "tests": 250,
   "unit": {
-    "tests": 142,
-    "pass": 142,
+    "tests": 145,
+    "pass": 145,
     "fail": 0,
     "passed": true
   },
@@ -97,7 +97,7 @@
     "errors": 0,
     "passed": true
   },
-  "durationSeconds": 513.09,
+  "durationSeconds": 513.2,
   "environment": {
     "python": "3.12.10",
     "platform": "win32",

@@ -70,9 +70,6 @@ body {
   height: 100%;
   overflow: hidden;
 }
-body {
-  min-width: 760px;
-}
 button,
 input,
 textarea,
@@ -182,7 +179,7 @@ kbd {
 #ide-root {
   width: 100%;
   height: 100%;
-  --sidebar-width: 250px;
+  --sidebar-width: 300px;
   --panel-height: 210px;
 }
 .ide-shell {
@@ -1822,6 +1819,8 @@ kbd {
 }
 .ide-spinner {
   display: inline-block;
+  flex: none;
+  box-sizing: border-box;
   width: 23px;
   height: 23px;
   border: 2px solid var(--line-strong);
@@ -1830,54 +1829,14 @@ kbd {
   animation: ide-spin 0.85s linear infinite;
 }
 .ide-spinner.small {
-  width: 11px;
-  height: 11px;
+  width: 14px;
+  height: 14px;
   border-width: 1.5px;
 }
 @keyframes ide-spin {
   to {
     transform: rotate(360deg);
   }
-}
-#ide-notifications {
-  position: fixed;
-  z-index: 100;
-  bottom: 39px;
-  right: 18px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 9px;
-  max-width: min(450px, 70vw);
-  pointer-events: none;
-}
-.ide-notification {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  background: var(--surface);
-  border: 1px solid var(--line-strong);
-  border-left: 3px solid var(--accent);
-  box-shadow: 0 6px 24px #25314a1c;
-  border-radius: 7px;
-  padding: 13px 12px 13px 16px;
-  font-size: 12.6px;
-  line-height: 1.8;
-  color: var(--secondary);
-  pointer-events: auto;
-  animation: ide-slide 0.15s ease-out;
-}
-.ide-notification.error {
-  border-left-color: var(--red);
-}
-.ide-notification.warning {
-  border-left-color: var(--amber);
-}
-.ide-notification button {
-  color: var(--muted);
-  padding: 0 2px;
-  line-height: 1.3;
-  font-size: 21.8px;
 }
 @keyframes ide-slide {
   from {

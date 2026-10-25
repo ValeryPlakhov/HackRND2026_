@@ -1,5 +1,6 @@
 const paths = {
   logo: '<path d="M5 4h8a4 4 0 0 1 0 8H5zm0 8h9a4 4 0 0 1 0 8H5z"/><path d="m15 2 5 0 0 5m0-5-8 8"/>',
+  bell: '<path d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4zM10 21a2 2 0 0 0 4 0"/>',
   grid: '<rect x="3" y="3" width="7" height="7" rx="1.7"/><rect x="14" y="3" width="7" height="7" rx="1.7"/><rect x="3" y="14" width="7" height="7" rx="1.7"/><rect x="14" y="14" width="7" height="7" rx="1.7"/>',
   nodes:
     '<rect x="8" y="2" width="8" height="5" rx="1.5"/><rect x="2" y="17" width="8" height="5" rx="1.5"/><rect x="14" y="17" width="8" height="5" rx="1.5"/><path d="M12 7v5M6 17v-5h12v5"/>',

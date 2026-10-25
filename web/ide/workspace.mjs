@@ -222,7 +222,7 @@ function taskCard(task) {
 
 function changeBanner({ pending, report, stale, job }) {
   if (job && ["queued", "running"].includes(job.state))
-    return `<div class="ws-banner running"><span class="ide-spinner small"></span><span><b>Проверяем поведение…</b> Исходная версия и новая версия собираются и запускаются на тестовых входах.</span></div>`;
+    return `<div class="ws-banner running"><span><b>${e(job.stage || "Проверяем поведение")}…</b> Обе версии собираются и запускаются на тестовых входах.</span><span class="ws-progress" role="progressbar" aria-label="Выполняется проверка"><i></i></span></div>`;
   if (!pending) return "";
   if (!report || stale)
     return `<div class="ws-banner">${glyph("info", 15)}<span><b>Применено: ${e(pending.label)}.</b> Поведение ещё не проверено.</span>${button("verify", "Проверить", "shield", "ide-button small primary")}${button("rollback-change", "Откатить", "undo", "ide-button small")}</div>`;
@@ -253,7 +253,7 @@ export function tasksHtml(state) {
 
 /** One row above the method: who calls it, which method is open (with cost), what it calls. */
 export function methodContextHtml({ analysis, fileName, methodId, methods = [], canBack, editing, canAdd }) {
-  const toggle = `<div class="ws-edit-toggle" role="group" aria-label="Вид метода"><button data-action="blueprint-edit" data-edit="0" class="${editing ? "" : "active"}" aria-pressed="${!editing}" title="Читать алгоритм: схема шагов">Схема</button><button data-action="blueprint-edit" data-edit="1" class="${editing ? "active" : ""}" aria-pressed="${editing}" title="Править блоками: каждая правка сразу меняет Java">Блоки</button></div>`;
+  const toggle = `<div class="ws-edit-toggle" role="group" aria-label="Вид метода"><button data-action="blueprint-edit" data-edit="0" class="${editing ? "" : "active"}" aria-pressed="${!editing}" title="Алгоритм по шагам. Шаг можно изменить двойным щелчком, подряд идущие шаги раскрываются кликом">Алгоритм</button><button data-action="blueprint-edit" data-edit="1" class="${editing ? "active" : ""}" aria-pressed="${editing}" title="Конструктор из блоков и проводов: каждая правка сразу меняет Java рядом">Блоки</button></div>`;
   const back = canBack ? `<button class="ws-back" data-action="nav-back" title="Вернуться к предыдущему методу (Alt+←)">${glyph("undo", 13)}Назад</button>` : "";
   const select = `<label class="sr-only" for="ide-method-select">Метод</label><select id="ide-method-select" ${!methods.length ? "disabled" : ""}>${methods.map((item) => `<option value="${e(item.id)}" ${item.id === methodId ? "selected" : ""}>${e(item.owner)}.${e(item.name === "<init>" ? item.owner : item.name)}()</option>`).join("") || "<option>Нет методов</option>"}</select>`;
   const add = editing && canAdd ? button("new-method", "Метод", "plus", "ide-button small subtle") : "";
@@ -312,7 +312,7 @@ export function verifyHeaderHtml({ baseline, changes, report, stale, job, pendin
     ${step(2, "Ваши изменения", `<small>${changes.length ? changes.map((item) => `${e(basename(item.path))}${item.status === "added" ? " (новый)" : ""}`).join(", ") : "нет отличий от исходной версии"}${pending ? ` · последнее: ${e(pending.label)}` : ""}</small>`, changes.length ? "active" : "")}
     ${step(3, "Тестовые входы", `<small>${enabled} из ${cases.length} включено</small>`, enabled ? "" : "bad")}
     ${step(4, result[1], `<small>${result[2]}</small>`, result[0])}
-    <div class="ws-step-actions">${button("verify", running ? "Проверяется…" : "Проверить поведение", "shield", "ide-button primary", running || !enabled ? "disabled" : "")}${pending ? button("rollback-change", "Откатить изменение", "undo", "ide-button") : ""}${report?.passed && !stale && changes.length ? button("save-all", "Принять и сохранить", "check", "ide-button") : ""}</div>
+    <div class="ws-step-actions">${button("verify", running ? "Проверяется…" : "Проверить поведение", "shield", "ide-button primary", running || !enabled ? "disabled" : "")}${pending ? button("rollback-change", "Откатить изменение", "undo", "ide-button") : ""}${button("baseline-diff", "Что изменено", "diff", "ide-button subtle")}${button("baseline-set-current", "Считать текущую исходной", "bookmark", "ide-button subtle", 'title="Дальше сравнивать с тем, что сейчас в редакторе"')}${report?.passed && !stale && changes.length ? button("save-all", "Принять и сохранить", "check", "ide-button") : ""}</div>
   </div>`;
 }
 
@@ -349,7 +349,7 @@ export function javaFace(node) {
  * Reading view of a control-flow graph: runs of plain statements collapse into one «steps» node,
  * so branches, loops and exits are what the eye sees first. Spans and the first line are kept.
  */
-export function condenseGraph(graph) {
+export function condenseGraph(graph, expanded = new Set()) {
   const nodes = new Map((graph?.nodes ?? []).map((node) => [node.id, node]));
   const outgoing = new Map();
   const incoming = new Map();
@@ -361,9 +361,9 @@ export function condenseGraph(graph) {
   }
   const next = (node) => {
     const out = outgoing.get(node.id) ?? [];
-    if (out.length !== 1) return null;
+    if (out.length !== 1 || expanded.has(node.id)) return null;
     const target = nodes.get(out[0].to);
-    if (!target || !SIMPLE.has(target.kind) || target.depth !== node.depth) return null;
+    if (!target || expanded.has(target.id) || !SIMPLE.has(target.kind) || target.depth !== node.depth) return null;
     return (incoming.get(target.id) ?? []).length === 1 ? target : null;
   };
   const owner = new Map();

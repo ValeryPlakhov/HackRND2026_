@@ -27,17 +27,33 @@ export function shell() {
   const tab = ([id, label]) =>
     `<button class="sidebar-tab ${id === "explorer" ? "active" : ""}" role="tab" data-action="sidebar" data-view="${id}">${e(label)}</button>`;
   return `<div class="ide-shell">
-    <header class="ide-titlebar"><button class="ide-brand" data-action="home" title="На главный экран" aria-label="Blueprints IDE — главный экран"><img src="/ide/mark.svg" alt=""/><span>Blueprints <b>IDE</b></span></button><button class="ide-tools-trigger" id="ide-tools-trigger" data-action="tools-menu" aria-haspopup="true" aria-expanded="false" title="Все инструменты (Alt+T)">${glyph("grid", 15)}<span>Инструменты</span>${glyph("down", 11)}</button><nav id="ide-workspaces" class="ide-workspaces" aria-label="Режим работы"></nav><button class="ide-command-trigger" data-action="palette" title="Файлы и команды (Ctrl K)">${glyph("search", 14)}<span>Поиск</span><kbd>Ctrl K</kbd></button><div class="ide-title-actions" id="ide-title-actions"></div></header>
+    <header class="ide-titlebar"><button class="ide-brand" data-action="home" title="На главный экран" aria-label="Blueprints IDE — главный экран"><img src="/ide/mark.svg" alt=""/><span>Blueprints <b>IDE</b></span></button><button class="ide-tools-trigger" id="ide-tools-trigger" data-action="tools-menu" aria-haspopup="true" aria-expanded="false" title="Все инструменты (Alt+T)">${glyph("grid", 15)}<span>Инструменты</span>${glyph("down", 11)}</button><nav id="ide-workspaces" class="ide-workspaces" aria-label="Режим работы"></nav><button class="ide-command-trigger" data-action="palette" title="Файлы и команды (Ctrl K)">${glyph("search", 14)}<span>Поиск</span><kbd>Ctrl K</kbd></button><div class="ide-title-actions" id="ide-title-actions"></div><div id="ide-loader" class="ide-loader" role="progressbar" aria-label="Выполняется работа" hidden><i></i></div></header>
     <div class="ide-body">
     <aside class="ide-sidebar"><div class="ide-sidebar-head"><div class="sidebar-tabs" role="tablist" aria-label="Боковая панель">${[["explorer", "Файлы"], ["search", "Поиск"], ["outline", "Структура"]].map(tab).join("")}</div><div id="ide-sidebar-actions"></div></div><div id="ide-sidebar-body" class="ide-sidebar-body"></div></aside><div class="ide-sidebar-resizer" role="separator" aria-orientation="vertical" aria-label="Ширина дерева файлов" tabindex="0"></div>
     <main class="ide-main"><div id="ide-tabs" class="ide-tabs" role="tablist" aria-label="Открытые файлы"></div><div id="ide-toolbar" class="ide-toolbar"></div><div id="ide-content" class="ide-content"></div><div class="ide-panel-resizer" role="separator" aria-orientation="horizontal" aria-label="Высота панели вывода" tabindex="0"></div><section id="ide-panel" class="ide-panel" aria-label="Результаты работы"><div class="ide-panel-head"><div role="tablist" aria-label="Панели результатов"><button data-action="panel" data-panel="output" role="tab" class="active">Вывод</button><button data-action="panel" data-panel="problems" role="tab">Проблемы <span id="ide-problem-count">0</span></button><button data-action="panel" data-panel="run" role="tab">Параметры запуска</button></div><div class="ide-panel-tools">${iconButton("clear-output", "Очистить вывод", "close")}${iconButton("toggle-panel", "Скрыть панель", "down")}</div></div><div id="ide-panel-body" class="ide-panel-body"></div></section></main></div>
     <div id="ide-tools-menu" class="ide-tools-menu" role="menu" aria-label="Инструменты" hidden></div>
+    <div id="ide-notify-panel" class="ide-notify-panel" role="dialog" aria-label="Уведомления" hidden></div>
     <footer class="ide-statusbar"><div><span id="ide-save-status">Готово</span><button data-action="workspace" data-workspace="verify" id="ide-quality-status" hidden></button></div><div><button data-action="goto-line" id="ide-cursor-status" hidden>Стр 1, стлб 1</button></div></footer>
   </div>`;
 }
 
-export function titleActions(project, busy) {
-  return `${project ? button(busy ? "stop" : "run", busy ? "Стоп" : "Запустить", busy ? "close" : "play", `ide-button small ${busy ? "danger" : "run"}`) : ""}${iconButton("settings", "Настройки", "settings")}`;
+export function titleActions(project, busy, notices = { unread: 0, error: false }) {
+  const bell = `<button class="ide-icon-button ide-bell ${notices.error ? "has-error" : ""} ${notices.unread ? "has-unread" : ""}" data-action="notifications" aria-label="Уведомления${notices.unread ? ": новых " + notices.unread : ""}" title="Уведомления" aria-haspopup="dialog">${glyph("bell")}${notices.unread ? `<b class="ide-bell-count">${notices.unread > 9 ? "9+" : notices.unread}</b>` : ""}</button>`;
+  return `${project ? button(busy ? "stop" : "run", busy ? "Стоп" : "Запустить", busy ? "close" : "play", `ide-button small ${busy ? "danger" : "run"}`) : ""}${bell}${iconButton("settings", "Настройки", "settings")}`;
+}
+
+const NOTICE_ICON = { error: "warning", warning: "warning", success: "circleCheck", info: "info" };
+
+export function notifyPanelHtml(items) {
+  const clock = (time) => new Date(time).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+  return `<div class="notify-head"><b>Уведомления</b>${items.length ? `<button class="ide-button small subtle" data-action="notifications-clear">Очистить</button>` : ""}</div><div class="notify-list">${
+    items
+      .map(
+        (item) =>
+          `<div class="notify-item ${e(item.kind)}"><span class="notify-icon">${glyph(NOTICE_ICON[item.kind] ?? "info", 16)}</span><p>${e(item.message)}</p><time>${clock(item.time)}</time></div>`,
+      )
+      .join("") || `<p class="notify-empty">${glyph("bell", 22)}Пока ничего нет. Сюда приходят результаты проверок, ошибки и подсказки.</p>`
+  }</div>`;
 }
 
 export function welcome({ recent = [], project = null, summary = "" }) {
@@ -99,16 +115,16 @@ export function toolbar(document, mode, project, busy) {
         )
         .join("")
     : e(project.name);
-  return `<div class="ide-breadcrumb">${glyph("folder", 14)}${breadcrumbs}</div><span class="toolbar-spacer"></span>${
+  return `${iconButton("toggle-sidebar", "Файлы проекта", "folder")}<div class="ide-breadcrumb">${breadcrumbs}</div><span class="toolbar-spacer"></span>${
     document?.language === "java"
-      ? `<div class="ide-mode-switch" role="group" aria-label="Представление файла">${[
-          ["blueprint", "Схема", "graph"],
-          ["split", "Схема и код", "split"],
-          ["code", "Код", "code"],
+      ? `<div class="ide-mode-switch" role="group" aria-label="Раскладка: код и схема">${[
+          ["code", "Только код", "code"],
+          ["split", "Код и схема рядом", "split"],
+          ["blueprint", "Только схема", "graph"],
         ]
           .map(
             ([id, label, name]) =>
-              `<button data-action="editor-mode" data-mode="${id}" class="${mode === id ? "active" : ""}" aria-pressed="${mode === id}">${glyph(name, 14)}${label}</button>`,
+              `<button data-action="editor-mode" data-mode="${id}" class="${mode === id ? "active" : ""}" aria-pressed="${mode === id}" aria-label="${label}" title="${label}">${glyph(name, 17)}</button>`,
           )
           .join("")}</div>`
       : ""

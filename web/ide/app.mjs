@@ -41,8 +41,8 @@ const DEFAULT_SETTINGS = {
   reduceMotion: false,
   showWhitespace: false,
   graphDirection: "TB",
-  editorView: "blueprint",
-  explorerWidth: 250,
+  editorView: "split",
+  explorerWidth: 300,
   panelHeight: 210,
 };
 
@@ -67,6 +67,9 @@ export class IdeApplication {
     this.home = false;
     this.workspace = "overview";
     this.toolsOpen = false;
+    this.notices = [];
+    this.unread = 0;
+    this.noticesOpen = false;
     this.treeExpanded = new Set();
     this.treeTouched = false;
     this.navStack = [];
@@ -116,7 +119,14 @@ export class IdeApplication {
       ),
     );
     this.bind();
-    this.documents.changed.subscribe((event) => this.documentChanged(event));
+    // On a narrow window (or a zoomed-in page) the file panel is an overlay that starts closed.
+    const narrow = matchMedia("(max-width: 900px)");
+    this.sidebarHidden = narrow.matches;
+    narrow.addEventListener("change", (event) => {
+      this.sidebarHidden = event.matches;
+      this.renderSidebar();
+    });
+((event) => this.documentChanged(event));
     this.bridge.filesChanged.subscribe((event) => {
       this.watchQueue = this.watchQueue
         .then(() => this.filesChanged(event))
@@ -156,19 +166,61 @@ export class IdeApplication {
     }
   }
 
-  notify(message, kind = "info", duration = 5500) {
-    const target = $("#ide-notifications");
-    const notification = document.createElement("div");
-    notification.className = "ide-notification " + kind;
-    const text = document.createElement("span");
-    text.textContent = message;
-    const close = document.createElement("button");
-    close.textContent = "×";
-    close.setAttribute("aria-label", "Закрыть уведомление");
-    close.addEventListener("click", () => notification.remove());
-    notification.append(text, close);
-    target.append(notification);
-    setTimeout(() => notification.remove(), duration);
+  /** Every message goes to one place: the bell in the top bar. Nothing floats over the work area. */
+  notify(message, kind = "info") {
+    const level = kind === "ok" ? "success" : kind;
+    this.notices.unshift({ id: crypto.randomUUID(), message: String(message), kind: level, time: Date.now() });
+    this.notices.length = Math.min(this.notices.length, 100);
+    if (this.noticesOpen) this.renderNotices();
+    else this.unread++;
+    const live = $("#ide-notifications");
+    if (live) live.textContent = String(message);
+    const bell = $(".ide-bell", this.root);
+    if (!this.noticesOpen) this.refreshBell(true);
+    else bell?.classList.remove("pulse");
+  }
+
+  noticeState() {
+    return { unread: this.unread, error: this.notices.slice(0, this.unread).some((item) => item.kind === "error" || item.kind === "warning") };
+  }
+
+  refreshBell(pulse = false) {
+    const target = $("#ide-title-actions", this.root);
+    if (!target) return;
+    this.renderToolbar();
+    if (pulse) {
+      const bell = $(".ide-bell", this.root);
+      bell?.classList.add("pulse");
+      setTimeout(() => bell?.classList.remove("pulse"), 1400);
+    }
+  }
+
+  renderNotices() {
+    $("#ide-notify-panel", this.root).innerHTML = view.notifyPanelHtml(this.notices);
+  }
+
+  openNotices() {
+    this.closeTools();
+    this.noticesOpen = true;
+    this.unread = 0;
+    this.renderNotices();
+    $("#ide-notify-panel", this.root).hidden = false;
+    this.renderToolbar();
+  }
+
+  closeNotices() {
+    if (!this.noticesOpen) return;
+    this.noticesOpen = false;
+    $("#ide-notify-panel", this.root).hidden = true;
+    this.renderToolbar();
+  }
+
+  /** The slim bar under the top bar: shown while anything is being analysed, checked or run. */
+  renderLoader() {
+    const loader = $("#ide-loader", this.root);
+    if (!loader) return;
+    const job = this.quality.job && ["queued", "running"].includes(this.quality.job.state);
+    loader.hidden = !(job || this.quality.analysing || this.quality.projectPlansLoading || this.analysing.size || this.busy);
   }
 
   get busy() {
@@ -248,6 +300,7 @@ export class IdeApplication {
   }
 
   openTools() {
+    this.closeNotices();
     const menu = $("#ide-tools-menu", this.root);
     menu.innerHTML = toolsMenuHtml(this.toolsState());
     menu.hidden = false;
@@ -264,7 +317,8 @@ export class IdeApplication {
   }
 
   renderToolbar() {
-    $("#ide-title-actions", this.root).innerHTML = view.titleActions(this.project, this.busy);
+    $("#ide-title-actions", this.root).innerHTML = view.titleActions(this.project, this.busy, this.noticeState());
+    this.renderLoader();
     $("#ide-toolbar", this.root).innerHTML = view.toolbar(
       this.workspace === "method" ? this.documents.active : null,
       this.mode,
@@ -364,6 +418,7 @@ export class IdeApplication {
   /** Re-renders the active non-editor workspace in place (keeps scroll and the verify inputs' focus). */
   renderWorkspace() {
     this.renderWorkspaceNav();
+    this.renderLoader();
     if (!this.project || this.workspace === "method") return;
     const target = $("#ide-content", this.root);
     if (!target) return;
@@ -570,13 +625,28 @@ export class IdeApplication {
     if (!body || !method.graph?.nodes?.length) return;
     this.blueprint = null;
     body.innerHTML = graphShell({ title: `${method.owner}.${method.name}`, toolbar: false });
-    const chart = ws.condenseGraph(method.graph);
+    this.expandedSteps ??= new Map();
+    const expanded = this.expandedSteps.get(method.id) ?? new Set();
+    const chart = ws.condenseGraph(method.graph, expanded);
+    const original = (id) => method.graph.nodes.find((item) => item.id === id) ?? null;
     const flowchart = new GraphWidget($(".graph-workbench", body), chart, {
       view: { x: 0, y: 0, scale: 1 },
       onSelect: (node) => {
-        if (node?.line) this.editor?.goTo(node.line, 1);
+        if (!node) return;
+        if (node.members) {
+          // A run of plain statements opens into single steps, each of which can be edited.
+          this.expandedSteps.set(method.id, new Set([...expanded, ...node.members]));
+          return this.mountFlowchart(file, method, target);
+        }
+        const step = original(node.id);
+        this.selectNode(step);
+        if (step && step.start >= 0) this.editor?.reveal(step.start, step.end);
       },
-      onEdit: () => this.safe(() => this.action("blueprint-edit", { dataset: { edit: "1" } })),
+      onEdit: (node) => {
+        if (!node || node.members) return;
+        this.selectNode(original(node.id));
+        this.safe(() => this.action("edit-node"));
+      },
     });
     this.graph = flowchart;
     // Long methods fitted to the pane become unreadable: start at a readable scale at the first step.
@@ -632,10 +702,13 @@ export class IdeApplication {
     if (!body) return;
     this.graph = new BlueprintEditor(body, graph, {
       view: this.blueprint.view?.[key],
+      onStatus: (text, kind) => kind === "error" && text && this.notify(text, "warning"),
       onChange: (changed, info) => this.blueprintChanged(file, changed, info),
       onSelect: (node) => {
         this.selectedNode = node;
         file.selectedNode = node?.id ?? null;
+        // The code beside the blocks follows the selection, without taking the keyboard focus.
+        if (node && node.start >= 0 && this.mode !== "blueprint") this.editor?.reveal(node.start, node.end);
       },
       onOpenLine: (node) => {
         if (this.mode === "blueprint") this.setMode("split");
@@ -898,7 +971,7 @@ export class IdeApplication {
     this.blueprint = null;
     this.blueprintViews = {};
     this.sidebar = "explorer";
-    this.sidebarHidden = false;
+    this.sidebarHidden = matchMedia("(max-width: 900px)").matches;
     this.panelHidden = true;
     this.mode = this.settings.editorView;
     this.workspace = "overview";
@@ -1256,8 +1329,10 @@ export class IdeApplication {
     if (this.documents.active)
       this.documents.active.selectedNode = node?.id ?? null;
     const target = $("#ide-node-inspector", this.root);
-    if (target)
+    if (target) {
       target.innerHTML = this.inspectorHtml(node, this.documents.active);
+      target.hidden = !node || this.blueprintEditing;
+    }
   }
 
   async selectMethod(id) {
@@ -1410,6 +1485,7 @@ export class IdeApplication {
 
   async action(name, element = null) {
     if (this.toolsOpen && name !== "tools-menu") this.closeTools();
+    if (this.noticesOpen && name !== "notifications" && name !== "notifications-clear") this.closeNotices();
     const file = this.documents.active;
     const path = element?.dataset.path;
     switch (name) {
@@ -1460,6 +1536,14 @@ export class IdeApplication {
       case "home":
         this.goHome();
         break;
+      case "notifications":
+        if (this.noticesOpen) this.closeNotices();
+        else this.openNotices();
+        break;
+      case "notifications-clear":
+        this.notices = [];
+        this.renderNotices();
+        break;
       case "tools-menu":
         if (this.toolsOpen) this.closeTools();
         else this.openTools();
@@ -1497,6 +1581,8 @@ export class IdeApplication {
         break;
       case "blueprint-edit":
         this.blueprintEditing = element.dataset.edit === "1";
+        // Code stays visible next to the blocks: edits are seen where they land.
+        if (this.blueprintEditing && this.mode === "blueprint") return this.setMode("split");
         this.renderGraph();
         $("#ide-graph-pane", this.root)?.classList.toggle("bp-reading", !this.blueprintEditing);
         break;
@@ -2134,6 +2220,7 @@ export class IdeApplication {
       "click",
       (event) => {
         if (this.toolsOpen && !event.target.closest("#ide-tools-menu, #ide-tools-trigger")) this.closeTools();
+        if (this.noticesOpen && !event.target.closest("#ide-notify-panel, .ide-bell")) this.closeNotices();
         const target = event.target.closest("[data-action]");
         if (target && !target.disabled && !event.defaultPrevented) {
           event.preventDefault();
@@ -2180,6 +2267,10 @@ export class IdeApplication {
       "keydown",
       (event) => {
         if (this.dialog.open) return;
+        if (event.key === "Escape" && this.noticesOpen) {
+          event.preventDefault();
+          return this.closeNotices();
+        }
         if (event.key === "Escape" && this.toolsOpen) {
           event.preventDefault();
           this.closeTools();
